@@ -1,0 +1,31 @@
+{
+    "header": {
+        "brand": "Webster",
+        "login": "Login",
+        "register": "Register",
+        "logout": "Logout",
+        "account": "Account"
+    },
+    "home": {
+        "heroTitleFirst": "Design Like a",
+        "heroTitleSecond": "Professional",
+        "heroDescription": "Create stunning visuals without design skills. Our intuitive editor helps you craft perfect images for any platform with just a few clicks.",
+        "heroUsers": "designers already using our platform",
+        "editorPlaceholder": "YOUR DESIGN",
+        "featuresTitle": "Features",
+        "featuresSubtitle": "Everything you need to create amazing designs",
+        "featuresDescription": "Powerful tools made simple. Transform your ideas into stunning visuals without the learning curve.",
+        "ctaReady": "Ready to create amazing designs?",
+        "ctaStart": "Start your creative journey today.",
+        "getStarted": "Get Started Free",
+        "ctaLearn": "Learn more",
+        "testimonialsTitle": "Loved by creators worldwide",
+        "testimonialsSubtitle": "See what our users are saying about their design experience",
+        "editorTitle": "Webster Editor"
+    },
+    "footer": {
+        "brand": "Webster",
+        "description": "Helps you design images quickly and easily",
+        "copyright": "© 2025 Webster. All rights reserved."
+    }
+}
