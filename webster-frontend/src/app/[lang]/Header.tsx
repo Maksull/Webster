@@ -48,8 +48,6 @@ export function Header() {
 
                     <div className="flex items-center">
                         <div className="hidden sm:ml-6 sm:flex sm:items-center space-x-4">
-                            <div className="h-5 w-px bg-gray-200 dark:bg-gray-700 mx-2"></div>
-
                             <LanguageToggler currentLang={lang} />
                             <ThemeToggle />
 
