@@ -25,13 +25,16 @@ export interface User {
     newEmail?: string | null;
     emailChangeCode?: string | null;
     emailChangeCodeExpiresAt?: Date | null;
-    showNameInEventVisitors: boolean;
+    createdAt: Date;
+    updatedAt: Date;
 }
 
 interface AuthContextType {
     user: User | null;
     isLoading: boolean;
     isAuthenticated: boolean;
+    token: string | null; // Added token to the context
+    getToken: () => string | null; // Added method to get the token
     login: (username: string, password: string) => Promise<void>;
     register: (userData: RegisterUserData) => Promise<void>;
     logout: () => Promise<void>;
@@ -77,6 +80,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const [user, setUser] = useState<User | null>(null);
     const [isLoading, setIsLoading] = useState<boolean>(true);
     const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+    const [token, setToken] = useState<string | null>(null); // Added token state
     const router = useRouter();
     const pathname = usePathname();
     const { lang } = useDictionary();
@@ -102,19 +106,36 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         });
     };
 
+    // Helper function to get the token
+    const getToken = (): string | null => {
+        if (token) {
+            return token;
+        }
+
+        // If token is not in state, try to get it from localStorage
+        if (typeof window !== 'undefined') {
+            const storedToken = localStorage.getItem('token');
+            if (storedToken) {
+                setToken(storedToken); // Update token state
+                return storedToken;
+            }
+        }
+
+        return null;
+    };
+
     // Helper function for API calls with authentication
     const authFetch = async (
         endpoint: string,
         options: RequestInit = {},
     ): Promise<Response> => {
-        const token =
-            typeof window !== 'undefined'
-                ? localStorage.getItem('token')
-                : null;
+        const currentToken = getToken();
 
         const headers = {
             'Content-Type': 'application/json',
-            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+            ...(currentToken
+                ? { Authorization: `Bearer ${currentToken}` }
+                : {}),
             ...(options.headers || {}),
         };
 
@@ -129,13 +150,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const checkAuth = async () => {
             setIsLoading(true);
 
-            const token = localStorage.getItem('token');
+            const storedToken = localStorage.getItem('token');
 
-            if (!token) {
+            if (!storedToken) {
                 setIsLoading(false);
                 setIsAuthenticated(false);
                 return;
             }
+
+            // Update token state
+            setToken(storedToken);
 
             try {
                 const response = await authFetch('/auth/verify');
@@ -152,21 +176,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                             setIsAuthenticated(true);
                         } else {
                             localStorage.removeItem('token');
+                            setToken(null);
                             setIsAuthenticated(false);
                         }
                     } else {
                         // Invalid token or user data, clear localStorage
                         localStorage.removeItem('token');
+                        setToken(null);
                         setIsAuthenticated(false);
                     }
                 } else {
                     // Invalid token, clear localStorage
                     localStorage.removeItem('token');
+                    setToken(null);
                     setIsAuthenticated(false);
                 }
             } catch (error) {
                 console.error('Auth verification failed:', error);
                 localStorage.removeItem('token');
+                setToken(null);
                 setIsAuthenticated(false);
             } finally {
                 setIsLoading(false);
@@ -204,10 +232,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             const result = await response.json();
 
             if (response.ok && result.status === 'success') {
-                const { token, user: userData } = result.data;
+                const { token: newToken, user: userData } = result.data;
 
-                // Store token in localStorage
-                localStorage.setItem('token', token);
+                // Store token in localStorage and state
+                localStorage.setItem('token', newToken);
+                setToken(newToken);
 
                 setUser(userData);
                 setIsAuthenticated(true);
@@ -246,9 +275,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             const result = await response.json();
 
             if (response.ok && result.status === 'success') {
-                const { token, user: registeredUser } = result.data;
+                const { token: newToken, user: registeredUser } = result.data;
 
-                localStorage.setItem('token', token);
+                // Store token in localStorage and state
+                localStorage.setItem('token', newToken);
+                setToken(newToken);
 
                 setUser(registeredUser);
                 setIsAuthenticated(true);
@@ -276,6 +307,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
             // Handle logout state cleanup
             localStorage.removeItem('token');
+            setToken(null);
 
             setUser(null);
             setIsAuthenticated(false);
@@ -285,6 +317,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
             // Even if there's an error, clear local state
             localStorage.removeItem('token');
+            setToken(null);
             setUser(null);
             setIsAuthenticated(false);
             router.push(`/${lang}/login`);
@@ -469,7 +502,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
 
     const updateUserAvatar = async (avatar: File): Promise<void> => {
-        const token = localStorage.getItem('token');
+        const currentToken = getToken();
 
         const formData = new FormData();
         formData.append('avatar', avatar);
@@ -479,7 +512,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 {
                     method: 'POST',
                     headers: {
-                        Authorization: `Bearer ${token}`,
+                        Authorization: `Bearer ${currentToken}`,
                     },
                     body: formData,
                 },
@@ -504,14 +537,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
 
     const deleteUserAvatar = async (): Promise<void> => {
-        const token = localStorage.getItem('token');
+        const currentToken = getToken();
         try {
             const response = await fetch(
                 `${API_URL}/users/${user?.id}/avatar`,
                 {
                     method: 'DELETE',
                     headers: {
-                        Authorization: `Bearer ${token}`,
+                        Authorization: `Bearer ${currentToken}`,
                     },
                 },
             );
@@ -547,6 +580,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 user,
                 isLoading,
                 isAuthenticated,
+                token,
+                getToken,
                 login,
                 register,
                 logout,
