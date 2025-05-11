@@ -731,7 +731,7 @@ export default function AccountPage() {
                                             </option>
                                         </select>
                                         <Link
-                                            href={`/${lang}/editor/new`}
+                                            href={`/${lang}/editor`}
                                             className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white px-4 py-2 rounded-lg font-medium transition-colors duration-200 flex items-center shadow-sm hover:shadow">
                                             <PlusCircle className="mr-2 h-4 w-4" />
                                             {dict.account?.newDesign ||
