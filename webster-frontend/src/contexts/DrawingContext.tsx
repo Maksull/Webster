@@ -15,9 +15,9 @@ import {
     DrawingElement,
     POPULAR_RESOLUTIONS,
 } from '@/types/elements';
+import { Canvas } from '@/types/canvas';
 
 interface DrawingContextProps {
-    // Canvas state
     dimensions: { width: number; height: number };
     setDimensions: React.Dispatch<
         React.SetStateAction<{ width: number; height: number }>
@@ -28,8 +28,6 @@ interface DrawingContextProps {
     setSelectedResolution: React.Dispatch<React.SetStateAction<Resolution>>;
     scale: number;
     setScale: React.Dispatch<React.SetStateAction<number>>;
-
-    // Drawing tools
     tool: ToolType;
     setTool: React.Dispatch<React.SetStateAction<ToolType>>;
     color: string;
@@ -38,16 +36,12 @@ interface DrawingContextProps {
     setStrokeWidth: React.Dispatch<React.SetStateAction<number>>;
     shapeFill: boolean;
     setShapeFill: React.Dispatch<React.SetStateAction<boolean>>;
-
-    // Canvas interaction state
     isDrawing: boolean;
     setIsDrawing: React.Dispatch<React.SetStateAction<boolean>>;
     startPoint: { x: number; y: number } | null;
     setStartPoint: React.Dispatch<
         React.SetStateAction<{ x: number; y: number } | null>
     >;
-
-    // Layer management
     layers: DrawingLayer[];
     setLayers: React.Dispatch<React.SetStateAction<DrawingLayer[]>>;
     elementsByLayer: Map<string, DrawingElement[]>;
@@ -58,25 +52,17 @@ interface DrawingContextProps {
     setActiveLayerId: React.Dispatch<React.SetStateAction<string>>;
     showLayersPanel: boolean;
     setShowLayersPanel: React.Dispatch<React.SetStateAction<boolean>>;
-
-    // History management
     history: HistoryRecord[];
     setHistory: React.Dispatch<React.SetStateAction<HistoryRecord[]>>;
     historyStep: number;
     setHistoryStep: React.Dispatch<React.SetStateAction<number>>;
-
-    // UI state
     showSettings: boolean;
     setShowSettings: React.Dispatch<React.SetStateAction<boolean>>;
     isMobileMenuOpen: boolean;
     setIsMobileMenuOpen: React.Dispatch<React.SetStateAction<boolean>>;
-
-    // Canvas refs
     stageRef: React.RefObject<any>;
     layerRefs: React.MutableRefObject<Map<string, any>>;
     canvasWrapperRef: React.RefObject<HTMLDivElement>;
-
-    // Canvas resize state
     isResizing: boolean;
     setIsResizing: React.Dispatch<React.SetStateAction<boolean>>;
     resizeDirection: string;
@@ -98,66 +84,97 @@ interface DrawingContextProps {
             height: number;
         }>
     >;
-
-    // Helper methods
     getActiveLayerElements: () => DrawingElement[];
     updateActiveLayerElements: (newElements: DrawingElement[]) => void;
+    canvasId?: string;
+    canvasName?: string;
+    setCanvasName: React.Dispatch<React.SetStateAction<string>>;
 }
 
 export const DrawingContext = createContext<DrawingContextProps | undefined>(
     undefined,
 );
 
-export const DrawingProvider: React.FC<{ children: React.ReactNode }> = ({
+interface DrawingProviderProps {
+    children: React.ReactNode;
+    initialCanvas?: Canvas | null;
+}
+
+export const DrawingProvider: React.FC<DrawingProviderProps> = ({
     children,
+    initialCanvas,
 }) => {
     const DEFAULT_RESOLUTION = POPULAR_RESOLUTIONS[0];
-
-    // Canvas settings
     const [dimensions, setDimensions] = useState({
-        width: DEFAULT_RESOLUTION.width,
-        height: DEFAULT_RESOLUTION.height,
+        width: initialCanvas?.width || DEFAULT_RESOLUTION.width,
+        height: initialCanvas?.height || DEFAULT_RESOLUTION.height,
     });
-    const [backgroundColor, setBackgroundColor] = useState('#FFFFFF');
-    const [selectedResolution, setSelectedResolution] =
-        useState<Resolution>(DEFAULT_RESOLUTION);
+    const [backgroundColor, setBackgroundColor] = useState(
+        initialCanvas?.backgroundColor || '#FFFFFF',
+    );
+    const [selectedResolution, setSelectedResolution] = useState<Resolution>(
+        initialCanvas
+            ? {
+                  name: `Custom (${initialCanvas.width}×${initialCanvas.height})`,
+                  width: initialCanvas.width,
+                  height: initialCanvas.height,
+              }
+            : DEFAULT_RESOLUTION,
+    );
     const [scale, setScale] = useState(1);
-
-    // Drawing tools
     const [tool, setTool] = useState<ToolType>('pencil');
     const [color, setColor] = useState('#000000');
     const [strokeWidth, setStrokeWidth] = useState(5);
     const [shapeFill, setShapeFill] = useState(true);
-
-    // Canvas interaction state
     const [isDrawing, setIsDrawing] = useState(false);
     const [startPoint, setStartPoint] = useState<{
         x: number;
         y: number;
     } | null>(null);
-
-    // Layer management
-    const [layers, setLayers] = useState<DrawingLayer[]>([]);
+    const [layers, setLayers] = useState<DrawingLayer[]>(() => {
+        if (initialCanvas?.layers && initialCanvas.layers.length > 0) {
+            return initialCanvas.layers;
+        }
+        return [];
+    });
     const [elementsByLayer, setElementsByLayer] = useState<
         Map<string, DrawingElement[]>
-    >(new Map());
-    const [activeLayerId, setActiveLayerId] = useState<string>('');
+    >(() => {
+        if (initialCanvas?.elementsByLayer) {
+            const elementsMap = new Map<string, DrawingElement[]>();
+            Object.entries(initialCanvas.elementsByLayer).forEach(
+                ([layerId, elements]) => {
+                    elementsMap.set(layerId, elements);
+                },
+            );
+            return elementsMap;
+        }
+        return new Map();
+    });
+    const [activeLayerId, setActiveLayerId] = useState<string>(() => {
+        if (initialCanvas?.layers && initialCanvas.layers.length > 0) {
+            return initialCanvas.layers[0].id;
+        }
+        return '';
+    });
     const [showLayersPanel, setShowLayersPanel] = useState<boolean>(false);
-
-    // History management
-    const [history, setHistory] = useState<HistoryRecord[]>([]);
+    const [history, setHistory] = useState<HistoryRecord[]>(() => {
+        if (initialCanvas?.layers) {
+            return [
+                {
+                    layers: initialCanvas.layers,
+                    elementsByLayer: new Map(elementsByLayer),
+                },
+            ];
+        }
+        return [];
+    });
     const [historyStep, setHistoryStep] = useState(0);
-
-    // UI state
     const [showSettings, setShowSettings] = useState(false);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-
-    // Canvas refs
     const stageRef = useRef<any>(null);
     const layerRefs = useRef<Map<string, any>>(new Map());
     const canvasWrapperRef = useRef<HTMLDivElement>(null);
-
-    // Canvas resize state
     const [isResizing, setIsResizing] = useState(false);
     const [resizeDirection, setResizeDirection] = useState('');
     const [resizeStartPos, setResizeStartPos] = useState({ x: 0, y: 0 });
@@ -172,36 +189,33 @@ export const DrawingProvider: React.FC<{ children: React.ReactNode }> = ({
         height: 0,
     });
 
-    // Initialize with a default layer
+    // Add state for canvas name
+    const [canvasName, setCanvasName] = useState<string>(
+        initialCanvas?.name || '',
+    );
+
     useEffect(() => {
-        const defaultLayerId = Date.now().toString();
-        const defaultLayer: DrawingLayer = {
-            id: defaultLayerId,
-            name: 'Layer 1',
-            visible: true,
-            locked: false,
-            opacity: 1,
-        };
-
-        setLayers([defaultLayer]);
-        setActiveLayerId(defaultLayerId);
-        setElementsByLayer(new Map([[defaultLayerId, []]]));
-        setHistory([
-            {
-                layers: [defaultLayer],
-                elementsByLayer: new Map([[defaultLayerId, []]]),
-            },
-        ]);
-
-        return () => {
-            document.removeEventListener('mousemove', handleResizeMove);
-            document.removeEventListener('mouseup', handleResizeEnd);
-            document.removeEventListener('touchmove', handleResizeMove);
-            document.removeEventListener('touchend', handleResizeEnd);
-        };
+        if (!initialCanvas && layers.length === 0) {
+            const defaultLayerId = Date.now().toString();
+            const defaultLayer: DrawingLayer = {
+                id: defaultLayerId,
+                name: 'Layer 1',
+                visible: true,
+                locked: false,
+                opacity: 1,
+            };
+            setLayers([defaultLayer]);
+            setActiveLayerId(defaultLayerId);
+            setElementsByLayer(new Map([[defaultLayerId, []]]));
+            setHistory([
+                {
+                    layers: [defaultLayer],
+                    elementsByLayer: new Map([[defaultLayerId, []]]),
+                },
+            ]);
+        }
     }, []);
 
-    // Helper functions for active layer
     const getActiveLayerElements = (): DrawingElement[] => {
         return elementsByLayer.get(activeLayerId) || [];
     };
@@ -210,17 +224,6 @@ export const DrawingProvider: React.FC<{ children: React.ReactNode }> = ({
         const updatedMap = new Map(elementsByLayer);
         updatedMap.set(activeLayerId, newElements);
         setElementsByLayer(updatedMap);
-    };
-
-    // Resize handlers
-    const handleResizeMove = (e: MouseEvent | TouchEvent) => {
-        // Implementation remains in DrawingEditor.tsx
-        // Keeping this as a placeholder
-    };
-
-    const handleResizeEnd = () => {
-        // Implementation remains in DrawingEditor.tsx
-        // Keeping this as a placeholder
     };
 
     const contextValue: DrawingContextProps = {
@@ -275,6 +278,9 @@ export const DrawingProvider: React.FC<{ children: React.ReactNode }> = ({
         setResizeInitialRect,
         getActiveLayerElements,
         updateActiveLayerElements,
+        canvasId: initialCanvas?.id,
+        canvasName,
+        setCanvasName,
     };
 
     return (

@@ -1,4 +1,4 @@
-import { User } from '@/entities/index.js';
+import { Canvas, User } from '@/entities/index.js';
 import { DataSourceOptions, DataSource } from 'typeorm';
 
 export const databaseConfig: DataSourceOptions = {
@@ -8,7 +8,7 @@ export const databaseConfig: DataSourceOptions = {
     username: process.env.DB_USERNAME || 'postgres',
     password: process.env.DB_PASSWORD || '1234',
     database: process.env.DB_NAME || 'webster',
-    entities: [User],
+    entities: [User, Canvas],
     synchronize: process.env.NODE_ENV !== 'production', // Don't use in production!
     logging: process.env.NODE_ENV !== 'production',
 };
