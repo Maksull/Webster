@@ -13,6 +13,7 @@ import {
     LineElement,
     Resolution,
 } from '@/types/elements';
+import { API_URL } from '@/config';
 
 export const useCanvasOperations = () => {
     const {
@@ -47,6 +48,9 @@ export const useCanvasOperations = () => {
         setElementsByLayer,
         getActiveLayerElements,
         updateActiveLayerElements,
+        canvasId,
+        canvasName,
+        backgroundColor,
     } = useDrawing();
 
     const { recordHistory } = useHistory();
@@ -729,10 +733,67 @@ export const useCanvasOperations = () => {
     };
 
     // Handle save (would connect to backend in full implementation)
-    const handleSave = () => {
-        // Here we would integrate with the backend API
-        // For now, just show a success message
-        alert('Drawing saved successfully!');
+    const handleSave = async () => {
+        if (!stageRef.current) {
+            console.error('Cannot save: Stage reference not available');
+            return;
+        }
+
+        try {
+            const thumbnailDataURL = stageRef.current.toDataURL({
+                pixelRatio: 0.5,
+                mimeType: 'image/jpeg',
+                quality: 0.8,
+            });
+
+            const elementsObject: Record<string, any> = {};
+            elementsByLayer.forEach((elements, layerId) => {
+                elementsObject[layerId] = elements;
+            });
+
+            // Include the canvas name in the canvas data
+            const canvasData = {
+                name: canvasName || 'Untitled Design', // Include canvas name
+                width: dimensions.width,
+                height: dimensions.height,
+                backgroundColor: backgroundColor,
+                layers,
+                elementsByLayer: elementsObject,
+                thumbnail: thumbnailDataURL,
+                lastModified: new Date().toISOString(),
+            };
+
+            // Handle both creating new canvases and updating existing ones
+            const url = canvasId
+                ? `${API_URL}/canvases/${canvasId}`
+                : `${API_URL}/canvases`;
+
+            const method = canvasId ? 'PUT' : 'POST';
+
+            const response = await fetch(url, {
+                method: method,
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${localStorage.getItem('token') || ''}`,
+                },
+                body: JSON.stringify(canvasData),
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.message || 'Failed to save canvas');
+            }
+
+            const result = await response.json();
+            console.log('Canvas saved successfully:', result);
+
+            alert('Drawing saved successfully!');
+        } catch (error) {
+            console.error('Error saving canvas:', error);
+            alert(
+                `Failed to save canvas: ${error instanceof Error ? error.message : 'Unknown error'}`,
+            );
+        }
     };
 
     // Download drawing as image

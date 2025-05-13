@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useDictionary } from '@/contexts/DictionaryContext';
 import { useDrawing, DrawingProvider } from '@/contexts/DrawingContext';
 import Header from './Header';
@@ -13,13 +13,24 @@ import SettingsPanel from './SettingsPanel';
 import { useCanvasOperations } from './useCanvasOperations';
 import { useHistory } from './useHistory';
 import ZoomControls from './ZoomControls';
+import { Canvas as CanvasType } from '@/types/canvas';
+
+interface DrawingEditorProps {
+    initialCanvas?: CanvasType | null;
+}
 
 const DrawingEditorContent: React.FC = () => {
     const { dict, lang } = useDictionary();
-    const { showLayersPanel, isMobileMenuOpen } = useDrawing();
-
+    const {
+        showLayersPanel,
+        isMobileMenuOpen,
+        setDimensions,
+        setBackgroundColor,
+        setLayers,
+        setElementsByLayer,
+        setActiveLayerId,
+    } = useDrawing();
     const { handleClear } = useHistory();
-
     const {
         handleMouseDown,
         handleMouseMove,
@@ -32,7 +43,6 @@ const DrawingEditorContent: React.FC = () => {
 
     return (
         <div className="h-screen w-full flex flex-col bg-slate-50 dark:bg-gray-900 overflow-hidden">
-            {/* Header */}
             <Header
                 dict={dict}
                 lang={lang}
@@ -40,7 +50,6 @@ const DrawingEditorContent: React.FC = () => {
                 onDownload={handleDownload}
             />
 
-            {/* Mobile Menu */}
             {isMobileMenuOpen && (
                 <MobileMenu
                     dict={dict}
@@ -50,12 +59,8 @@ const DrawingEditorContent: React.FC = () => {
                 />
             )}
 
-            {/* Main Content */}
             <div className="flex-1 flex overflow-hidden">
-                {/* Desktop Toolbar */}
                 <DesktopToolbar dict={dict} onClear={handleClear} />
-
-                {/* Canvas */}
                 <Canvas
                     onMouseDown={handleMouseDown}
                     onMouseMove={handleMouseMove}
@@ -64,28 +69,20 @@ const DrawingEditorContent: React.FC = () => {
                 />
             </div>
 
-            {/* Mobile toolbar at bottom */}
             <MobileToolbar dict={dict} />
-
-            {/* Settings Panel */}
             <SettingsPanel
                 dict={dict}
                 onResolutionChange={handleResolutionChange}
             />
-
-            {/* Layers Panel */}
             {showLayersPanel && <LayerPanel dict={dict} />}
-
-            {/* Floating zoom controls for mobile */}
             <ZoomControls showOnMobile={true} />
         </div>
     );
 };
 
-// Wrap the component with the DrawingProvider
-const DrawingEditor: React.FC = () => {
+const DrawingEditor: React.FC<DrawingEditorProps> = ({ initialCanvas }) => {
     return (
-        <DrawingProvider>
+        <DrawingProvider initialCanvas={initialCanvas}>
             <DrawingEditorContent />
         </DrawingProvider>
     );
