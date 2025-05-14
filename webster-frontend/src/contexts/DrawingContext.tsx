@@ -89,6 +89,10 @@ interface DrawingContextProps {
     canvasId?: string;
     canvasName?: string;
     setCanvasName: React.Dispatch<React.SetStateAction<string>>;
+    selectedElementIds: string[]; // Support multi-selection
+    setSelectedElementIds: React.Dispatch<React.SetStateAction<string[]>>;
+    isMoving: boolean;
+    setIsMoving: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
 export const DrawingContext = createContext<DrawingContextProps | undefined>(
@@ -188,8 +192,8 @@ export const DrawingProvider: React.FC<DrawingProviderProps> = ({
         width: 0,
         height: 0,
     });
-
-    // Add state for canvas name
+    const [selectedElementIds, setSelectedElementIds] = useState<string[]>([]);
+    const [isMoving, setIsMoving] = useState(false);
     const [canvasName, setCanvasName] = useState<string>(
         initialCanvas?.name || '',
     );
@@ -281,6 +285,10 @@ export const DrawingProvider: React.FC<DrawingProviderProps> = ({
         canvasId: initialCanvas?.id,
         canvasName,
         setCanvasName,
+        selectedElementIds,
+        setSelectedElementIds,
+        isMoving,
+        setIsMoving,
     };
 
     return (

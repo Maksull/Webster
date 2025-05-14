@@ -12,17 +12,55 @@ import {
 } from '@/types/elements';
 
 interface ElementRendererProps {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    element: any; // Using any because we need to support different element types
+    element: any;
+    isSelected: boolean;
+    onSelect: (id: string) => void;
 }
 
-const ElementRenderer: React.FC<ElementRendererProps> = ({ element }) => {
+const ElementRenderer: React.FC<ElementRendererProps> = ({
+    element,
+    isSelected,
+    onSelect,
+}) => {
+    const selectionProps = isSelected
+        ? {
+              shadowColor: '#0066FF',
+              shadowBlur: 10,
+              shadowOpacity: 0.6,
+              shadowOffset: { x: 0, y: 0 },
+              strokeWidth: (element.strokeWidth || 1) + 2,
+              stroke: '#0066FF',
+          }
+        : {};
+
+    const hitAreaProps = {
+        // Increase hit area for better touch/click detection
+        perfectDrawEnabled: false,
+        listening: true,
+        hitStrokeWidth: 10, // Make the hit area larger than the visual stroke
+    };
+
+    const handleClick = (e: any) => {
+        e.cancelBubble = true;
+        console.log('Element clicked:', element.id);
+        onSelect(element.id);
+    };
+
+    // Common props for all shapes
+    const commonProps = {
+        id: element.id,
+        name: `element-${element.id}`, // Adding name can help with debugging
+        onClick: handleClick,
+        onTap: handleClick,
+        ...hitAreaProps,
+        ...(isSelected ? selectionProps : {}),
+    };
+
     switch (element.type) {
         case 'line':
             const lineElement = element as LineElement;
             return (
                 <Line
-                    key={lineElement.id}
                     points={lineElement.points}
                     stroke={lineElement.stroke}
                     strokeWidth={lineElement.strokeWidth}
@@ -32,37 +70,35 @@ const ElementRenderer: React.FC<ElementRendererProps> = ({ element }) => {
                     globalCompositeOperation={
                         lineElement.globalCompositeOperation
                     }
+                    {...commonProps}
                 />
             );
-
         case 'rect':
             const rectElement = element as RectElement;
             return rectElement.image ? (
                 <Rect
-                    key={rectElement.id}
                     x={rectElement.x}
                     y={rectElement.y}
                     width={rectElement.width}
                     height={rectElement.height}
                     fillPatternImage={rectElement.image}
                     fillPatternRepeat="no-repeat"
+                    {...commonProps}
                 />
             ) : (
                 <Rect
-                    key={rectElement.id}
                     x={rectElement.x}
                     y={rectElement.y}
                     width={rectElement.width}
                     height={rectElement.height}
                     fill={rectElement.fill}
+                    {...commonProps}
                 />
             );
-
         case 'rectangle':
             const rectangleElement = element as RectangleElement;
             return (
                 <Rect
-                    key={rectangleElement.id}
                     x={rectangleElement.x}
                     y={rectangleElement.y}
                     width={rectangleElement.width}
@@ -70,42 +106,39 @@ const ElementRenderer: React.FC<ElementRendererProps> = ({ element }) => {
                     fill={rectangleElement.fill}
                     stroke={rectangleElement.stroke}
                     strokeWidth={rectangleElement.strokeWidth}
+                    {...commonProps}
                 />
             );
-
         case 'circle':
             const circleElement = element as CircleElement;
             return (
                 <Circle
-                    key={circleElement.id}
                     x={circleElement.x}
                     y={circleElement.y}
                     radius={circleElement.radius}
                     fill={circleElement.fill}
                     stroke={circleElement.stroke}
                     strokeWidth={circleElement.strokeWidth}
+                    {...commonProps}
                 />
             );
-
         case 'line-shape':
             const lineShapeElement = element as LineShapeElement;
             return (
                 <Line
-                    key={lineShapeElement.id}
                     points={lineShapeElement.points}
                     stroke={lineShapeElement.stroke}
                     strokeWidth={lineShapeElement.strokeWidth}
                     tension={0}
                     lineCap="round"
                     lineJoin="round"
+                    {...commonProps}
                 />
             );
-
         case 'triangle':
             const triangleElement = element as TriangleElement;
             return (
                 <RegularPolygon
-                    key={triangleElement.id}
                     x={triangleElement.x}
                     y={triangleElement.y}
                     sides={3}
@@ -113,9 +146,9 @@ const ElementRenderer: React.FC<ElementRendererProps> = ({ element }) => {
                     fill={triangleElement.fill}
                     stroke={triangleElement.stroke}
                     strokeWidth={triangleElement.strokeWidth}
+                    {...commonProps}
                 />
             );
-
         default:
             return null;
     }

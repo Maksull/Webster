@@ -12,6 +12,7 @@ import {
     Palette,
     Undo,
     Redo,
+    MousePointer,
 } from 'lucide-react';
 import { Dictionary } from '@/get-dictionary';
 import { useDrawing } from '@/contexts/DrawingContext';
@@ -35,6 +36,7 @@ const MobileToolbar: React.FC<MobileToolbarProps> = ({ dict }) => {
     return (
         <div className="md:hidden flex justify-center items-center h-12 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 flex-shrink-0 overflow-x-auto">
             <div className="flex space-x-3 px-2">
+                <ToolButton tool="select" icon={MousePointer} title="Select" />
                 <ToolButton tool="pencil" icon={Pencil} title="Pencil" />
                 <ToolButton tool="eraser" icon={Eraser} title="Eraser" />
                 <ToolButton tool="bucket" icon={Droplet} title="Fill" />
