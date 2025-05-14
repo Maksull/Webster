@@ -18,6 +18,7 @@ import {
     ZoomIn,
     ZoomOut,
     Maximize,
+    MousePointer,
 } from 'lucide-react';
 import { Dictionary } from '@/get-dictionary';
 import { useHistory } from './useHistory';
@@ -57,6 +58,11 @@ const DesktopToolbar: React.FC<DesktopToolbarProps> = ({ dict, onClear }) => {
     return (
         <div className="hidden md:flex w-16 flex-shrink-0 bg-white dark:bg-gray-800 border-r border-slate-200 dark:border-gray-700 flex-col items-center py-4 gap-2">
             {/* Drawing tools */}
+            <ToolButton
+                tool="select"
+                icon={MousePointer}
+                title={dict.drawing?.select || 'Select'}
+            />
             <ToolButton
                 tool="pencil"
                 icon={Pencil}

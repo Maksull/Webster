@@ -91,7 +91,8 @@ export type ToolType =
     | 'rectangle'
     | 'circle'
     | 'line'
-    | 'triangle';
+    | 'triangle'
+    | 'select';
 
 export const POPULAR_RESOLUTIONS: Resolution[] = [
     { name: 'HD (16:9)', width: 1280, height: 720 },

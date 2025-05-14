@@ -1,4 +1,3 @@
-// app/[lang]/editor/components/canvas/LayerRenderer.tsx
 'use client';
 
 import React from 'react';
@@ -11,27 +10,38 @@ interface LayerRendererProps {
     layer: DrawingLayer;
     elements: DrawingElement[];
     onRef: (id: string, node: any) => void;
+    selectedElementIds: string[];
+    onSelectElement: (id: string) => void;
 }
 
 const LayerRenderer: React.FC<LayerRendererProps> = ({
     layer,
     elements,
     onRef,
+    selectedElementIds,
+    onSelectElement,
 }) => {
-    // Skip invisible layers
     if (!layer.visible) return null;
+    console.log(elements);
 
     return (
         <Layer
             key={layer.id}
             opacity={layer.opacity}
+            listening={true}
+            hitGraphEnabled={true}
             ref={node => {
                 if (node) {
                     onRef(layer.id, node);
                 }
             }}>
             {elements.map(element => (
-                <ElementRenderer key={element.id} element={element} />
+                <ElementRenderer
+                    key={element.id}
+                    element={element}
+                    isSelected={selectedElementIds.includes(element.id)}
+                    onSelect={onSelectElement}
+                />
             ))}
         </Layer>
     );

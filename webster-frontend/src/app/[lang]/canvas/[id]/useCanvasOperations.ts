@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useHistory } from './useHistory';
 
 import { hexToRgb, colorsMatch, colorMatchesWithTolerance } from './colorUtils';
@@ -12,6 +12,7 @@ import {
     TriangleElement,
     LineElement,
     Resolution,
+    RectElement,
 } from '@/types/elements';
 import { API_URL } from '@/config';
 
@@ -32,7 +33,6 @@ export const useCanvasOperations = () => {
         dimensions,
         setDimensions,
         scale,
-        selectedResolution,
         setSelectedResolution,
         isResizing,
         setIsResizing,
@@ -42,7 +42,6 @@ export const useCanvasOperations = () => {
         setResizeStartPos,
         originalDimensions,
         setOriginalDimensions,
-        resizeInitialRect,
         setResizeInitialRect,
         elementsByLayer,
         setElementsByLayer,
@@ -51,9 +50,15 @@ export const useCanvasOperations = () => {
         canvasId,
         canvasName,
         backgroundColor,
+        selectedElementIds,
+        setSelectedElementIds,
+        isMoving,
+        setIsMoving,
     } = useDrawing();
 
     const { recordHistory } = useHistory();
+
+    const dragStartPos = useRef({ x: 0, y: 0 });
 
     // Handle resize
     useEffect(() => {
@@ -69,10 +74,112 @@ export const useCanvasOperations = () => {
     const handleMouseDown = (e: any) => {
         const stage = e.target.getStage();
         const pos = stage.getPointerPosition();
-
-        // Get the active layer
         const activeLayer = layers.find(layer => layer.id === activeLayerId);
+
         if (!activeLayer || !activeLayer.visible || activeLayer.locked) return;
+
+        console.log('Tool:', tool);
+
+        if (tool === 'select') {
+            // Use direct hit detection instead of relying on event bubbling
+            const shapes = stage.getAllIntersections(pos);
+            console.log('Shapes under pointer:', shapes);
+
+            // Filter out the background and find actionable shapes
+            const targetShapes = shapes.filter(
+                shape =>
+                    shape !== stage &&
+                    shape.getClassName() !== 'Stage' &&
+                    (shape.getClassName() === 'Rect' ||
+                        shape.getClassName() === 'Circle' ||
+                        shape.getClassName() === 'Line' ||
+                        shape.getClassName() === 'RegularPolygon'),
+            );
+
+            if (targetShapes.length > 0) {
+                console.log('Found target shape:', targetShapes[0]);
+
+                // Now find which element this shape corresponds to
+                let foundElement = null;
+                let foundElementId = null;
+
+                // Loop through all elements in all layers
+                elementsByLayer.forEach((elements, layerId) => {
+                    elements.forEach(element => {
+                        // Simple position-based matching for shapes with x,y coordinates
+                        if (
+                            (element.type === 'rectangle' ||
+                                element.type === 'rect' ||
+                                element.type === 'circle' ||
+                                element.type === 'triangle') &&
+                            'x' in element &&
+                            'y' in element
+                        ) {
+                            const elementPos = { x: element.x, y: element.y };
+                            const shapePos = {
+                                x: targetShapes[0].attrs.x,
+                                y: targetShapes[0].attrs.y,
+                            };
+
+                            // If positions match approximately
+                            if (
+                                Math.abs(elementPos.x - shapePos.x) < 5 &&
+                                Math.abs(elementPos.y - shapePos.y) < 5
+                            ) {
+                                foundElement = element;
+                                foundElementId = element.id;
+                            }
+                        }
+                        // For line elements, check points
+                        else if (
+                            element.type === 'line' ||
+                            element.type === 'line-shape'
+                        ) {
+                            if (
+                                targetShapes[0].getClassName() === 'Line' &&
+                                'points' in element &&
+                                'points' in targetShapes[0].attrs &&
+                                element.points.length > 0 &&
+                                targetShapes[0].attrs.points.length > 0
+                            ) {
+                                // Check first point for simple matching
+                                if (
+                                    Math.abs(
+                                        element.points[0] -
+                                            targetShapes[0].attrs.points[0],
+                                    ) < 5 &&
+                                    Math.abs(
+                                        element.points[1] -
+                                            targetShapes[0].attrs.points[1],
+                                    ) < 5
+                                ) {
+                                    foundElement = element;
+                                    foundElementId = element.id;
+                                }
+                            }
+                        }
+                    });
+                });
+
+                if (foundElement && foundElementId) {
+                    console.log('Found matching element:', foundElement);
+
+                    // Set selected element
+                    setSelectedElementIds([foundElementId]);
+
+                    // Start moving the element
+                    setIsMoving(true);
+                    dragStartPos.current = pos;
+                } else {
+                    console.log('Could not match shape to any element');
+                    setSelectedElementIds([]);
+                }
+            } else {
+                console.log('Clicked on empty area');
+                setSelectedElementIds([]);
+            }
+            return;
+        }
 
         if (tool === 'bucket') {
             // For bucket tool, trigger fill
@@ -189,7 +296,7 @@ export const useCanvasOperations = () => {
 
     // Handle mouse move event on canvas
     const handleMouseMove = (e: any) => {
-        if (!isDrawing) return;
+        if (!isDrawing && !isMoving) return;
 
         // Get the active layer
         const activeLayer = layers.find(layer => layer.id === activeLayerId);
@@ -197,6 +304,86 @@ export const useCanvasOperations = () => {
 
         const stage = e.target.getStage();
         const point = stage.getPointerPosition();
+        const pos = stage.getPointerPosition();
+
+        // Handle moving selected elements
+        if (isMoving && selectedElementIds.length > 0) {
+            const dx = pos.x - dragStartPos.current.x;
+            const dy = pos.y - dragStartPos.current.y;
+
+            // Update position of all selected elements
+            const updatedElementsByLayer = new Map(elementsByLayer);
+
+            // For each layer
+            updatedElementsByLayer.forEach((elements, layerId) => {
+                const updatedElements = elements.map(element => {
+                    if (!selectedElementIds.includes(element.id)) {
+                        return element;
+                    }
+
+                    // Move the element based on its type
+                    switch (element.type) {
+                        case 'line':
+                            const lineElement = element as LineElement;
+                            const newPoints = [...lineElement.points];
+                            for (let i = 0; i < newPoints.length; i += 2) {
+                                newPoints[i] += dx;
+                                newPoints[i + 1] += dy;
+                            }
+                            return { ...lineElement, points: newPoints };
+
+                        case 'rectangle':
+                        case 'rect':
+                            const rectElement = element as
+                                | RectangleElement
+                                | RectElement;
+                            return {
+                                ...rectElement,
+                                x: rectElement.x + dx,
+                                y: rectElement.y + dy,
+                            };
+
+                        case 'circle':
+                            const circleElement = element as CircleElement;
+                            return {
+                                ...circleElement,
+                                x: circleElement.x + dx,
+                                y: circleElement.y + dy,
+                            };
+
+                        case 'triangle':
+                            const triangleElement = element as TriangleElement;
+                            return {
+                                ...triangleElement,
+                                x: triangleElement.x + dx,
+                                y: triangleElement.y + dy,
+                            };
+
+                        case 'line-shape':
+                            const lineShapeElement =
+                                element as LineShapeElement;
+                            const newLinePoints = [...lineShapeElement.points];
+                            for (let i = 0; i < newLinePoints.length; i += 2) {
+                                newLinePoints[i] += dx;
+                                newLinePoints[i + 1] += dy;
+                            }
+                            return {
+                                ...lineShapeElement,
+                                points: newLinePoints,
+                            };
+
+                        default:
+                            return element;
+                    }
+                });
+
+                updatedElementsByLayer.set(layerId, updatedElements);
+            });
+
+            setElementsByLayer(updatedElementsByLayer);
+            dragStartPos.current = pos;
+            return;
+        }
 
         // Get active layer elements
         const activeElements = getActiveLayerElements();
@@ -303,11 +490,17 @@ export const useCanvasOperations = () => {
 
     // Handle mouse up event on canvas
     const handleMouseUp = () => {
+        if (isMoving) {
+            setIsMoving(false);
+            recordHistory();
+        }
+
         setIsDrawing(false);
         setStartPoint(null);
 
-        // Save to history
-        recordHistory();
+        if (isDrawing) {
+            recordHistory();
+        }
     };
 
     // Handle bucket tool click

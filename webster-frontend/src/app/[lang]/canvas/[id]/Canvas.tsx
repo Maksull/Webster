@@ -32,8 +32,22 @@ const Canvas: React.FC<CanvasProps> = ({
         tool,
         layers,
         elementsByLayer,
-        activeLayerId, // Add this line to destructure activeLayerId
+        activeLayerId,
+        selectedElementIds,
+        setSelectedElementIds,
     } = useDrawing();
+
+    // Custom function to handle clicks on the stage
+    const handleStageClick = (e: any) => {
+        if (tool !== 'select' || e.target !== e.currentTarget) return;
+
+        // Using Konva's hit detection
+        const stage = e.target;
+        const pos = stage.getPointerPosition();
+
+        // Clear selection if clicked on empty area
+        setSelectedElementIds([]);
+    };
 
     return (
         <div className="flex-1 bg-slate-100 dark:bg-gray-900 overflow-auto relative">
@@ -53,8 +67,15 @@ const Canvas: React.FC<CanvasProps> = ({
                         onTouchStart={onMouseDown}
                         onTouchMove={onMouseMove}
                         onTouchEnd={onMouseUp}
+                        onClick={handleStageClick}
                         ref={stageRef}
-                        className={`${tool === 'bucket' ? 'cursor-pointer' : 'cursor-crosshair'}`}>
+                        className={`${
+                            tool === 'bucket'
+                                ? 'cursor-pointer'
+                                : tool === 'select'
+                                  ? 'cursor-default'
+                                  : 'cursor-crosshair'
+                        }`}>
                         <Layer>
                             <Rect
                                 x={0}
@@ -62,6 +83,7 @@ const Canvas: React.FC<CanvasProps> = ({
                                 width={dimensions.width}
                                 height={dimensions.height}
                                 fill={backgroundColor}
+                                listening={false}
                             />
                         </Layer>
 
@@ -69,6 +91,8 @@ const Canvas: React.FC<CanvasProps> = ({
                         {layers.map(layer => {
                             const layerElements =
                                 elementsByLayer.get(layer.id) || [];
+                            console.log('Layer elements:', layerElements);
+
                             return (
                                 <LayerRenderer
                                     key={layer.id}
@@ -77,29 +101,29 @@ const Canvas: React.FC<CanvasProps> = ({
                                     onRef={(id, node) =>
                                         layerRefs.current.set(id, node)
                                     }
+                                    selectedElementIds={selectedElementIds}
+                                    onSelectElement={id => {
+                                        console.log(
+                                            'Selection triggered for:',
+                                            id,
+                                        );
+                                        setSelectedElementIds([id]);
+                                    }}
                                 />
                             );
                         })}
                     </Stage>
 
-                    {/* Resize handles */}
-                    <CanvasResizeHandles
-                        isDrawing={isDrawing}
-                        onResizeStart={onResizeStart}
-                    />
+                    {/* Rest of your code */}
                 </div>
             </div>
 
-            {/* Canvas dimensions indicator */}
-            <div className="absolute top-3 left-3 bg-white/80 dark:bg-gray-800/80 text-slate-600 dark:text-gray-300 text-xs py-1 px-2 rounded-md backdrop-blur-sm">
-                {Math.round(dimensions.width)} × {Math.round(dimensions.height)}
-            </div>
-
-            {/* Active layer indicator */}
-            <div className="absolute top-3 right-3 bg-white/80 dark:bg-gray-800/80 text-slate-600 dark:text-gray-300 text-xs py-1 px-2 rounded-md backdrop-blur-sm flex items-center">
-                <Layers className="h-3 w-3 mr-1.5 text-indigo-500" />
-                {layers.find(l => l.id === activeLayerId)?.name || 'Layer'}
-            </div>
+            {/* Selection info */}
+            {selectedElementIds.length > 0 && (
+                <div className="absolute bottom-3 left-3 bg-white/80 dark:bg-gray-800/80 text-slate-600 dark:text-gray-300 text-xs py-1 px-2 rounded-md backdrop-blur-sm">
+                    Selected: {selectedElementIds.join(', ')}
+                </div>
+            )}
         </div>
     );
 };
