@@ -1,5 +1,5 @@
-import { CanvasService, ERROR_MESSAGES } from '@/services/canvas.service.js';
-import { CreateCanvasDto, UpdateCanvasDto } from '@/types/index.js';
+import { CanvasService, ERROR_MESSAGES } from '../services/canvas.service.js';
+import { CreateCanvasDto, UpdateCanvasDto } from '../types/index.js';
 import { FastifyRequest, FastifyReply } from 'fastify';
 
 export class CanvasController {

@@ -1,6 +1,6 @@
 'use client';
 
-import { useDrawing } from '@/contexts/DrawingContext';
+import { useDrawing } from '@/contexts';
 import { DrawingLayer } from '@/types/layers';
 
 export const useLayers = () => {

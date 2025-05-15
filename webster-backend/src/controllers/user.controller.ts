@@ -1,5 +1,5 @@
-import { User } from '@/entities/index.js';
-import { UserService } from '@/services/index.js';
+import { User } from '../entities/index.js';
+import { UserService } from '../services/index.js';
 import { FastifyRequest, FastifyReply } from 'fastify';
 
 export class UserController {

@@ -6,14 +6,14 @@ import { ArrowLeft, Menu, Save, Download } from 'lucide-react';
 import { Dictionary } from '@/get-dictionary';
 import { useDrawing } from '@/contexts/DrawingContext';
 
-interface HeaderProps {
+interface CanvasHeaderProps {
     dict: Dictionary;
     lang: string;
     onSave: () => void;
     onDownload: () => void;
 }
 
-const Header: React.FC<HeaderProps> = ({ dict, lang, onSave, onDownload }) => {
+const CanvasHeader: React.FC<CanvasHeaderProps> = ({ dict, lang, onSave, onDownload }) => {
     const { setIsMobileMenuOpen, canvasName, setCanvasName } = useDrawing();
 
     const [isEditing, setIsEditing] = useState(false);
@@ -126,4 +126,4 @@ const Header: React.FC<HeaderProps> = ({ dict, lang, onSave, onDownload }) => {
     );
 };
 
-export default Header;
+export default CanvasHeader;

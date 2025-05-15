@@ -1,6 +1,6 @@
 'use client';
 
-import { useDrawing } from '@/contexts/DrawingContext';
+import { useDrawing } from '@/contexts';
 import React from 'react';
 
 const ShapeFillControl: React.FC = () => {

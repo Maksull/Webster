@@ -1,9 +1,8 @@
 'use client';
 
-import React, { useEffect } from 'react';
+import React from 'react';
 import { useDictionary } from '@/contexts/DictionaryContext';
-import { useDrawing, DrawingProvider } from '@/contexts/DrawingContext';
-import Header from './Header';
+import CanvasHeader from './CanvasHeader';
 import Canvas from './Canvas';
 import DesktopToolbar from './DesktopToolbar';
 import LayerPanel from './LayerPanel';
@@ -14,6 +13,7 @@ import { useCanvasOperations } from './useCanvasOperations';
 import { useHistory } from './useHistory';
 import ZoomControls from './ZoomControls';
 import { Canvas as CanvasType } from '@/types/canvas';
+import { DrawingProvider, useDrawing } from '@/contexts';
 
 interface DrawingEditorProps {
     initialCanvas?: CanvasType | null;
@@ -43,7 +43,7 @@ const DrawingEditorContent: React.FC = () => {
 
     return (
         <div className="h-screen w-full flex flex-col bg-slate-50 dark:bg-gray-900 overflow-hidden">
-            <Header
+            <CanvasHeader
                 dict={dict}
                 lang={lang}
                 onSave={handleSave}

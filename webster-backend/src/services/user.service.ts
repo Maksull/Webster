@@ -3,8 +3,8 @@ import path from 'path';
 import fs from 'fs';
 import { promisify } from 'util';
 import { pipeline } from 'stream';
-import { AppDataSource } from '@/config/index.js';
-import { User } from '@/entities/index.js';
+import { AppDataSource } from '../config/index.js';
+import { User } from '../entities/index.js';
 
 const pump = promisify(pipeline);
 

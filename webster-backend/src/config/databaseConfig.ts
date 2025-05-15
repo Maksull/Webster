@@ -1,4 +1,4 @@
-import { Canvas, User } from '@/entities/index.js';
+import { Canvas, User } from '../entities/index.js';
 import { DataSourceOptions, DataSource } from 'typeorm';
 
 export const databaseConfig: DataSourceOptions = {

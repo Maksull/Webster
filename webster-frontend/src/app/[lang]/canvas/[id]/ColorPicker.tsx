@@ -3,8 +3,8 @@
 import React from 'react';
 import { CheckCircle } from 'lucide-react';
 import { Dictionary } from '@/get-dictionary';
-import { useDrawing } from '@/contexts/DrawingContext';
 import { commonColors } from './colorUtils';
+import { useDrawing } from '@/contexts';
 
 interface ColorPickerProps {
     dict: Dictionary;

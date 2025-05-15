@@ -1,11 +1,11 @@
 import { randomBytes, pbkdf2Sync } from 'crypto';
 import jwt from 'jsonwebtoken';
 import { addMinutes } from 'date-fns';
-import { User } from '@/entities/index.js';
-import { AppDataSource, environmentConfig } from '@/config/index.js';
+import { User } from '../entities/index.js';
+import { AppDataSource, environmentConfig } from '../config/index.js';
 import { EmailService } from './index.js';
-import { TokenBlacklist } from '@/middlewares/index.js';
-import { ChangeEmailDto, ChangePasswordDto, LoginDto, RegisterUserDto } from '@/types/index.js';
+import { TokenBlacklist } from '../middlewares/index.js';
+import { ChangeEmailDto, ChangePasswordDto, LoginDto, RegisterUserDto } from '../types/index.js';
 
 const PBKDF2_ITERATIONS = 10000;
 const PBKDF2_KEY_LENGTH = 64;

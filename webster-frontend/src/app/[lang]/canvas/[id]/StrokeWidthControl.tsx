@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { Dictionary } from '@/get-dictionary';
-import { useDrawing } from '@/contexts/DrawingContext';
+import { useDrawing } from '@/contexts';
 
 interface StrokeWidthControlProps {
     dict: Dictionary;

@@ -7,8 +7,8 @@ import ColorPicker from './ColorPicker';
 import StrokeWidthControl from './StrokeWidthControl';
 import ShapeFillControl from './ShapeFillControl';
 import { Dictionary } from '@/get-dictionary';
-import { useDrawing } from '@/contexts/DrawingContext';
 import { Resolution } from '@/types/elements';
+import { useDrawing } from '@/contexts';
 
 interface SettingsPanelProps {
     dict: Dictionary;

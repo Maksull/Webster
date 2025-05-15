@@ -22,8 +22,8 @@ import {
     Download,
 } from 'lucide-react';
 import { Dictionary } from '@/get-dictionary';
-import { useDrawing } from '@/contexts/DrawingContext';
 import { useHistory } from './useHistory';
+import { useDrawing } from '@/contexts';
 
 interface MobileMenuProps {
     dict: Dictionary;
