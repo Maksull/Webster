@@ -22,7 +22,7 @@ import {
 } from 'lucide-react';
 import { Dictionary } from '@/get-dictionary';
 import { useHistory } from './useHistory';
-import { useDrawing } from '@/contexts/DrawingContext';
+import { useDrawing } from '@/contexts';
 
 interface DesktopToolbarProps {
     dict: Dictionary;

@@ -1,6 +1,6 @@
-import { CanvasController } from '@/controllers/index.js';
-import { authenticateToken } from '@/middlewares/index.js';
-import { CreateCanvasDto, UpdateCanvasDto } from '@/types/index.js';
+import { CanvasController } from '../controllers/index.js';
+import { authenticateToken } from '../middlewares/index.js';
+import { CreateCanvasDto, UpdateCanvasDto } from '../types/index.js';
 import { FastifyInstance, FastifyRequest } from 'fastify';
 
 const createCanvasSchema = {

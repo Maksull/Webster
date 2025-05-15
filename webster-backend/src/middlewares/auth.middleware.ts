@@ -1,4 +1,4 @@
-import { environmentConfig } from '@/config/index.js';
+import { environmentConfig } from '../config/index.js';
 import { FastifyRequest, FastifyReply } from 'fastify';
 import jwt from 'jsonwebtoken';
 

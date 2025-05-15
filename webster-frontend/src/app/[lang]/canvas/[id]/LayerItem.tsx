@@ -15,8 +15,8 @@ import {
     CheckCircle,
 } from 'lucide-react';
 import { DrawingLayer } from '@/types/layers';
-import { useDrawing } from '@/contexts/DrawingContext';
 import { useLayers } from './useLayers';
+import { useDrawing } from '@/contexts';
 
 interface LayerItemProps {
     layer: DrawingLayer;

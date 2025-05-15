@@ -1,6 +1,6 @@
 'use client';
 
-import { useDrawing } from '@/contexts/DrawingContext';
+import { useDrawing } from '@/contexts';
 import { Dictionary } from '@/get-dictionary';
 import { POPULAR_RESOLUTIONS, Resolution } from '@/types/elements';
 import React, { useState } from 'react';

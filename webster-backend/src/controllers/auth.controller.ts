@@ -1,6 +1,6 @@
-import { AuthService } from '@/services/index.js';
-import { ERROR_MESSAGES } from '@/services/auth.service.js';
-import { ChangeEmailDto, ChangePasswordDto, LoginDto, RegisterUserDto } from '@/types/index.js';
+import { AuthService } from '../services/index.js';
+import { ERROR_MESSAGES } from '../services/auth.service.js';
+import { ChangeEmailDto, ChangePasswordDto, LoginDto, RegisterUserDto } from '../types/index.js';
 import { FastifyRequest, FastifyReply } from 'fastify';
 
 export class AuthController {

@@ -1,6 +1,6 @@
 'use client';
 
-import { useDrawing } from '@/contexts/DrawingContext';
+import { useDrawing } from '@/contexts';
 
 export const useHistory = () => {
     const {

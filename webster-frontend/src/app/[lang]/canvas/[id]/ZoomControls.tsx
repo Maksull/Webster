@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { ZoomIn, ZoomOut } from 'lucide-react';
-import { useDrawing } from '@/contexts/DrawingContext';
+import { useDrawing } from '@/contexts';
 
 interface ZoomControlsProps {
     showOnMobile?: boolean;

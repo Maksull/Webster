@@ -5,7 +5,7 @@ import LayerItem from './LayerItem';
 import { Layers, Plus, X } from 'lucide-react';
 import { Dictionary } from '@/get-dictionary';
 import { useLayers } from './useLayers';
-import { useDrawing } from '@/contexts/DrawingContext';
+import { useDrawing } from '@/contexts';
 
 interface LayerPanelProps {
     dict: Dictionary;

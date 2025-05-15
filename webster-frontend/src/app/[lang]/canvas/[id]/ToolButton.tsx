@@ -2,7 +2,8 @@
 
 import React from 'react';
 import { LucideIcon } from 'lucide-react';
-import { useDrawing } from '@/contexts/DrawingContext';
+import { useDrawing } from '@/contexts';
+import { ToolType } from '@/types/elements';
 
 interface ToolButtonProps {
     tool: ToolType;

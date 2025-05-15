@@ -1,6 +1,6 @@
-import { Canvas } from '@/entities/index.js';
+import { Canvas } from '../entities/index.js';
 import { AppDataSource } from '../config/index.js';
-import { CanvasResponseDto, CreateCanvasDto, UpdateCanvasDto } from '@/types/index.js';
+import { CanvasResponseDto, CreateCanvasDto, UpdateCanvasDto } from '../types/index.js';
 
 export const ERROR_MESSAGES = {
     CANVAS_NOT_FOUND: 'Canvas not found',
@@ -41,7 +41,7 @@ export class CanvasService {
         }
 
         // Check if the user is authorized to view this canvas
-        if (!canvas.isPublic && userId !== canvas.userId) {
+        if (userId !== canvas.userId) {
             throw new Error(ERROR_MESSAGES.UNAUTHORIZED);
         }
 
@@ -89,7 +89,6 @@ export class CanvasService {
 
     async getPublicCanvases(): Promise<CanvasResponseDto[]> {
         const canvases = await this.canvasRepository.find({
-            where: { isPublic: true },
             order: { createdAt: 'DESC' },
         });
 
@@ -109,7 +108,6 @@ export class CanvasService {
             elementsByLayer: canvas.elementsByLayer,
             thumbnail: canvas.thumbnail ?? null,
             userId: canvas.userId,
-            isPublic: canvas.isPublic,
             lastModified: canvas.lastModified ?? null,
             createdAt: canvas.createdAt,
             updatedAt: canvas.updatedAt,

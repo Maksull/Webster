@@ -4,7 +4,6 @@ import { useEffect, useRef } from 'react';
 import { useHistory } from './useHistory';
 
 import { hexToRgb, colorsMatch, colorMatchesWithTolerance } from './colorUtils';
-import { useDrawing } from '@/contexts/DrawingContext';
 import {
     RectangleElement,
     CircleElement,
@@ -15,6 +14,7 @@ import {
     RectElement,
 } from '@/types/elements';
 import { API_URL } from '@/config';
+import { useDrawing } from '@/contexts';
 
 export const useCanvasOperations = () => {
     const {

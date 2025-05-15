@@ -1,4 +1,4 @@
-import { emailConfig } from '@/config/index.js';
+import { emailConfig } from '../config/index.js';
 
 export class EmailService {
     transport: any;

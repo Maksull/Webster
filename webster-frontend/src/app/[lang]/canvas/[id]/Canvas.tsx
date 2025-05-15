@@ -1,10 +1,8 @@
 'use client';
 import React from 'react';
 import { Stage, Layer, Rect } from 'react-konva';
-import CanvasResizeHandles from './CanvasResizeHandles';
 import LayerRenderer from './LayerRenderer';
-import { useDrawing } from '@/contexts/DrawingContext';
-import { Layers } from 'lucide-react';
+import { useDrawing } from '@/contexts';
 
 interface CanvasProps {
     onMouseDown: (e: any) => void;
