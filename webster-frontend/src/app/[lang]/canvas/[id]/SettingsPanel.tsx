@@ -9,6 +9,7 @@ import ShapeFillControl from './ShapeFillControl';
 import { Dictionary } from '@/get-dictionary';
 import { Resolution } from '@/types/elements';
 import { useDrawing } from '@/contexts';
+import BackgroundTransparencyControl from './BackgroundTransparencyControl';
 
 interface SettingsPanelProps {
     dict: Dictionary;
@@ -46,6 +47,7 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
                 </div>
                 <ColorPicker dict={dict} />
                 <ShapeFillControl />
+                <BackgroundTransparencyControl dict={dict} />
             </div>
         </div>
     );

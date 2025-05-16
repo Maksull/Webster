@@ -41,7 +41,6 @@ const Canvas: React.FC<CanvasProps> = ({
 
         // Using Konva's hit detection
         const stage = e.target;
-        const pos = stage.getPointerPosition();
 
         // Clear selection if clicked on empty area
         setSelectedElementIds([]);
@@ -55,7 +54,11 @@ const Canvas: React.FC<CanvasProps> = ({
                         transform: `scale(${scale})`,
                         transformOrigin: 'center center',
                     }}
-                    className="border border-slate-300 dark:border-gray-600 shadow-md relative">
+                    className={`border border-slate-300 dark:border-gray-600 shadow-md relative ${
+                        backgroundColor === 'transparent'
+                            ? 'bg-checkerboard'
+                            : ''
+                    }`}>
                     <Stage
                         width={dimensions.width}
                         height={dimensions.height}
@@ -111,17 +114,8 @@ const Canvas: React.FC<CanvasProps> = ({
                             );
                         })}
                     </Stage>
-
-                    {/* Rest of your code */}
                 </div>
             </div>
-
-            {/* Selection info */}
-            {selectedElementIds.length > 0 && (
-                <div className="absolute bottom-3 left-3 bg-white/80 dark:bg-gray-800/80 text-slate-600 dark:text-gray-300 text-xs py-1 px-2 rounded-md backdrop-blur-sm">
-                    Selected: {selectedElementIds.join(', ')}
-                </div>
-            )}
         </div>
     );
 };
