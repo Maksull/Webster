@@ -12,7 +12,10 @@ const createCanvasSchema = {
             description: { type: 'string', nullable: true },
             width: { type: 'integer', minimum: 100 },
             height: { type: 'integer', minimum: 100 },
-            backgroundColor: { type: 'string', pattern: '^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$' },
+            backgroundColor: {
+                type: 'string',
+                pattern: '^(#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})|transparent)$',
+            },
             layers: {
                 type: 'array',
                 items: {
@@ -55,7 +58,10 @@ const updateCanvasSchema = {
             description: { type: 'string', nullable: true },
             width: { type: 'integer', minimum: 100 },
             height: { type: 'integer', minimum: 100 },
-            backgroundColor: { type: 'string', pattern: '^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$' },
+            backgroundColor: {
+                type: 'string',
+                pattern: '^(#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})|transparent)$',
+            },
             layers: {
                 type: 'array',
                 items: {

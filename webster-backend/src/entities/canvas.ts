@@ -18,7 +18,7 @@ export class Canvas {
     @Column({ type: 'int' })
     height!: number;
 
-    @Column({ type: 'varchar', length: 7, default: '#FFFFFF' })
+    @Column({ type: 'varchar', length: 11, default: '#FFFFFF' })
     backgroundColor!: string;
 
     @Column({ type: 'jsonb' })
