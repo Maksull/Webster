@@ -13,7 +13,12 @@ interface CanvasHeaderProps {
     onDownload: () => void;
 }
 
-const CanvasHeader: React.FC<CanvasHeaderProps> = ({ dict, lang, onSave, onDownload }) => {
+const CanvasHeader: React.FC<CanvasHeaderProps> = ({
+    dict,
+    lang,
+    onSave,
+    onDownload,
+}) => {
     const { setIsMobileMenuOpen, canvasName, setCanvasName } = useDrawing();
 
     const [isEditing, setIsEditing] = useState(false);
