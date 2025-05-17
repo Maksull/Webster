@@ -78,14 +78,27 @@ export type Dictionary = {
             enterEmail: string;
             loading: string;
             submit: string;
+            submitVerify: string;
+            submitReset: string;
             newPasswordTitle: string;
             newPasswordField: string;
             enterNewPassword: string;
             newPasswordSuccess: string;
             email: string;
+            success: string;
         };
         errors: {
+            emailRequired: string;
             generic: string;
+        };
+        verifyEmail: {
+            description: string;
+            enterCode: string;
+            codeExpiry: string;
+            resending: string;
+            waitResend: string;
+            resendCode: string;
+            backToLogin: string;
         };
         verifyEmailTitle: string;
         verifyEmailDescription: string;

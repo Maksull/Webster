@@ -71,22 +71,34 @@
         "privacyLink": "Privacy Policy",
         "resetPassword": {
             "title": "Reset your password",
-            "subtitle": "Enter your email to receive a password reset link",
+            "subtitle": "Enter your email to receive a password reset code",
             "loginLink": "Back to login",
             "enterEmail": "Enter your email address",
             "loading": "Sending...",
-            "submit": "Send reset link",
+            "submit": "Send reset code",
+            "submitVerify": "Verify code",
+            "submitReset": "Reset password",
             "newPasswordTitle": "Set new password",
             "newPasswordField": "New Password",
             "enterNewPassword": "Enter your new password",
             "newPasswordSuccess": "Your password has been successfully updated! Redirecting to login...",
-            "email": "Email address"
+            "email": "Email address",
+            "success": "Reset code has been resent to your email"
         },
         "errors": {
+            "emailRequired": "Email is required to resend the reset code",
             "generic": "Something went wrong. Please try again later."
         },
+        "verifyEmail": {
+            "description": "Please enter the code sent to your email address",
+            "enterCode": "Enter 6-digit code",
+            "codeExpiry": "Code expires in 15 minutes",
+            "resending": "Resending...",
+            "waitResend": "Resend code in {seconds}s",
+            "resendCode": "Resend code",
+            "backToLogin": "Back to login"
+        },
         "verifyEmailTitle": "Verify Your Email",
-        "verifyEmailDescription": "Please enter the verification code sent to your email address",
         "emailVerifiedSuccess": "Email verified successfully! You will be redirected shortly.",
         "verificationFailed": "Verification failed. Please try again.",
         "codeSentSuccess": "Verification code has been sent to your email.",
