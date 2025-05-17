@@ -14,15 +14,10 @@ import {
     Redo,
     MousePointer,
 } from 'lucide-react';
-import { Dictionary } from '@/get-dictionary';
 import { useHistory } from './useHistory';
 import { useDrawing } from '@/contexts';
 
-interface MobileToolbarProps {
-    dict: Dictionary;
-}
-
-const MobileToolbar: React.FC<MobileToolbarProps> = ({ dict }) => {
+const MobileToolbar: React.FC = () => {
     const {
         color,
         showLayersPanel,

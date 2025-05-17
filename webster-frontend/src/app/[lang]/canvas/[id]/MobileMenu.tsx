@@ -43,7 +43,6 @@ const MobileMenu: React.FC<MobileMenuProps> = ({
         setTool,
         showLayersPanel,
         setShowLayersPanel,
-        showSettings,
         setShowSettings,
         scale,
         setScale,

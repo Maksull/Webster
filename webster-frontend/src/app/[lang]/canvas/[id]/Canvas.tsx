@@ -1,8 +1,10 @@
 'use client';
+
 import React from 'react';
 import { Stage, Layer, Rect } from 'react-konva';
 import LayerRenderer from './LayerRenderer';
 import { useDrawing } from '@/contexts';
+import CanvasResizeHandles from './CanvasResizeHandles';
 
 interface CanvasProps {
     onMouseDown: (e: any) => void;
@@ -30,19 +32,12 @@ const Canvas: React.FC<CanvasProps> = ({
         tool,
         layers,
         elementsByLayer,
-        activeLayerId,
         selectedElementIds,
         setSelectedElementIds,
     } = useDrawing();
 
-    // Custom function to handle clicks on the stage
     const handleStageClick = (e: any) => {
         if (tool !== 'select' || e.target !== e.currentTarget) return;
-
-        // Using Konva's hit detection
-        const stage = e.target;
-
-        // Clear selection if clicked on empty area
         setSelectedElementIds([]);
     };
 
@@ -114,6 +109,11 @@ const Canvas: React.FC<CanvasProps> = ({
                             );
                         })}
                     </Stage>
+
+                    <CanvasResizeHandles
+                        isDrawing={isDrawing}
+                        onResizeStart={onResizeStart}
+                    />
                 </div>
             </div>
         </div>

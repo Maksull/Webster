@@ -1,5 +1,4 @@
 'use client';
-
 import React, { useState } from 'react';
 import {
     Eye,
@@ -25,7 +24,6 @@ interface LayerItemProps {
 
 const LayerItem: React.FC<LayerItemProps> = ({ layer, index }) => {
     const { activeLayerId, setActiveLayerId, layers } = useDrawing();
-
     const {
         toggleLayerVisibility,
         toggleLayerLock,
@@ -57,11 +55,7 @@ const LayerItem: React.FC<LayerItemProps> = ({ layer, index }) => {
 
     return (
         <div
-            className={`p-2 rounded-md ${
-                isActive
-                    ? 'bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-100 dark:border-indigo-800'
-                    : 'hover:bg-slate-50 dark:hover:bg-gray-700'
-            }`}
+            className={`p-2 rounded-md ${isActive ? 'bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-100 dark:border-indigo-800' : 'hover:bg-slate-50 dark:hover:bg-gray-700'}`}
             onClick={() => setActiveLayerId(layer.id)}>
             <div className="flex items-center justify-between">
                 <div className="flex items-center">
@@ -104,16 +98,11 @@ const LayerItem: React.FC<LayerItemProps> = ({ layer, index }) => {
                         </div>
                     ) : (
                         <span
-                            className={`text-sm font-medium ${
-                                !layer.visible
-                                    ? 'text-slate-400 dark:text-gray-500'
-                                    : 'text-slate-700 dark:text-gray-200'
-                            }`}>
+                            className={`text-sm font-medium ${!layer.visible ? 'text-slate-400 dark:text-gray-500' : 'text-slate-700 dark:text-gray-200'}`}>
                             {layer.name}
                         </span>
                     )}
                 </div>
-
                 <div className="flex items-center">
                     <button
                         className="ml-1 p-1 text-slate-500 dark:text-gray-400 rounded hover:bg-slate-100 dark:hover:bg-gray-700"
@@ -133,7 +122,6 @@ const LayerItem: React.FC<LayerItemProps> = ({ layer, index }) => {
 
             {isActive && (
                 <div className="mt-2 pl-6 flex flex-col gap-2">
-                    {/* Layer opacity control */}
                     <div className="flex items-center text-xs">
                         <span className="w-16 text-slate-500 dark:text-gray-400">
                             Opacity:
@@ -144,12 +132,12 @@ const LayerItem: React.FC<LayerItemProps> = ({ layer, index }) => {
                             max="1"
                             step="0.01"
                             value={layer.opacity}
-                            onChange={e =>
+                            onChange={e => {
                                 updateLayerOpacity(
                                     layer.id,
                                     parseFloat(e.target.value),
-                                )
-                            }
+                                );
+                            }}
                             className="flex-1 h-1.5 bg-slate-200 dark:bg-gray-700 rounded-full appearance-none cursor-pointer accent-indigo-500"
                             onClick={e => e.stopPropagation()}
                         />
@@ -184,7 +172,9 @@ const LayerItem: React.FC<LayerItemProps> = ({ layer, index }) => {
                             className="px-1.5 py-1 text-xs rounded bg-slate-100 dark:bg-gray-700 text-slate-600 dark:text-gray-300 hover:bg-slate-200 dark:hover:bg-gray-600"
                             onClick={e => {
                                 e.stopPropagation();
-                                index > 0 && moveLayerUp(layer.id);
+                                if (index > 0) {
+                                    moveLayerUp(layer.id);
+                                }
                             }}
                             disabled={index === 0}>
                             <ArrowUp className="h-3 w-3 inline mr-1" />
@@ -195,8 +185,9 @@ const LayerItem: React.FC<LayerItemProps> = ({ layer, index }) => {
                             className="px-1.5 py-1 text-xs rounded bg-slate-100 dark:bg-gray-700 text-slate-600 dark:text-gray-300 hover:bg-slate-200 dark:hover:bg-gray-600"
                             onClick={e => {
                                 e.stopPropagation();
-                                index < layers.length - 1 &&
+                                if (index < layers.length - 1) {
                                     moveLayerDown(layer.id);
+                                }
                             }}
                             disabled={index === layers.length - 1}>
                             <ArrowDown className="h-3 w-3 inline mr-1" />

@@ -12,7 +12,7 @@ interface LayerPanelProps {
 }
 
 const LayerPanel: React.FC<LayerPanelProps> = ({ dict }) => {
-    const { layers, showLayersPanel, setShowLayersPanel } = useDrawing();
+    const { layers, setShowLayersPanel } = useDrawing();
 
     const { addLayer } = useLayers();
 

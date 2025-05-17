@@ -21,15 +21,7 @@ interface DrawingEditorProps {
 
 const DrawingEditorContent: React.FC = () => {
     const { dict, lang } = useDictionary();
-    const {
-        showLayersPanel,
-        isMobileMenuOpen,
-        setDimensions,
-        setBackgroundColor,
-        setLayers,
-        setElementsByLayer,
-        setActiveLayerId,
-    } = useDrawing();
+    const { showLayersPanel, isMobileMenuOpen } = useDrawing();
     const { handleClear } = useHistory();
     const {
         handleMouseDown,
@@ -69,7 +61,7 @@ const DrawingEditorContent: React.FC = () => {
                 />
             </div>
 
-            <MobileToolbar dict={dict} />
+            <MobileToolbar />
             <SettingsPanel
                 dict={dict}
                 onResolutionChange={handleResolutionChange}
