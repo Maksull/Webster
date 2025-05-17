@@ -4,9 +4,10 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Paintbrush, AlertCircle } from 'lucide-react';
-import { useDictionary } from '@/contexts';
+import { useAuth, useDictionary } from '@/contexts';
 
 export const ResetPasswordForm = () => {
+    const { resetPassword } = useAuth();
     const { dict, lang } = useDictionary();
     const router = useRouter();
     const [email, setEmail] = useState('');
@@ -19,24 +20,7 @@ export const ResetPasswordForm = () => {
         setIsSubmitting(true);
 
         try {
-            const response = await fetch('/api/auth/reset-password', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ email }),
-            });
-
-            const data = await response.json();
-
-            if (!response.ok) {
-                setError(
-                    data.message ||
-                        dict.auth?.errors?.generic ||
-                        'Something went wrong. Please try again later.',
-                );
-                return;
-            }
+            await resetPassword(email);
 
             // Store email in localStorage for resend functionality
             localStorage.setItem('resetPasswordEmail', email);

@@ -40,6 +40,10 @@ interface AuthContextType {
     logout: () => Promise<void>;
     resetPassword: (email: string) => Promise<void>;
     verifyEmail: (code: string) => Promise<void>;
+    resetPasswordWithToken: (
+        token: string,
+        newPassword: string,
+    ) => Promise<void>;
     changePassword: (
         currentPassword: string,
         newPassword: string,
@@ -375,6 +379,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
     };
 
+    const resetPasswordWithToken = async (
+        token: string,
+        newPassword: string,
+    ): Promise<void> => {
+        try {
+            const response = await authFetch(
+                '/auth/reset-password-with-token',
+                {
+                    method: 'POST',
+                    body: JSON.stringify({ token, newPassword }),
+                },
+            );
+
+            const result = await response.json();
+
+            if (!response.ok) {
+                throw new Error(result.message || 'Password reset failed');
+            }
+
+            return result;
+        } catch (error) {
+            console.error('Reset password with token error:', error);
+            throw error;
+        }
+    };
+
     const changePassword = async (
         currentPassword: string,
         newPassword: string,
@@ -587,6 +617,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 logout,
                 resetPassword,
                 verifyEmail,
+                resetPasswordWithToken,
                 changePassword,
                 changeEmail,
                 resendVerificationCode,
