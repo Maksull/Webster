@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { useDictionary } from '@/contexts/DictionaryContext';
+import {useDictionary} from '@/contexts/DictionaryContext';
 import CanvasHeader from './CanvasHeader';
 import Canvas from './Canvas';
 import DesktopToolbar from './DesktopToolbar';
@@ -9,11 +9,11 @@ import LayerPanel from './LayerPanel';
 import MobileMenu from './MobileMenu';
 import MobileToolbar from './MobileToolbar';
 import SettingsPanel from './SettingsPanel';
-import { useCanvasOperations } from './useCanvasOperations';
-import { useHistory } from './useHistory';
+import {useCanvasOperations} from './useCanvasOperations';
+import {useHistory} from './useHistory';
 import ZoomControls from './ZoomControls';
-import { Canvas as CanvasType } from '@/types/canvas';
-import { DrawingProvider, useDrawing } from '@/contexts';
+import {Canvas as CanvasType} from '@/types/canvas';
+import {DrawingProvider, useDrawing} from '@/contexts';
 
 interface DrawingEditorProps {
     initialCanvas?: CanvasType | null;

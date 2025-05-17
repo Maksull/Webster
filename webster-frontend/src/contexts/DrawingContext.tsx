@@ -197,6 +197,7 @@ export const DrawingProvider: React.FC<DrawingProviderProps> = ({
     const [canvasName, setCanvasName] = useState<string>(
         initialCanvas?.name || '',
     );
+    const [opacity, setOpacity] = useState(1);
 
     useEffect(() => {
         if (!initialCanvas && layers.length === 0) {
@@ -289,6 +290,8 @@ export const DrawingProvider: React.FC<DrawingProviderProps> = ({
         setSelectedElementIds,
         isMoving,
         setIsMoving,
+        opacity,
+        setOpacity,
     };
 
     return (

@@ -9,6 +9,7 @@ export interface LineElement {
     id: string;
     type: 'line';
     layerId: string;
+    opacity: number;
 }
 
 export interface RectElement {
@@ -21,6 +22,7 @@ export interface RectElement {
     type: 'rect';
     image?: HTMLImageElement;
     layerId: string;
+    opacity: number;
 }
 
 export interface CircleElement {
@@ -33,6 +35,7 @@ export interface CircleElement {
     id: string;
     type: 'circle';
     layerId: string;
+    opacity: number;
 }
 
 export interface LineShapeElement {
@@ -42,6 +45,7 @@ export interface LineShapeElement {
     id: string;
     type: 'line-shape';
     layerId: string;
+    opacity: number;
 }
 
 export interface RectangleElement {
@@ -55,6 +59,7 @@ export interface RectangleElement {
     id: string;
     type: 'rectangle';
     layerId: string;
+    opacity: number;
 }
 
 export interface TriangleElement {
@@ -68,6 +73,7 @@ export interface TriangleElement {
     id: string;
     type: 'triangle';
     layerId: string;
+    opacity: number;
 }
 
 export type DrawingElement =

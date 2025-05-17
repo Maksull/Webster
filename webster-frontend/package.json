@@ -33,6 +33,7 @@
     "eslint-plugin-prettier": "^5.2.3",
     "postcss": "^8.5.3",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "typescript": "^5",
+    "tailwind-scrollbar": "^4.0.2"
   }
 }
