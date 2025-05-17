@@ -10,9 +10,10 @@ import {
     Eye,
     EyeOff,
 } from 'lucide-react';
-import { useDictionary } from '@/contexts';
+import { useAuth, useDictionary } from '@/contexts';
 
 export const SetNewPasswordForm = () => {
+    const { resetPasswordWithToken } = useAuth();
     const { dict, lang } = useDictionary();
     const router = useRouter();
     const [newPassword, setNewPassword] = useState('');
@@ -59,30 +60,7 @@ export const SetNewPasswordForm = () => {
                 return;
             }
 
-            const response = await fetch(
-                '/api/auth/reset-password-with-token',
-                {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ token, newPassword }),
-                },
-            );
-
-            const data = await response.json();
-
-            if (!response.ok) {
-                if (data.code === 'FST_ERR_VALIDATION') {
-                    setError('Password must be at least 8 characters long.');
-                } else {
-                    setError(
-                        data.message ||
-                            dict.auth?.errors?.generic ||
-                            'Something went wrong. Please try again later.',
-                    );
-                }
-                return;
-            }
-
+            await resetPasswordWithToken(token, newPassword);
             setSuccess(true);
             setTimeout(() => router.push(`/${lang}/login`), 1500);
         } catch {
@@ -287,7 +265,7 @@ export const SetNewPasswordForm = () => {
                         className="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-md text-sm font-medium text-white bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 disabled:opacity-70 disabled:cursor-not-allowed transition-all duration-200 hover:shadow-lg mt-4">
                         {isSubmitting
                             ? dict.auth?.resetPassword?.loading || 'Updating...'
-                            : dict.auth?.resetPassword?.submit ||
+                            : dict.auth?.resetPassword?.submitReset ||
                               'Set New Password'}
                     </button>
                 </form>
