@@ -99,7 +99,6 @@
             "backToLogin": "Back to login"
         },
         "verifyEmailTitle": "Verify Your Email",
-        "verifyEmailDescription": "Please enter the verification code sent to your email address",
         "emailVerifiedSuccess": "Email verified successfully! You will be redirected shortly.",
         "verificationFailed": "Verification failed. Please try again.",
         "codeSentSuccess": "Verification code has been sent to your email.",
