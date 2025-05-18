@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useHistory } from './useHistory';
 
 import { hexToRgb, colorsMatch, colorMatchesWithTolerance } from './colorUtils';
@@ -60,6 +60,9 @@ export const useCanvasOperations = () => {
 
     const dragStartPos = useRef({ x: 0, y: 0 });
 
+    const [selectionRect, setSelectionRect] = useState(null);
+    const [isSelecting, setIsSelecting] = useState(false);
+
     // Handle resize
     useEffect(() => {
         return () => {
@@ -71,21 +74,14 @@ export const useCanvasOperations = () => {
     }, []);
 
     // Handle mouse down event on canvas
-    const handleMouseDown = (e: any) => {
+    const handleMouseDown = e => {
         const stage = e.target.getStage();
         const pos = stage.getPointerPosition();
         const activeLayer = layers.find(layer => layer.id === activeLayerId);
-
         if (!activeLayer || !activeLayer.visible || activeLayer.locked) return;
 
-        console.log('Tool:', tool);
-
         if (tool === 'select') {
-            // Use direct hit detection instead of relying on event bubbling
             const shapes = stage.getAllIntersections(pos);
-            console.log('Shapes under pointer:', shapes);
-
-            // Filter out the background and find actionable shapes
             const targetShapes = shapes.filter(
                 shape =>
                     shape !== stage &&
@@ -97,16 +93,11 @@ export const useCanvasOperations = () => {
             );
 
             if (targetShapes.length > 0) {
-                console.log('Found target shape:', targetShapes[0]);
-
-                // Now find which element this shape corresponds to
                 let foundElement = null;
                 let foundElementId = null;
 
-                // Loop through all elements in all layers
                 elementsByLayer.forEach((elements, layerId) => {
                     elements.forEach(element => {
-                        // Simple position-based matching for shapes with x,y coordinates
                         if (
                             (element.type === 'rectangle' ||
                                 element.type === 'rect' ||
@@ -121,7 +112,6 @@ export const useCanvasOperations = () => {
                                 y: targetShapes[0].attrs.y,
                             };
 
-                            // If positions match approximately
                             if (
                                 Math.abs(elementPos.x - shapePos.x) < 5 &&
                                 Math.abs(elementPos.y - shapePos.y) < 5
@@ -129,9 +119,7 @@ export const useCanvasOperations = () => {
                                 foundElement = element;
                                 foundElementId = element.id;
                             }
-                        }
-                        // For line elements, check points
-                        else if (
+                        } else if (
                             element.type === 'line' ||
                             element.type === 'line-shape'
                         ) {
@@ -142,7 +130,6 @@ export const useCanvasOperations = () => {
                                 element.points.length > 0 &&
                                 targetShapes[0].attrs.points.length > 0
                             ) {
-                                // Check first point for simple matching
                                 if (
                                     Math.abs(
                                         element.points[0] -
@@ -162,21 +149,53 @@ export const useCanvasOperations = () => {
                 });
 
                 if (foundElement && foundElementId) {
-                    console.log('Found matching element:', foundElement);
+                    // Check if shift key is pressed for multi-select
+                    const isShiftPressed =
+                        e.evt && (e.evt.shiftKey || e.evt.ctrlKey);
 
-                    // Set selected element
-                    setSelectedElementIds([foundElementId]);
+                    if (isShiftPressed) {
+                        // Toggle selection of the clicked element
+                        const newSelectedIds = [...selectedElementIds];
+                        const index = newSelectedIds.indexOf(foundElementId);
 
-                    // Start moving the element
+                        if (index !== -1) {
+                            // Remove if already selected
+                            newSelectedIds.splice(index, 1);
+                        } else {
+                            // Add if not selected
+                            newSelectedIds.push(foundElementId);
+                        }
+
+                        setSelectedElementIds(newSelectedIds);
+                    } else {
+                        // If element is already selected and no shift key, keep selection for dragging
+                        if (!selectedElementIds.includes(foundElementId)) {
+                            setSelectedElementIds([foundElementId]);
+                        }
+                    }
+
                     setIsMoving(true);
                     dragStartPos.current = pos;
-                } else {
-                    console.log('Could not match shape to any element');
+                } else if (!e.evt.shiftKey) {
+                    // Clear selection only if shift is not pressed
                     setSelectedElementIds([]);
                 }
             } else {
-                console.log('Clicked on empty area');
-                setSelectedElementIds([]);
+                // Start area selection if we're clicking on empty space
+                if (!e.evt.shiftKey) {
+                    setSelectedElementIds([]);
+                }
+
+                // Start selection rectangle
+                setSelectionRect({
+                    x: pos.x,
+                    y: pos.y,
+                    width: 0,
+                    height: 0,
+                });
+
+                setIsSelecting(true);
+                setStartPoint({ x: pos.x, y: pos.y });
             }
             return;
         }
@@ -295,10 +314,9 @@ export const useCanvasOperations = () => {
     };
 
     // Handle mouse move event on canvas
-    const handleMouseMove = (e: any) => {
-        if (!isDrawing && !isMoving) return;
+    const handleMouseMove = e => {
+        if (!isDrawing && !isMoving && !isSelecting) return;
 
-        // Get the active layer
         const activeLayer = layers.find(layer => layer.id === activeLayerId);
         if (!activeLayer || !activeLayer.visible || activeLayer.locked) return;
 
@@ -306,22 +324,32 @@ export const useCanvasOperations = () => {
         const point = stage.getPointerPosition();
         const pos = stage.getPointerPosition();
 
-        // Handle moving selected elements
+        // Handle area selection
+        if (isSelecting && tool === 'select') {
+            if (!startPoint) return;
+
+            setSelectionRect({
+                x: Math.min(startPoint.x, pos.x),
+                y: Math.min(startPoint.y, pos.y),
+                width: Math.abs(pos.x - startPoint.x),
+                height: Math.abs(pos.y - startPoint.y),
+            });
+
+            return;
+        }
+
         if (isMoving && selectedElementIds.length > 0) {
             const dx = pos.x - dragStartPos.current.x;
             const dy = pos.y - dragStartPos.current.y;
 
-            // Update position of all selected elements
             const updatedElementsByLayer = new Map(elementsByLayer);
 
-            // For each layer
             updatedElementsByLayer.forEach((elements, layerId) => {
                 const updatedElements = elements.map(element => {
                     if (!selectedElementIds.includes(element.id)) {
                         return element;
                     }
 
-                    // Move the element based on its type
                     switch (element.type) {
                         case 'line':
                             const lineElement = element as LineElement;
@@ -490,6 +518,35 @@ export const useCanvasOperations = () => {
 
     // Handle mouse up event on canvas
     const handleMouseUp = () => {
+        if (isSelecting && selectionRect) {
+            // Finalize area selection
+            const newSelectedIds = [];
+
+            // Find all elements that intersect with the selection rectangle
+            elementsByLayer.forEach((elements, layerId) => {
+                elements.forEach(element => {
+                    if (isElementInSelectionRect(element, selectionRect)) {
+                        newSelectedIds.push(element.id);
+                    }
+                });
+            });
+
+            // If shift key is pressed, add to existing selection
+            if (
+                window.event &&
+                (window.event.shiftKey || window.event.ctrlKey)
+            ) {
+                setSelectedElementIds([
+                    ...new Set([...selectedElementIds, ...newSelectedIds]),
+                ]);
+            } else {
+                setSelectedElementIds(newSelectedIds);
+            }
+
+            setIsSelecting(false);
+            setSelectionRect(null);
+        }
+
         if (isMoving) {
             setIsMoving(false);
             recordHistory();
@@ -500,6 +557,68 @@ export const useCanvasOperations = () => {
 
         if (isDrawing) {
             recordHistory();
+        }
+    };
+    const isElementInSelectionRect = (element, rect) => {
+        if (!rect) return false;
+
+        switch (element.type) {
+            case 'rectangle':
+            case 'rect': {
+                const { x, y, width, height } = element;
+                // Check if any part of the rectangle overlaps with selection
+                return (
+                    x < rect.x + rect.width &&
+                    x + width > rect.x &&
+                    y < rect.y + rect.height &&
+                    y + height > rect.y
+                );
+            }
+
+            case 'circle': {
+                const { x, y, radius } = element;
+                // Check if circle overlaps with selection
+                return (
+                    x + radius > rect.x &&
+                    x - radius < rect.x + rect.width &&
+                    y + radius > rect.y &&
+                    y - radius < rect.y + rect.height
+                );
+            }
+
+            case 'triangle': {
+                const { x, y, radius } = element;
+                // Similar to circle for simplicity
+                return (
+                    x + radius > rect.x &&
+                    x - radius < rect.x + rect.width &&
+                    y + radius > rect.y &&
+                    y - radius < rect.y + rect.height
+                );
+            }
+
+            case 'line':
+            case 'line-shape': {
+                const { points } = element;
+                // Check if any point of the line is in the selection
+                for (let i = 0; i < points.length; i += 2) {
+                    const pointX = points[i];
+                    const pointY = points[i + 1];
+
+                    if (
+                        pointX >= rect.x &&
+                        pointX <= rect.x + rect.width &&
+                        pointY >= rect.y &&
+                        pointY <= rect.y + rect.height
+                    ) {
+                        return true;
+                    }
+                }
+                return false;
+            }
+
+            default:
+                return false;
         }
     };
 
