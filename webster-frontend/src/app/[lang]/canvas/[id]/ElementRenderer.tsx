@@ -52,6 +52,7 @@ const ElementRenderer: React.FC<ElementRendererProps> = ({
         name: `element-${element.id}`, // Adding name can help with debugging
         onClick: handleClick,
         onTap: handleClick,
+        opacity: element.opacity ?? 1,
         ...hitAreaProps,
         ...(isSelected ? selectionProps : {}),
     };

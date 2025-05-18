@@ -54,6 +54,7 @@ export const useCanvasOperations = () => {
         setSelectedElementIds,
         isMoving,
         setIsMoving,
+        opacity,
     } = useDrawing();
 
     const { recordHistory } = useHistory();
@@ -228,6 +229,7 @@ export const useCanvasOperations = () => {
                     id: Date.now().toString(),
                     type: 'rectangle',
                     layerId: activeLayerId,
+                    opacity: opacity,
                 };
 
                 // Add element to active layer
@@ -246,6 +248,7 @@ export const useCanvasOperations = () => {
                     id: Date.now().toString(),
                     type: 'circle',
                     layerId: activeLayerId,
+                    opacity: opacity,
                 };
 
                 // Add element to active layer
@@ -261,6 +264,7 @@ export const useCanvasOperations = () => {
                     id: Date.now().toString(),
                     type: 'line-shape',
                     layerId: activeLayerId,
+                    opacity: opacity,
                 };
 
                 // Add element to active layer
@@ -280,6 +284,7 @@ export const useCanvasOperations = () => {
                     id: Date.now().toString(),
                     type: 'triangle',
                     layerId: activeLayerId,
+                    opacity: opacity,
                 };
 
                 // Add element to active layer
@@ -305,6 +310,7 @@ export const useCanvasOperations = () => {
             id: Date.now().toString(),
             type: 'line',
             layerId: activeLayerId,
+            opacity: opacity,
         };
 
         // Add element to active layer
