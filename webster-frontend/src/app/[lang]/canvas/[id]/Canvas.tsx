@@ -1,6 +1,5 @@
 'use client';
-
-import React from 'react';
+import React, { useState } from 'react';
 import { Stage, Layer, Rect } from 'react-konva';
 import LayerRenderer from './LayerRenderer';
 import { useDrawing } from '@/contexts';
@@ -36,9 +35,144 @@ const Canvas: React.FC<CanvasProps> = ({
         setSelectedElementIds,
     } = useDrawing();
 
+    // Add selection rectangle state directly in Canvas component
+    const [selectionRect, setSelectionRect] = useState(null);
+    const [isSelecting, setIsSelecting] = useState(false);
+
     const handleStageClick = (e: any) => {
         if (tool !== 'select' || e.target !== e.currentTarget) return;
         setSelectedElementIds([]);
+    };
+
+    // Custom mouse handlers that incorporate selection rectangle
+    const handleCanvasMouseDown = e => {
+        // If we're using the select tool and clicking on the stage (not an element)
+        if (tool === 'select' && e.target === e.target.getStage()) {
+            const stage = e.target.getStage();
+            const pos = stage.getPointerPosition();
+
+            // Start selection rectangle
+            setSelectionRect({
+                x: pos.x,
+                y: pos.y,
+                width: 0,
+                height: 0,
+            });
+            setIsSelecting(true);
+        }
+
+        // Call the original mouse down handler
+        onMouseDown(e);
+    };
+
+    const handleCanvasMouseMove = e => {
+        // Update selection rectangle if we're selecting
+        if (isSelecting && tool === 'select') {
+            const stage = e.target.getStage();
+            const pos = stage.getPointerPosition();
+            const startX = selectionRect.x;
+            const startY = selectionRect.y;
+
+            setSelectionRect({
+                x: Math.min(startX, pos.x),
+                y: Math.min(startY, pos.y),
+                width: Math.abs(pos.x - startX),
+                height: Math.abs(pos.y - startY),
+            });
+        }
+
+        // Call the original mouse move handler
+        onMouseMove(e);
+    };
+
+    const handleCanvasMouseUp = e => {
+        if (isSelecting) {
+            // Find elements in the selection rectangle
+            const selectedIds = [];
+
+            elementsByLayer.forEach((elements, layerId) => {
+                elements.forEach(element => {
+                    if (isElementInSelectionRect(element, selectionRect)) {
+                        selectedIds.push(element.id);
+                    }
+                });
+            });
+
+            // Update selected elements, considering shift key for multi-select
+            if (e.evt && (e.evt.shiftKey || e.evt.ctrlKey)) {
+                setSelectedElementIds([
+                    ...new Set([...selectedElementIds, ...selectedIds]),
+                ]);
+            } else {
+                setSelectedElementIds(selectedIds);
+            }
+
+            setIsSelecting(false);
+            setSelectionRect(null);
+        }
+
+        // Call the original mouse up handler
+        onMouseUp();
+    };
+
+    // Helper function to check if an element is within the selection rectangle
+    const isElementInSelectionRect = (element, rect) => {
+        if (!rect) return false;
+
+        switch (element.type) {
+            case 'rectangle':
+            case 'rect': {
+                const { x, y, width, height } = element;
+                return (
+                    x < rect.x + rect.width &&
+                    x + width > rect.x &&
+                    y < rect.y + rect.height &&
+                    y + height > rect.y
+                );
+            }
+
+            case 'circle': {
+                const { x, y, radius } = element;
+                return (
+                    x + radius > rect.x &&
+                    x - radius < rect.x + rect.width &&
+                    y + radius > rect.y &&
+                    y - radius < rect.y + rect.height
+                );
+            }
+
+            case 'triangle': {
+                const { x, y, radius } = element;
+                return (
+                    x + radius > rect.x &&
+                    x - radius < rect.x + rect.width &&
+                    y + radius > rect.y &&
+                    y - radius < rect.y + rect.height
+                );
+            }
+
+            case 'line':
+            case 'line-shape': {
+                const { points } = element;
+                for (let i = 0; i < points.length; i += 2) {
+                    const pointX = points[i];
+                    const pointY = points[i + 1];
+
+                    if (
+                        pointX >= rect.x &&
+                        pointX <= rect.x + rect.width &&
+                        pointY >= rect.y &&
+                        pointY <= rect.y + rect.height
+                    ) {
+                        return true;
+                    }
+                }
+                return false;
+            }
+
+            default:
+                return false;
+        }
     };
 
     return (
@@ -57,12 +191,12 @@ const Canvas: React.FC<CanvasProps> = ({
                     <Stage
                         width={dimensions.width}
                         height={dimensions.height}
-                        onMouseDown={onMouseDown}
-                        onMousemove={onMouseMove}
-                        onMouseup={onMouseUp}
-                        onTouchStart={onMouseDown}
-                        onTouchMove={onMouseMove}
-                        onTouchEnd={onMouseUp}
+                        onMouseDown={handleCanvasMouseDown}
+                        onMousemove={handleCanvasMouseMove}
+                        onMouseup={handleCanvasMouseUp}
+                        onTouchStart={handleCanvasMouseDown}
+                        onTouchMove={handleCanvasMouseMove}
+                        onTouchEnd={handleCanvasMouseUp}
                         onClick={handleStageClick}
                         ref={stageRef}
                         className={`${
@@ -87,7 +221,6 @@ const Canvas: React.FC<CanvasProps> = ({
                         {layers.map(layer => {
                             const layerElements =
                                 elementsByLayer.get(layer.id) || [];
-                            console.log('Layer elements:', layerElements);
 
                             return (
                                 <LayerRenderer
@@ -99,15 +232,52 @@ const Canvas: React.FC<CanvasProps> = ({
                                     }
                                     selectedElementIds={selectedElementIds}
                                     onSelectElement={id => {
-                                        console.log(
-                                            'Selection triggered for:',
-                                            id,
-                                        );
-                                        setSelectedElementIds([id]);
+                                        // Handle shift key for multi-select
+                                        if (
+                                            window.event &&
+                                            (window.event.shiftKey ||
+                                                window.event.ctrlKey)
+                                        ) {
+                                            const newSelectedIds = [
+                                                ...selectedElementIds,
+                                            ];
+                                            const index =
+                                                newSelectedIds.indexOf(id);
+
+                                            if (index !== -1) {
+                                                newSelectedIds.splice(index, 1);
+                                            } else {
+                                                newSelectedIds.push(id);
+                                            }
+
+                                            setSelectedElementIds(
+                                                newSelectedIds,
+                                            );
+                                        } else {
+                                            setSelectedElementIds([id]);
+                                        }
                                     }}
                                 />
                             );
                         })}
+
+                        {/* Render selection rectangle with high visibility */}
+                        {selectionRect && tool === 'select' && (
+                            <Layer>
+                                <Rect
+                                    x={selectionRect.x}
+                                    y={selectionRect.y}
+                                    width={selectionRect.width}
+                                    height={selectionRect.height}
+                                    stroke="#0066FF"
+                                    strokeWidth={2}
+                                    dash={[5, 5]}
+                                    fill="#0066FF"
+                                    opacity={0.1}
+                                    listening={false}
+                                />
+                            </Layer>
+                        )}
                     </Stage>
 
                     <CanvasResizeHandles

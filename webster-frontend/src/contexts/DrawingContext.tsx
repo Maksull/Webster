@@ -62,7 +62,7 @@ interface DrawingContextProps {
     setIsMobileMenuOpen: React.Dispatch<React.SetStateAction<boolean>>;
     stageRef: React.RefObject<any>;
     layerRefs: React.MutableRefObject<Map<string, any>>;
-    canvasWrapperRef: React.RefObject<HTMLDivElement>;
+    canvasWrapperRef: React.RefObject<HTMLDivElement | null>;
     isResizing: boolean;
     setIsResizing: React.Dispatch<React.SetStateAction<boolean>>;
     resizeDirection: string;
