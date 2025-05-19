@@ -55,6 +55,7 @@ export const useCanvasOperations = () => {
         isMoving,
         setIsMoving,
         opacity,
+        setBackgroundColor,
     } = useDrawing();
 
     const { recordHistory } = useHistory();
@@ -631,31 +632,84 @@ export const useCanvasOperations = () => {
     // Handle bucket tool click
     const handleBucketClick = (x: number, y: number) => {
         if (!stageRef.current) return;
-
-        // Get the active layer
         const activeLayer = layers.find(layer => layer.id === activeLayerId);
         if (!activeLayer || activeLayer.locked) return;
 
-        // Get the canvas from the stage
+        // First, check if we're clicking directly on the canvas background
+        // by checking if there are any elements at the click position
         const stage = stageRef.current;
-        const dataURL = stage.toDataURL();
+        const pos = { x: Math.floor(x), y: Math.floor(y) };
+        const shapes = stage.getAllIntersections(pos);
 
-        // Create a temporary image from the stage
+        // Filter out the stage itself and any background rectangle
+        const targetShapes = shapes.filter(
+            shape => shape !== stage && shape.getClassName() !== 'Stage',
+        );
+
+        // If we're clicking on the empty canvas (no objects at this position)
+        // or only hitting the background rect (which is always the first layer)
+        if (
+            targetShapes.length === 0 ||
+            (targetShapes.length === 1 &&
+                targetShapes[0].getAttrs().y === 0 &&
+                targetShapes[0].getAttrs().x === 0 &&
+                targetShapes[0].getAttrs().width === dimensions.width &&
+                targetShapes[0].getAttrs().height === dimensions.height)
+        ) {
+            // This is a click on the background, update backgroundColor
+            setBackgroundColor(color);
+            recordHistory();
+            return;
+        }
+
+        // Find the specific element we clicked on
+        let targetElement = null;
+        let targetElementIdx = -1;
+        const elements = getActiveLayerElements();
+
+        for (let i = elements.length - 1; i >= 0; i--) {
+            const element = elements[i];
+            if (isPointInElement(pos.x, pos.y, element)) {
+                targetElement = element;
+                targetElementIdx = i;
+                break;
+            }
+        }
+
+        // If we found a specific element to fill
+        if (targetElement && targetElementIdx !== -1) {
+            // For simple shapes like rectangle, circle, and triangle
+            // directly update their fill property instead of creating a new element
+            if (
+                ['rectangle', 'rect', 'circle', 'triangle'].includes(
+                    targetElement.type,
+                )
+            ) {
+                const updatedElements = [...elements];
+                updatedElements[targetElementIdx] = {
+                    ...targetElement,
+                    fill: color,
+                };
+                updateActiveLayerElements(updatedElements);
+                recordHistory();
+                return;
+            }
+        }
+
+        // For more complex cases (line shapes, or if element detection fails),
+        // proceed with the pixel-based flood fill
+        const dataURL = stage.toDataURL();
         const img = new Image();
         img.src = dataURL;
 
         img.onload = () => {
-            // Create a temporary canvas to analyze the image
             const canvas = document.createElement('canvas');
             canvas.width = dimensions.width;
             canvas.height = dimensions.height;
             const ctx = canvas.getContext('2d');
             if (!ctx) return;
 
-            // Draw the stage image onto our temporary canvas
             ctx.drawImage(img, 0, 0);
-
-            // Get the image data
             const imageData = ctx.getImageData(
                 0,
                 0,
@@ -664,7 +718,6 @@ export const useCanvasOperations = () => {
             );
             const data = imageData.data;
 
-            // The target color we're replacing (the color at the clicked position)
             const targetPos =
                 (Math.floor(y) * dimensions.width + Math.floor(x)) * 4;
             const targetR = data[targetPos];
@@ -672,11 +725,9 @@ export const useCanvasOperations = () => {
             const targetB = data[targetPos + 2];
             const targetA = data[targetPos + 3];
 
-            // The replacement color (from our color picker)
             const fillColorObj = hexToRgb(color);
             if (!fillColorObj) return;
 
-            // Early return if we're trying to fill an area with the same color
             if (
                 colorsMatch(
                     [targetR, targetG, targetB, targetA],
@@ -686,32 +737,23 @@ export const useCanvasOperations = () => {
                 return;
             }
 
-            // Create a mask for the filled pixels
+            // Otherwise, proceed with the original flood fill algorithm
             const width = dimensions.width;
             const height = dimensions.height;
             const mask = new Uint8Array(width * height);
-
-            // Queue for the flood fill
             const queue: number[] = [];
             queue.push(Math.floor(y) * width + Math.floor(x));
 
-            // Color tolerance
             const tolerance = 20;
-
-            // Arrays for 4-way connectivity
             const dx = [0, 1, 0, -1];
             const dy = [-1, 0, 1, 0];
-
-            // Count visited pixels to determine if we should fill the whole canvas
             let visitedCount = 0;
 
-            // Process the queue
             while (queue.length > 0) {
                 const pos = queue.shift()!;
                 const y = Math.floor(pos / width);
                 const x = pos % width;
 
-                // Check bounds and if already processed
                 if (
                     x < 0 ||
                     x >= width ||
@@ -722,7 +764,6 @@ export const useCanvasOperations = () => {
                     continue;
                 }
 
-                // Check if current pixel matches target color (with tolerance)
                 const pixelPos = pos * 4;
                 if (
                     !colorMatchesWithTolerance(
@@ -739,17 +780,14 @@ export const useCanvasOperations = () => {
                     continue;
                 }
 
-                // Mark pixel as processed
                 mask[pos] = 1;
                 visitedCount++;
 
-                // Change the pixel color in the image data
                 data[pixelPos] = fillColorObj.r;
                 data[pixelPos + 1] = fillColorObj.g;
                 data[pixelPos + 2] = fillColorObj.b;
-                data[pixelPos + 3] = 255; // Full opacity
+                data[pixelPos + 3] = 255;
 
-                // Add neighbors to queue
                 for (let i = 0; i < 4; i++) {
                     const nx = x + dx[i];
                     const ny = y + dy[i];
@@ -767,36 +805,116 @@ export const useCanvasOperations = () => {
                 }
             }
 
-            // Put modified image data back to canvas
+            // Create an image with the filled pixels for complex shapes
             ctx.putImageData(imageData, 0, 0);
-
-            // Create an image element for Konva
             const fillImage = new window.Image();
             fillImage.src = canvas.toDataURL();
 
             fillImage.onload = () => {
-                // Create a new Rectangle element with the fill color
                 const newRect = {
                     x: 0,
                     y: 0,
                     width: dimensions.width,
                     height: dimensions.height,
-                    fill: 'transparent', // Fill is transparent because we'll use the image
+                    fill: 'transparent',
                     id: Date.now().toString(),
                     type: 'rect',
-                    image: fillImage, // Add the image to the element
-                    layerId: activeLayerId, // Assign to active layer
+                    image: fillImage,
+                    layerId: activeLayerId,
                 };
 
-                // Add the new element to the active layer
                 const activeElements = getActiveLayerElements();
                 const newElements = [...activeElements, newRect];
                 updateActiveLayerElements(newElements);
-
-                // Save to history
                 recordHistory();
             };
         };
+    };
+
+    const isPointInElement = (x, y, element) => {
+        switch (element.type) {
+            case 'rectangle':
+            case 'rect': {
+                const { x: ex, y: ey, width, height } = element;
+                return (
+                    x >= ex && x <= ex + width && y >= ey && y <= ey + height
+                );
+            }
+            case 'circle': {
+                const { x: ex, y: ey, radius } = element;
+                const dx = x - ex;
+                const dy = y - ey;
+                return dx * dx + dy * dy <= radius * radius;
+            }
+            case 'triangle': {
+                const { x: ex, y: ey, radius } = element;
+                const dx = x - ex;
+                const dy = y - ey;
+                return dx * dx + dy * dy <= radius * radius;
+            }
+            case 'line':
+            case 'line-shape': {
+                const { points } = element;
+                // For lines, check if point is near any segment
+                for (let i = 0; i < points.length - 2; i += 2) {
+                    const x1 = points[i];
+                    const y1 = points[i + 1];
+                    const x2 = points[i + 2];
+                    const y2 = points[i + 3];
+
+                    // Check if point is near this line segment
+                    const distToSegment = distanceToLineSegment(
+                        x1,
+                        y1,
+                        x2,
+                        y2,
+                        x,
+                        y,
+                    );
+                    if (distToSegment <= 5) {
+                        // 5px tolerance
+                        return true;
+                    }
+                }
+                return false;
+            }
+            default:
+                return false;
+        }
+    };
+
+    // Helper function to calculate distance from point to line segment
+    const distanceToLineSegment = (x1, y1, x2, y2, x, y) => {
+        const A = x - x1;
+        const B = y - y1;
+        const C = x2 - x1;
+        const D = y2 - y1;
+
+        const dot = A * C + B * D;
+        const len_sq = C * C + D * D;
+        let param = -1;
+
+        if (len_sq !== 0) {
+            param = dot / len_sq;
+        }
+
+        let xx, yy;
+
+        if (param < 0) {
+            xx = x1;
+            yy = y1;
+        } else if (param > 1) {
+            xx = x2;
+            yy = y2;
+        } else {
+            xx = x1 + param * C;
+            yy = y1 + param * D;
+        }
+
+        const dx = x - xx;
+        const dy = y - yy;
+
+        return Math.sqrt(dx * dx + dy * dy);
     };
 
     // Handle resize start
