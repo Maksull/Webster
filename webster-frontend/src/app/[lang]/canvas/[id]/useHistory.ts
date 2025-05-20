@@ -19,7 +19,9 @@ export const useHistory = () => {
     } = useDrawing();
 
     // Record current state to history
-    const recordHistory = (newBackgroundColor: string | undefined) => {
+    const recordHistory = (
+        newBackgroundColor: string | undefined = undefined,
+    ) => {
         const newHistory = history.slice(0, historyStep + 1);
         newHistory.push({
             layers,
