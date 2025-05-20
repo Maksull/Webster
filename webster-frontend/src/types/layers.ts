@@ -16,4 +16,5 @@ export interface DrawingState {
 export interface HistoryRecord {
     layers: DrawingLayer[];
     elementsByLayer: Map<string, DrawingElement[]>;
+    backgroundColor: string;
 }
