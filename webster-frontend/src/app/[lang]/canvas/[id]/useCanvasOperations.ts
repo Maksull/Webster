@@ -658,7 +658,7 @@ export const useCanvasOperations = () => {
         ) {
             // This is a click on the background, update backgroundColor
             setBackgroundColor(color);
-            recordHistory();
+            recordHistory(color);
             return;
         }
 

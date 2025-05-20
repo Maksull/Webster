@@ -14,15 +14,19 @@ export const useHistory = () => {
         setActiveLayerId,
         elementsByLayer,
         layers,
+        backgroundColor,
+        setBackgroundColor,
     } = useDrawing();
 
     // Record current state to history
-    const recordHistory = () => {
+    const recordHistory = (newBackgroundColor: string | undefined) => {
         const newHistory = history.slice(0, historyStep + 1);
         newHistory.push({
             layers,
             elementsByLayer: new Map(elementsByLayer),
+            backgroundColor: newBackgroundColor || backgroundColor, // Use passed color if provided
         });
+
         setHistory(newHistory);
         setHistoryStep(newHistory.length - 1);
     };
@@ -31,12 +35,15 @@ export const useHistory = () => {
     const handleUndo = () => {
         if (historyStep > 0) {
             setHistoryStep(historyStep - 1);
-            const { layers: prevLayers, elementsByLayer: prevElements } =
-                history[historyStep - 1];
+            const {
+                layers: prevLayers,
+                elementsByLayer: prevElements,
+                backgroundColor: prevBackgroundColor,
+            } = history[historyStep - 1];
             setLayers(prevLayers);
             setElementsByLayer(prevElements);
+            setBackgroundColor(prevBackgroundColor);
 
-            // Make sure active layer still exists
             if (!prevLayers.find(layer => layer.id === activeLayerId)) {
                 setActiveLayerId(prevLayers[0].id);
             }
@@ -47,12 +54,15 @@ export const useHistory = () => {
     const handleRedo = () => {
         if (historyStep < history.length - 1) {
             setHistoryStep(historyStep + 1);
-            const { layers: nextLayers, elementsByLayer: nextElements } =
-                history[historyStep + 1];
+            const {
+                layers: nextLayers,
+                elementsByLayer: nextElements,
+                backgroundColor: nextBackgroundColor,
+            } = history[historyStep + 1];
             setLayers(nextLayers);
             setElementsByLayer(nextElements);
+            setBackgroundColor(nextBackgroundColor);
 
-            // Make sure active layer still exists
             if (!nextLayers.find(layer => layer.id === activeLayerId)) {
                 setActiveLayerId(nextLayers[0].id);
             }
@@ -75,6 +85,7 @@ export const useHistory = () => {
             {
                 layers,
                 elementsByLayer: clearedElementsByLayer,
+                backgroundColor,
             },
         ];
         setHistory(newHistory);

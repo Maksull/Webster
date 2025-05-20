@@ -22,7 +22,6 @@ const LayerRenderer: React.FC<LayerRendererProps> = ({
     onSelectElement,
 }) => {
     if (!layer.visible) return null;
-    console.log(elements);
 
     return (
         <Layer

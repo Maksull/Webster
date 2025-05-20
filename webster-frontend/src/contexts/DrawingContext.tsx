@@ -168,6 +168,8 @@ export const DrawingProvider: React.FC<DrawingProviderProps> = ({
                 {
                     layers: initialCanvas.layers,
                     elementsByLayer: new Map(elementsByLayer),
+                    backgroundColor:
+                        initialCanvas?.backgroundColor || '#FFFFFF',
                 },
             ];
         }
@@ -216,6 +218,7 @@ export const DrawingProvider: React.FC<DrawingProviderProps> = ({
                 {
                     layers: [defaultLayer],
                     elementsByLayer: new Map([[defaultLayerId, []]]),
+                    backgroundColor,
                 },
             ]);
         }
