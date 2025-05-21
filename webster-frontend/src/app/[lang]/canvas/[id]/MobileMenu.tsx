@@ -20,6 +20,7 @@ import {
     ZoomOut,
     Save,
     Download,
+    Type,
 } from 'lucide-react';
 import { Dictionary } from '@/get-dictionary';
 import { useHistory } from './useHistory';
@@ -162,6 +163,19 @@ const MobileMenu: React.FC<MobileMenuProps> = ({
                         }}>
                         <TriangleIcon className="h-5 w-5 mr-2" />
                         Triangle
+                    </button>
+                    <button
+                        className={`flex items-center px-3 py-2 rounded-lg ${
+                            tool === 'text'
+                                ? 'bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400'
+                                : 'text-gray-600 dark:text-gray-400'
+                        }`}
+                        onClick={() => {
+                            setTool('text');
+                            toggleMobileMenu();
+                        }}>
+                        <Type className="h-5 w-5 mr-2" />
+                        Type
                     </button>
                     <div className="border-t border-gray-200 dark:border-gray-700 my-2"></div>
 
