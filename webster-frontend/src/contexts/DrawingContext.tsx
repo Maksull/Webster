@@ -93,6 +93,16 @@ interface DrawingContextProps {
     setSelectedElementIds: React.Dispatch<React.SetStateAction<string[]>>;
     isMoving: boolean;
     setIsMoving: React.Dispatch<React.SetStateAction<boolean>>;
+
+    textEditingId: string | null;
+    setTextEditingId: React.Dispatch<React.SetStateAction<string | null>>;
+    textValue: string;
+    setTextValue: React.Dispatch<React.SetStateAction<string>>;
+
+    textFontSize: number;
+    setTextFontSize: React.Dispatch<React.SetStateAction<number>>;
+    textFontFamily: string;
+    setTextFontFamily: React.Dispatch<React.SetStateAction<string>>;
 }
 
 export const DrawingContext = createContext<DrawingContextProps | undefined>(
@@ -199,7 +209,12 @@ export const DrawingProvider: React.FC<DrawingProviderProps> = ({
     const [canvasName, setCanvasName] = useState<string>(
         initialCanvas?.name || '',
     );
+
     const [opacity, setOpacity] = useState(1);
+    const [textEditingId, setTextEditingId] = useState<string | null>(null);
+    const [textValue, setTextValue] = useState('');
+    const [textFontSize, setTextFontSize] = useState(20);
+    const [textFontFamily, setTextFontFamily] = useState('Arial');
 
     useEffect(() => {
         if (!initialCanvas && layers.length === 0) {
@@ -293,6 +308,14 @@ export const DrawingProvider: React.FC<DrawingProviderProps> = ({
         setSelectedElementIds,
         isMoving,
         setIsMoving,
+        textEditingId,
+        setTextEditingId,
+        textValue,
+        setTextValue,
+        textFontSize,
+        setTextFontSize,
+        textFontFamily,
+        setTextFontFamily,
         opacity,
         setOpacity,
     };

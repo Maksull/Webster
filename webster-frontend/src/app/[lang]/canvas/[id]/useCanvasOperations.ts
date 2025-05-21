@@ -12,6 +12,7 @@ import {
     LineElement,
     Resolution,
     RectElement,
+    TextElement,
 } from '@/types/elements';
 import { API_URL } from '@/config';
 import { useDrawing } from '@/contexts';
@@ -54,6 +55,10 @@ export const useCanvasOperations = () => {
         setSelectedElementIds,
         isMoving,
         setIsMoving,
+        setTextEditingId,
+        setTextValue,
+        textFontSize,
+        textFontFamily,
         opacity,
         setBackgroundColor,
     } = useDrawing();
@@ -75,15 +80,82 @@ export const useCanvasOperations = () => {
         };
     }, []);
 
+    const handleTextEdit = (id: string) => {
+        // Find the text element
+        const activeElements = getActiveLayerElements();
+        const textElement = activeElements.find(
+            el => el.id === id,
+        ) as TextElement;
+
+        if (textElement) {
+            setTextEditingId(id);
+            setTextValue(textElement.text);
+        }
+    };
+    const handleTextEditDone = (id: string, value: string) => {
+        const updatedElementsByLayer = new Map(elementsByLayer);
+
+        updatedElementsByLayer.forEach((elements, layerId) => {
+            const updatedElements = elements.map(element => {
+                if (element.id === id && element.type === 'text') {
+                    return {
+                        ...element,
+                        text: value,
+                    };
+                }
+                return element;
+            });
+
+            updatedElementsByLayer.set(layerId, updatedElements);
+        });
+
+        setElementsByLayer(updatedElementsByLayer);
+        setTextEditingId(null);
+        setTextValue('');
+        recordHistory();
+    };
+
     // Handle mouse down event on canvas
-    const handleMouseDown = e => {
+    const handleMouseDown = (e: any) => {
         const stage = e.target.getStage();
         const pos = stage.getPointerPosition();
         const activeLayer = layers.find(layer => layer.id === activeLayerId);
+
         if (!activeLayer || !activeLayer.visible || activeLayer.locked) return;
 
+        if (tool === 'text') {
+            const stage = e.target.getStage();
+            const pos = stage.getPointerPosition();
+
+            // Create a new text element
+            const newText: TextElement = {
+                x: pos.x,
+                y: pos.y,
+                text: 'Click to edit',
+                fontSize: textFontSize,
+                fontFamily: textFontFamily,
+                fill: color,
+                id: Date.now().toString(),
+                type: 'text',
+                layerId: activeLayerId,
+            };
+
+            // Add element to active layer
+            const activeElements = getActiveLayerElements();
+            const updatedElements = [...activeElements, newText];
+            updateActiveLayerElements(updatedElements);
+
+            // Set this text element for editing
+            setTextEditingId(newText.id);
+            setTextValue('Click to edit');
+
+            return;
+        }
         if (tool === 'select') {
+            // Use direct hit detection instead of relying on event bubbling
             const shapes = stage.getAllIntersections(pos);
+
+            // Filter out the background and find actionable shapes
             const targetShapes = shapes.filter(
                 shape =>
                     shape !== stage &&
@@ -91,16 +163,37 @@ export const useCanvasOperations = () => {
                     (shape.getClassName() === 'Rect' ||
                         shape.getClassName() === 'Circle' ||
                         shape.getClassName() === 'Line' ||
-                        shape.getClassName() === 'RegularPolygon'),
+                        shape.getClassName() === 'RegularPolygon' ||
+                        shape.getClassName() === 'Text'),
             );
 
             if (targetShapes.length > 0) {
+                // Now find which element this shape corresponds to
                 let foundElement = null;
                 let foundElementId = null;
 
+                // Loop through all elements in all layers
                 elementsByLayer.forEach((elements, layerId) => {
                     elements.forEach(element => {
+                        // Add specific case for text elements
                         if (
+                            element.type === 'text' &&
+                            targetShapes[0].getClassName() === 'Text'
+                        ) {
+                            const elementPos = { x: element.x, y: element.y };
+                            const shapePos = {
+                                x: targetShapes[0].attrs.x,
+                                y: targetShapes[0].attrs.y,
+                            };
+
+                            if (
+                                Math.abs(elementPos.x - shapePos.x) < 5 &&
+                                Math.abs(elementPos.y - shapePos.y) < 5
+                            ) {
+                                foundElement = element;
+                                foundElementId = element.id;
+                            }
+                        } else if (
                             (element.type === 'rectangle' ||
                                 element.type === 'rect' ||
                                 element.type === 'circle' ||
@@ -108,6 +201,7 @@ export const useCanvasOperations = () => {
                             'x' in element &&
                             'y' in element
                         ) {
+                            // Existing logic for other element types
                             const elementPos = { x: element.x, y: element.y };
                             const shapePos = {
                                 x: targetShapes[0].attrs.x,
@@ -125,6 +219,7 @@ export const useCanvasOperations = () => {
                             element.type === 'line' ||
                             element.type === 'line-shape'
                         ) {
+                            // Existing logic for line elements
                             if (
                                 targetShapes[0].getClassName() === 'Line' &&
                                 'points' in element &&
@@ -321,9 +416,11 @@ export const useCanvasOperations = () => {
     };
 
     // Handle mouse move event on canvas
-    const handleMouseMove = e => {
+    const handleMouseMove = (e: any) => {
+        // Update condition to include isSelecting
         if (!isDrawing && !isMoving && !isSelecting) return;
 
+        // Rest of your existing code...
         const activeLayer = layers.find(layer => layer.id === activeLayerId);
         if (!activeLayer || !activeLayer.visible || activeLayer.locked) return;
 
@@ -349,14 +446,17 @@ export const useCanvasOperations = () => {
             const dx = pos.x - dragStartPos.current.x;
             const dy = pos.y - dragStartPos.current.y;
 
+            // Update position of all selected elements
             const updatedElementsByLayer = new Map(elementsByLayer);
 
+            // For each layer
             updatedElementsByLayer.forEach((elements, layerId) => {
                 const updatedElements = elements.map(element => {
                     if (!selectedElementIds.includes(element.id)) {
                         return element;
                     }
 
+                    // Move the element based on its type
                     switch (element.type) {
                         case 'line':
                             const lineElement = element as LineElement;
@@ -392,6 +492,13 @@ export const useCanvasOperations = () => {
                                 ...triangleElement,
                                 x: triangleElement.x + dx,
                                 y: triangleElement.y + dy,
+                            };
+                        case 'text':
+                            const textElement = element as TextElement;
+                            return {
+                                ...textElement,
+                                x: textElement.x + dx,
+                                y: textElement.y + dy,
                             };
 
                         case 'line-shape':
@@ -573,7 +680,6 @@ export const useCanvasOperations = () => {
             case 'rectangle':
             case 'rect': {
                 const { x, y, width, height } = element;
-                // Check if any part of the rectangle overlaps with selection
                 return (
                     x < rect.x + rect.width &&
                     x + width > rect.x &&
@@ -581,10 +687,8 @@ export const useCanvasOperations = () => {
                     y + height > rect.y
                 );
             }
-
             case 'circle': {
                 const { x, y, radius } = element;
-                // Check if circle overlaps with selection
                 return (
                     x + radius > rect.x &&
                     x - radius < rect.x + rect.width &&
@@ -592,10 +696,8 @@ export const useCanvasOperations = () => {
                     y - radius < rect.y + rect.height
                 );
             }
-
             case 'triangle': {
                 const { x, y, radius } = element;
-                // Similar to circle for simplicity
                 return (
                     x + radius > rect.x &&
                     x - radius < rect.x + rect.width &&
@@ -603,15 +705,12 @@ export const useCanvasOperations = () => {
                     y - radius < rect.y + rect.height
                 );
             }
-
             case 'line':
             case 'line-shape': {
                 const { points } = element;
-                // Check if any point of the line is in the selection
                 for (let i = 0; i < points.length; i += 2) {
                     const pointX = points[i];
                     const pointY = points[i + 1];
-
                     if (
                         pointX >= rect.x &&
                         pointX <= rect.x + rect.width &&
@@ -623,7 +722,21 @@ export const useCanvasOperations = () => {
                 }
                 return false;
             }
+            case 'text': {
+                // Handle text elements
+                const { x, y, width, height, fontSize, text } = element;
+                // If width and height are defined, use them
+                // Otherwise, estimate based on text length and fontSize
+                const textWidth = width || (text?.length * fontSize) / 2 || 0;
+                const textHeight = height || fontSize || 0;
 
+                return (
+                    x < rect.x + rect.width &&
+                    x + textWidth > rect.x &&
+                    y < rect.y + rect.height &&
+                    y + textHeight > rect.y
+                );
+            }
             default:
                 return false;
         }
@@ -699,17 +812,23 @@ export const useCanvasOperations = () => {
         // For more complex cases (line shapes, or if element detection fails),
         // proceed with the pixel-based flood fill
         const dataURL = stage.toDataURL();
+
+        // Create a temporary image from the stage
         const img = new Image();
         img.src = dataURL;
 
         img.onload = () => {
+            // Create a temporary canvas to analyze the image
             const canvas = document.createElement('canvas');
             canvas.width = dimensions.width;
             canvas.height = dimensions.height;
             const ctx = canvas.getContext('2d');
             if (!ctx) return;
 
+            // Draw the stage image onto our temporary canvas
             ctx.drawImage(img, 0, 0);
+
+            // Get the image data
             const imageData = ctx.getImageData(
                 0,
                 0,
@@ -718,6 +837,7 @@ export const useCanvasOperations = () => {
             );
             const data = imageData.data;
 
+            // The target color we're replacing (the color at the clicked position)
             const targetPos =
                 (Math.floor(y) * dimensions.width + Math.floor(x)) * 4;
             const targetR = data[targetPos];
@@ -725,9 +845,11 @@ export const useCanvasOperations = () => {
             const targetB = data[targetPos + 2];
             const targetA = data[targetPos + 3];
 
+            // The replacement color (from our color picker)
             const fillColorObj = hexToRgb(color);
             if (!fillColorObj) return;
 
+            // Early return if we're trying to fill an area with the same color
             if (
                 colorsMatch(
                     [targetR, targetG, targetB, targetA],
@@ -737,23 +859,32 @@ export const useCanvasOperations = () => {
                 return;
             }
 
-            // Otherwise, proceed with the original flood fill algorithm
+            // Create a mask for the filled pixels
             const width = dimensions.width;
             const height = dimensions.height;
             const mask = new Uint8Array(width * height);
+
+            // Queue for the flood fill
             const queue: number[] = [];
             queue.push(Math.floor(y) * width + Math.floor(x));
 
+            // Color tolerance
             const tolerance = 20;
+
+            // Arrays for 4-way connectivity
             const dx = [0, 1, 0, -1];
             const dy = [-1, 0, 1, 0];
+
+            // Count visited pixels to determine if we should fill the whole canvas
             let visitedCount = 0;
 
+            // Process the queue
             while (queue.length > 0) {
                 const pos = queue.shift()!;
                 const y = Math.floor(pos / width);
                 const x = pos % width;
 
+                // Check bounds and if already processed
                 if (
                     x < 0 ||
                     x >= width ||
@@ -764,6 +895,7 @@ export const useCanvasOperations = () => {
                     continue;
                 }
 
+                // Check if current pixel matches target color (with tolerance)
                 const pixelPos = pos * 4;
                 if (
                     !colorMatchesWithTolerance(
@@ -780,14 +912,17 @@ export const useCanvasOperations = () => {
                     continue;
                 }
 
+                // Mark pixel as processed
                 mask[pos] = 1;
                 visitedCount++;
 
+                // Change the pixel color in the image data
                 data[pixelPos] = fillColorObj.r;
                 data[pixelPos + 1] = fillColorObj.g;
                 data[pixelPos + 2] = fillColorObj.b;
-                data[pixelPos + 3] = 255;
+                data[pixelPos + 3] = 255; // Full opacity
 
+                // Add neighbors to queue
                 for (let i = 0; i < 4; i++) {
                     const nx = x + dx[i];
                     const ny = y + dy[i];
@@ -805,27 +940,33 @@ export const useCanvasOperations = () => {
                 }
             }
 
-            // Create an image with the filled pixels for complex shapes
+            // Put modified image data back to canvas
             ctx.putImageData(imageData, 0, 0);
+
+            // Create an image element for Konva
             const fillImage = new window.Image();
             fillImage.src = canvas.toDataURL();
 
             fillImage.onload = () => {
+                // Create a new Rectangle element with the fill color
                 const newRect = {
                     x: 0,
                     y: 0,
                     width: dimensions.width,
                     height: dimensions.height,
-                    fill: 'transparent',
+                    fill: 'transparent', // Fill is transparent because we'll use the image
                     id: Date.now().toString(),
                     type: 'rect',
-                    image: fillImage,
-                    layerId: activeLayerId,
+                    image: fillImage, // Add the image to the element
+                    layerId: activeLayerId, // Assign to active layer
                 };
 
+                // Add the new element to the active layer
                 const activeElements = getActiveLayerElements();
                 const newElements = [...activeElements, newRect];
                 updateActiveLayerElements(newElements);
+
+                // Save to history
                 recordHistory();
             };
         };
@@ -1220,9 +1361,6 @@ export const useCanvasOperations = () => {
                 throw new Error(errorData.message || 'Failed to save canvas');
             }
 
-            const result = await response.json();
-            console.log('Canvas saved successfully:', result);
-
             alert('Drawing saved successfully!');
         } catch (error) {
             console.error('Error saving canvas:', error);
@@ -1253,5 +1391,7 @@ export const useCanvasOperations = () => {
         handleResolutionChange,
         handleSave,
         handleDownload,
+        handleTextEdit,
+        handleTextEditDone,
     };
 };

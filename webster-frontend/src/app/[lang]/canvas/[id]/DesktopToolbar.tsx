@@ -19,6 +19,7 @@ import {
     ZoomOut,
     Maximize,
     MousePointer,
+    Type,
 } from 'lucide-react';
 import { Dictionary } from '@/get-dictionary';
 import { useHistory } from './useHistory';
@@ -101,6 +102,11 @@ const DesktopToolbar: React.FC<DesktopToolbarProps> = ({ dict, onClear }) => {
                 tool="triangle"
                 icon={TriangleIcon}
                 title={dict.drawing?.triangle || 'Triangle'}
+            />
+            <ToolButton
+                tool="text"
+                icon={Type}
+                title={dict.drawing?.text || 'Text'}
             />
 
             <div className="my-2 border-t border-slate-200 dark:border-gray-700 w-10"></div>

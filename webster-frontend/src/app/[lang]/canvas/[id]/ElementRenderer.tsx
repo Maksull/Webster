@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Line, Rect, Circle, RegularPolygon } from 'react-konva';
+import { Line, Rect, Circle, RegularPolygon, Text } from 'react-konva';
 import {
     LineElement,
     RectElement,
@@ -9,18 +9,21 @@ import {
     LineShapeElement,
     RectangleElement,
     TriangleElement,
+    TextElement,
 } from '@/types/elements';
 
 interface ElementRendererProps {
     element: any;
     isSelected: boolean;
     onSelect: (id: string) => void;
+    onTextEdit?: (id: string) => void;
 }
 
 const ElementRenderer: React.FC<ElementRendererProps> = ({
     element,
     isSelected,
     onSelect,
+    onTextEdit,
 }) => {
     const selectionProps = isSelected
         ? {
@@ -42,17 +45,24 @@ const ElementRenderer: React.FC<ElementRendererProps> = ({
 
     const handleClick = (e: any) => {
         e.cancelBubble = true;
-        console.log('Element clicked:', element.id);
+
+        // Special handling for text elements - enable editing on double-click
+        if (element.type === 'text' && e.evt.type === 'dblclick') {
+            if (typeof onTextEdit === 'function') {
+                onTextEdit(element.id);
+            }
+            return;
+        }
+
         onSelect(element.id);
     };
 
     // Common props for all shapes
     const commonProps = {
         id: element.id,
-        name: `element-${element.id}`, // Adding name can help with debugging
+        name: `element-${element.id}`,
         onClick: handleClick,
         onTap: handleClick,
-        opacity: element.opacity ?? 1,
         ...hitAreaProps,
         ...(isSelected ? selectionProps : {}),
     };
@@ -147,6 +157,35 @@ const ElementRenderer: React.FC<ElementRendererProps> = ({
                     fill={triangleElement.fill}
                     stroke={triangleElement.stroke}
                     strokeWidth={triangleElement.strokeWidth}
+                    {...commonProps}
+                />
+            );
+        case 'text':
+            const textElement = element as TextElement;
+            return (
+                <Text
+                    x={textElement.x}
+                    y={textElement.y}
+                    text={textElement.text}
+                    fontSize={textElement.fontSize}
+                    fontFamily={textElement.fontFamily}
+                    fill={textElement.fill}
+                    width={textElement.width}
+                    height={textElement.height}
+                    rotation={textElement.rotation || 0}
+                    onDblClick={e => {
+                        e.cancelBubble = true;
+                        if (typeof onTextEdit === 'function') {
+                            onTextEdit(element.id);
+                        }
+                    }}
+                    onDblTap={e => {
+                        e.cancelBubble = true;
+                        if (typeof onTextEdit === 'function') {
+                            onTextEdit(element.id);
+                        }
+                    }}
+                    {...commonProps}
                     {...commonProps}
                 />
             );

@@ -76,13 +76,29 @@ export interface TriangleElement {
     opacity: number;
 }
 
+export interface TextElement {
+    x: number;
+    y: number;
+    text: string;
+    fontSize: number;
+    fontFamily: string;
+    fill: string;
+    id: string;
+    type: 'text';
+    layerId: string;
+    width?: number;
+    height?: number;
+    rotation?: number;
+}
+
 export type DrawingElement =
     | LineElement
     | RectElement
     | CircleElement
     | LineShapeElement
     | RectangleElement
-    | TriangleElement;
+    | TriangleElement
+    | TextElement;
 
 export interface Resolution {
     name: string;
@@ -98,7 +114,8 @@ export type ToolType =
     | 'circle'
     | 'line'
     | 'triangle'
-    | 'select';
+    | 'select'
+    | 'text';
 
 export const POPULAR_RESOLUTIONS: Resolution[] = [
     { name: 'HD (16:9)', width: 1280, height: 720 },

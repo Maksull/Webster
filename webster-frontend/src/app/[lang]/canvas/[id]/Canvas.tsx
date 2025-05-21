@@ -1,9 +1,13 @@
 'use client';
+
 import React, { useState } from 'react';
 import { Stage, Layer, Rect } from 'react-konva';
 import LayerRenderer from './LayerRenderer';
 import { useDrawing } from '@/contexts';
 import CanvasResizeHandles from './CanvasResizeHandles';
+import TextEditor from './TextEditor';
+import { useCanvasOperations } from './useCanvasOperations';
+import { createPortal } from 'react-dom';
 
 interface CanvasProps {
     onMouseDown: (e: any) => void;
@@ -33,15 +37,47 @@ const Canvas: React.FC<CanvasProps> = ({
         elementsByLayer,
         selectedElementIds,
         setSelectedElementIds,
+        textEditingId,
+        textValue,
+        setTextValue,
     } = useDrawing();
 
     // Add selection rectangle state directly in Canvas component
     const [selectionRect, setSelectionRect] = useState(null);
     const [isSelecting, setIsSelecting] = useState(false);
+    const { handleTextEdit, handleTextEditDone } = useCanvasOperations();
 
     const handleStageClick = (e: any) => {
-        if (tool !== 'select' || e.target !== e.currentTarget) return;
-        setSelectedElementIds([]);
+        // Don't clear selection if we clicked on a text element
+        const stage = e.target.getStage();
+        if (!stage) return;
+
+        const pos = stage.getPointerPosition();
+
+        // Check if we clicked on a text element
+        const layers = stage.getLayers();
+        let hitText = false;
+
+        // Check all layers for text hits
+        layers.forEach(layer => {
+            const textNodes = layer.find('Text');
+            textNodes.forEach(textNode => {
+                const textNodeRect = textNode.getClientRect();
+                if (
+                    pos.x >= textNodeRect.x &&
+                    pos.x <= textNodeRect.x + textNodeRect.width &&
+                    pos.y >= textNodeRect.y &&
+                    pos.y <= textNodeRect.y + textNodeRect.height
+                ) {
+                    hitText = true;
+                }
+            });
+        });
+
+        // Only clear selection if we didn't hit a text element
+        if (tool === 'select' && !hitText && e.target === e.target.getStage()) {
+            setSelectedElementIds([]);
+        }
     };
 
     // Custom mouse handlers that incorporate selection rectangle
@@ -175,8 +211,51 @@ const Canvas: React.FC<CanvasProps> = ({
         }
     };
 
+    const getTextEditorPosition = () => {
+        if (!textEditingId || !stageRef.current) return { x: 0, y: 0 };
+
+        // Find the text element being edited
+        let textElement = null;
+        elementsByLayer.forEach(elements => {
+            const found = elements.find(el => el.id === textEditingId);
+            if (found && found.type === 'text') {
+                textElement = found;
+            }
+        });
+
+        if (!textElement) return { x: 0, y: 0 };
+
+        // Get the position in screen coordinates
+        const stage = stageRef.current;
+        const containerRect = stage.container().getBoundingClientRect();
+
+        return {
+            x: textElement.x * scale + containerRect.left,
+            y: textElement.y * scale + containerRect.top,
+        };
+    };
+
+    // Render the text editor if needed
+    const renderTextEditor = () => {
+        if (!textEditingId) return null;
+
+        const position = getTextEditorPosition();
+
+        return createPortal(
+            <TextEditor
+                value={textValue}
+                onChange={setTextValue}
+                onDone={() => handleTextEditDone(textEditingId, textValue)}
+                position={position}
+            />,
+            document.getElementById('canvas-container')!,
+        );
+    };
+
     return (
-        <div className="flex-1 bg-slate-100 dark:bg-gray-900 overflow-auto relative">
+        <div
+            id="canvas-container"
+            className="flex-1 bg-slate-100 dark:bg-gray-900 overflow-auto relative">
             <div className="absolute top-0 left-0 min-w-full min-h-full flex items-center justify-center p-4">
                 <div
                     style={{
@@ -257,6 +336,7 @@ const Canvas: React.FC<CanvasProps> = ({
                                             setSelectedElementIds([id]);
                                         }
                                     }}
+                                    onTextEdit={handleTextEdit} // Add this line
                                 />
                             );
                         })}
@@ -284,6 +364,7 @@ const Canvas: React.FC<CanvasProps> = ({
                         isDrawing={isDrawing}
                         onResizeStart={onResizeStart}
                     />
+                    {renderTextEditor()}
                 </div>
             </div>
         </div>

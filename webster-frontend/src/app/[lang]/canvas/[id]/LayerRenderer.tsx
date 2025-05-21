@@ -12,6 +12,7 @@ interface LayerRendererProps {
     onRef: (id: string, node: any) => void;
     selectedElementIds: string[];
     onSelectElement: (id: string) => void;
+    onTextEdit?: (id: string) => void;
 }
 
 const LayerRenderer: React.FC<LayerRendererProps> = ({
@@ -20,6 +21,7 @@ const LayerRenderer: React.FC<LayerRendererProps> = ({
     onRef,
     selectedElementIds,
     onSelectElement,
+    onTextEdit,
 }) => {
     if (!layer.visible) return null;
 
@@ -40,6 +42,7 @@ const LayerRenderer: React.FC<LayerRendererProps> = ({
                     element={element}
                     isSelected={selectedElementIds.includes(element.id)}
                     onSelect={onSelectElement}
+                    onTextEdit={onTextEdit}
                 />
             ))}
         </Layer>
