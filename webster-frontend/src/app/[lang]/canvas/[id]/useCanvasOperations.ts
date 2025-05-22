@@ -13,6 +13,7 @@ import {
     Resolution,
     RectElement,
     TextElement,
+    ArrowElement,
     ImageElement,
 } from '@/types/elements';
 import { API_URL } from '@/config';
@@ -330,7 +331,8 @@ export const useCanvasOperations = () => {
             tool === 'rectangle' ||
             tool === 'circle' ||
             tool === 'line' ||
-            tool === 'triangle'
+            tool === 'triangle' ||
+            tool === 'arrow'
         ) {
             // For shape tools, store the start point
             setStartPoint({ x: pos.x, y: pos.y });
@@ -410,7 +412,24 @@ export const useCanvasOperations = () => {
                 const activeElements = getActiveLayerElements();
                 const updatedElements = [...activeElements, newTriangle];
                 updateActiveLayerElements(updatedElements);
+            } else if (tool === 'arrow') {
+                // Create initial arrow with start and end points at same position
+                const newArrow: ArrowElement = {
+                    points: [pos.x, pos.y, pos.x, pos.y], // start and end the same initially
+                    stroke: color,
+                    strokeWidth,
+                    id: Date.now().toString(),
+                    type: 'arrow',
+                    layerId: activeLayerId,
+                    opacity: opacity,
+                };
+
+                // Add element to active layer
+                const activeElements = getActiveLayerElements();
+                const updatedElements = [...activeElements, newArrow];
+                updateActiveLayerElements(updatedElements);
             }
+
             setIsDrawing(true);
             return;
         }
@@ -612,6 +631,24 @@ export const useCanvasOperations = () => {
             updateActiveLayerElements(updatedElements);
             return;
         }
+
+        if (tool === 'arrow' && lastElement.type === 'arrow') {
+            if (!startPoint) return;
+
+            const updatedArrow: ArrowElement = {
+                ...(lastElement as ArrowElement),
+                points: [startPoint.x, startPoint.y, pos.x, pos.y],
+            };
+
+            const updatedElements = [
+                ...activeElements.slice(0, -1),
+                updatedArrow,
+            ];
+
+            updateActiveLayerElements(updatedElements);
+            return;
+        }
+
 
         if (tool === 'triangle' && lastElement.type === 'triangle') {
             if (!startPoint) return;
