@@ -1,7 +1,14 @@
 'use client';
 
-import React from 'react';
-import { Line, Rect, Circle, RegularPolygon, Text } from 'react-konva';
+import React, { useState, useEffect } from 'react';
+import {
+    Line,
+    Rect,
+    Circle,
+    RegularPolygon,
+    Text,
+    Image as KonvaImage,
+} from 'react-konva';
 import {
     LineElement,
     RectElement,
@@ -10,6 +17,7 @@ import {
     RectangleElement,
     TriangleElement,
     TextElement,
+    ImageElement,
 } from '@/types/elements';
 
 interface ElementRendererProps {
@@ -25,6 +33,23 @@ const ElementRenderer: React.FC<ElementRendererProps> = ({
     onTextEdit,
     onSelect,
 }) => {
+    const [imageObj, setImageObj] = useState<HTMLImageElement | null>(null);
+
+    // Load image for image elements
+    useEffect(() => {
+        if (element.type === 'image') {
+            const img = new window.Image();
+            img.crossOrigin = 'anonymous';
+            img.onload = () => {
+                setImageObj(img);
+            };
+            img.onerror = error => {
+                console.error('Failed to load image:', error);
+            };
+            img.src = element.src;
+        }
+    }, [element.type, element.src]);
+
     const selectionProps = isSelected
         ? {
               shadowColor: '#0066FF',
@@ -37,13 +62,11 @@ const ElementRenderer: React.FC<ElementRendererProps> = ({
         : {};
 
     const hitAreaProps = {
-        // Increase hit area for better touch/click detection
         perfectDrawEnabled: true,
         listening: true,
-        hitStrokeWidth: 40, // Make the hit area larger than the visual stroke
+        hitStrokeWidth: 40,
     };
 
-    // Common props for all shapes
     const commonProps = {
         id: element.id,
         name: `element-${element.id}`,
@@ -68,6 +91,7 @@ const ElementRenderer: React.FC<ElementRendererProps> = ({
                     {...commonProps}
                 />
             );
+
         case 'rect':
             const rectElement = element as RectElement;
             return rectElement.image ? (
@@ -90,6 +114,7 @@ const ElementRenderer: React.FC<ElementRendererProps> = ({
                     {...commonProps}
                 />
             );
+
         case 'rectangle':
             const rectangleElement = element as RectangleElement;
             return (
@@ -104,6 +129,7 @@ const ElementRenderer: React.FC<ElementRendererProps> = ({
                     {...commonProps}
                 />
             );
+
         case 'circle':
             const circleElement = element as CircleElement;
             return (
@@ -117,6 +143,7 @@ const ElementRenderer: React.FC<ElementRendererProps> = ({
                     {...commonProps}
                 />
             );
+
         case 'line-shape':
             const lineShapeElement = element as LineShapeElement;
             return (
@@ -130,6 +157,7 @@ const ElementRenderer: React.FC<ElementRendererProps> = ({
                     {...commonProps}
                 />
             );
+
         case 'triangle':
             const triangleElement = element as TriangleElement;
             return (
@@ -144,10 +172,57 @@ const ElementRenderer: React.FC<ElementRendererProps> = ({
                     {...commonProps}
                 />
             );
+
+        case 'image':
+            const imageElement = element as ImageElement;
+
+            if (!imageObj) {
+                // Show a placeholder while image is loading
+                return (
+                    <Rect
+                        x={imageElement.x}
+                        y={imageElement.y}
+                        width={imageElement.width}
+                        height={imageElement.height}
+                        fill="#f0f0f0"
+                        stroke="#ccc"
+                        strokeWidth={1}
+                        opacity={0.8}
+                        {...commonProps}
+                        onClick={e => {
+                            e.cancelBubble = true;
+                            onSelect(element.id);
+                        }}
+                        onMouseDown={e => {
+                            onSelect(element.id);
+                        }}
+                    />
+                );
+            }
+
+            return (
+                <KonvaImage
+                    x={imageElement.x}
+                    y={imageElement.y}
+                    width={imageElement.width}
+                    height={imageElement.height}
+                    image={imageObj}
+                    rotation={imageElement.rotation || 0}
+                    opacity={imageElement.opacity || 1}
+                    {...commonProps}
+                    onClick={e => {
+                        e.cancelBubble = true;
+                        onSelect(element.id);
+                    }}
+                    onMouseDown={e => {
+                        onSelect(element.id);
+                    }}
+                    draggable={false} // We handle dragging through our select tool
+                />
+            );
+
         case 'text':
             const textElement = element as TextElement;
-
-            // Calculate text dimensions with padding for hit area
             const textWidth =
                 textElement.width ||
                 (textElement.text?.length * textElement.fontSize) / 2 ||
@@ -157,7 +232,7 @@ const ElementRenderer: React.FC<ElementRendererProps> = ({
 
             return (
                 <>
-                    {/* Invisible hit area for better interaction */}
+                    {/* Hit area for text */}
                     <Rect
                         x={textElement.x - padding}
                         y={textElement.y - padding}
@@ -167,7 +242,6 @@ const ElementRenderer: React.FC<ElementRendererProps> = ({
                         strokeWidth={1}
                         opacity={0.3}
                         fill="transparent"
-                        // Important: Use the same ID as the text element
                         id={element.id}
                         name={`element-${element.id}`}
                         onClick={e => {
@@ -175,7 +249,6 @@ const ElementRenderer: React.FC<ElementRendererProps> = ({
                             onSelect(element.id);
                         }}
                         onMouseDown={e => {
-                            // Don't cancel bubble here - let it propagate for drag detection
                             onSelect(element.id);
                         }}
                         onDblClick={e => {
@@ -188,7 +261,6 @@ const ElementRenderer: React.FC<ElementRendererProps> = ({
                             console.log('Text hit area double tapped');
                             onTextEdit && onTextEdit(element.id);
                         }}
-                        // Apply common props but override some behaviors
                         perfectDrawEnabled={false}
                         listening={true}
                         hitStrokeWidth={20}
@@ -212,7 +284,6 @@ const ElementRenderer: React.FC<ElementRendererProps> = ({
                             onSelect(element.id);
                         }}
                         onMouseDown={e => {
-                            // Don't cancel bubble here - let it propagate for drag detection
                             onSelect(element.id);
                         }}
                         onDblClick={e => {
@@ -229,6 +300,7 @@ const ElementRenderer: React.FC<ElementRendererProps> = ({
                     />
                 </>
             );
+
         default:
             return null;
     }

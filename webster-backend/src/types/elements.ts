@@ -77,4 +77,35 @@ export interface TriangleElement {
     layerId: string;
 }
 
-export type DrawingElement = LineElement | RectElement | CircleElement | LineShapeElement | RectangleElement | TriangleElement;
+export interface TextElement {
+    id: string;
+    type: 'text';
+    x: number;
+    y: number;
+    text: string;
+    fontSize: number;
+    fontFamily: string;
+    fill: string;
+    width?: number;
+    height?: number;
+    rotation?: number;
+    layerId: string;
+    opacity?: number;
+}
+
+export interface ImageElement {
+    id: string;
+    type: 'image';
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+    src: string; // base64 data URL
+    originalWidth: number;
+    originalHeight: number;
+    rotation?: number;
+    layerId: string;
+    opacity?: number;
+}
+
+export type DrawingElement = LineElement | RectElement | CircleElement | LineShapeElement | RectangleElement | TriangleElement | TextElement | ImageElement;

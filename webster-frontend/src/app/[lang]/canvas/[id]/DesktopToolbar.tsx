@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useRef } from 'react';
 import ToolButton from './ToolButton';
 import {
     Pencil,
@@ -20,10 +20,12 @@ import {
     Maximize,
     MousePointer,
     Type,
+    Image as ImageIcon,
 } from 'lucide-react';
 import { Dictionary } from '@/get-dictionary';
 import { useHistory } from './useHistory';
 import { useDrawing } from '@/contexts';
+import { ImageElement } from '@/types/elements';
 
 interface DesktopToolbarProps {
     dict: Dictionary;
@@ -39,41 +41,136 @@ const DesktopToolbar: React.FC<DesktopToolbarProps> = ({ dict, onClear }) => {
         setShowSettings,
         scale,
         setScale,
+        activeLayerId,
+        getActiveLayerElements,
+        updateActiveLayerElements,
+        opacity,
+        tool,
+        setTool,
     } = useDrawing();
 
     const { handleUndo, handleRedo, canUndo, canRedo } = useHistory();
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
-    // Handle zoom
     const handleZoomIn = () => {
-        setScale(prevScale => Math.min(prevScale + 0.1, 3)); // Max zoom 3x
+        setScale(prevScale => Math.min(prevScale + 0.1, 3));
     };
 
     const handleZoomOut = () => {
-        setScale(prevScale => Math.max(prevScale - 0.1, 0.5)); // Min zoom 0.5x
+        setScale(prevScale => Math.max(prevScale - 0.1, 0.5));
     };
 
     const handleResetZoom = () => {
         setScale(1);
     };
 
+    const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (!file || !file.type.startsWith('image/')) {
+            alert('Please select a valid image file');
+            return;
+        }
+
+        // Check file size (limit to 10MB)
+        if (file.size > 10 * 1024 * 1024) {
+            alert(
+                'Image file is too large. Please select an image smaller than 10MB.',
+            );
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = e => {
+            const src = e.target?.result as string;
+
+            // Create a temporary image to get dimensions
+            const img = new Image();
+            img.onload = () => {
+                // Calculate initial size (max 300px while maintaining aspect ratio)
+                const maxSize = 300;
+                let width = img.width;
+                let height = img.height;
+
+                if (width > maxSize || height > maxSize) {
+                    const aspectRatio = width / height;
+                    if (width > height) {
+                        width = maxSize;
+                        height = maxSize / aspectRatio;
+                    } else {
+                        height = maxSize;
+                        width = maxSize * aspectRatio;
+                    }
+                }
+
+                const imageElement: ImageElement = {
+                    id: Date.now().toString(),
+                    type: 'image',
+                    x: 50, // Default position
+                    y: 50,
+                    width,
+                    height,
+                    src,
+                    originalWidth: img.width,
+                    originalHeight: img.height,
+                    rotation: 0,
+                    opacity: opacity || 1,
+                    layerId: activeLayerId,
+                };
+
+                // Add to active layer
+                const activeElements = getActiveLayerElements();
+                const updatedElements = [...activeElements, imageElement];
+                updateActiveLayerElements(updatedElements);
+
+                // Switch to select tool to allow immediate manipulation
+                setTool('select');
+            };
+
+            img.src = src;
+        };
+
+        reader.readAsDataURL(file);
+
+        // Reset the input
+        if (fileInputRef.current) {
+            fileInputRef.current.value = '';
+        }
+    };
+
+    const triggerImageUpload = () => {
+        fileInputRef.current?.click();
+    };
+
     return (
         <div className="hidden md:flex w-16 flex-shrink-0 bg-white dark:bg-gray-800 border-r border-slate-200 dark:border-gray-700 flex-col items-center py-4 gap-2">
-            {/* Drawing tools */}
+            {/* Hidden file input */}
+            <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleImageUpload}
+                style={{ display: 'none' }}
+            />
+
+            {/* Selection and drawing tools */}
             <ToolButton
                 tool="select"
                 icon={MousePointer}
                 title={dict.drawing?.select || 'Select'}
             />
+
             <ToolButton
                 tool="pencil"
                 icon={Pencil}
                 title={dict.drawing?.pencil || 'Pencil'}
             />
+
             <ToolButton
                 tool="eraser"
                 icon={Eraser}
                 title={dict.drawing?.eraser || 'Eraser'}
             />
+
             <ToolButton
                 tool="bucket"
                 icon={Droplet}
@@ -88,26 +185,42 @@ const DesktopToolbar: React.FC<DesktopToolbarProps> = ({ dict, onClear }) => {
                 icon={Square}
                 title={dict.drawing?.rectangle || 'Rectangle'}
             />
+
             <ToolButton
                 tool="circle"
                 icon={CircleIcon}
                 title={dict.drawing?.circle || 'Circle'}
             />
+
             <ToolButton
                 tool="line"
                 icon={Minus}
                 title={dict.drawing?.line || 'Line'}
             />
+
             <ToolButton
                 tool="triangle"
                 icon={TriangleIcon}
                 title={dict.drawing?.triangle || 'Triangle'}
             />
+
             <ToolButton
                 tool="text"
                 icon={Type}
                 title={dict.drawing?.text || 'Text'}
             />
+
+            {/* Image tool */}
+            <button
+                className={`p-2 rounded-lg transition-colors duration-200 ${
+                    tool === 'image'
+                        ? 'bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400'
+                        : 'text-slate-600 dark:text-gray-400 hover:bg-slate-100 dark:hover:bg-gray-700'
+                }`}
+                onClick={triggerImageUpload}
+                title={dict.drawing?.image || 'Insert Image'}>
+                <ImageIcon className="h-5 w-5" />
+            </button>
 
             <div className="my-2 border-t border-slate-200 dark:border-gray-700 w-10"></div>
 

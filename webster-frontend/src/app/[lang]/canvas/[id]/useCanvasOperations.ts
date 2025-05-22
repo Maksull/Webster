@@ -13,6 +13,7 @@ import {
     Resolution,
     RectElement,
     TextElement,
+    ImageElement,
 } from '@/types/elements';
 import { API_URL } from '@/config';
 import { useDrawing } from '@/contexts';
@@ -153,6 +154,11 @@ export const useCanvasOperations = () => {
 
             return;
         }
+        if (tool === 'image') {
+            // Image tool should trigger file selection instead of mouse down behavior
+            // The actual image insertion is handled by the toolbar component
+            return;
+        }
         if (tool === 'select') {
             const shapes = stage.getAllIntersections(pos);
             const targetShapes = shapes.filter(
@@ -163,7 +169,8 @@ export const useCanvasOperations = () => {
                         shape.getClassName() === 'Circle' ||
                         shape.getClassName() === 'Line' ||
                         shape.getClassName() === 'RegularPolygon' ||
-                        shape.getClassName() === 'Text'),
+                        shape.getClassName() === 'Text' ||
+                        shape.getClassName() === 'Image'),
             );
 
             if (targetShapes.length > 0) {
@@ -508,6 +515,14 @@ export const useCanvasOperations = () => {
                                 y: textElement.y + dy,
                             };
 
+                        case 'image':
+                            const imageElement = element as ImageElement;
+                            return {
+                                ...imageElement,
+                                x: imageElement.x + dx,
+                                y: imageElement.y + dy,
+                            };
+
                         case 'line-shape':
                             const lineShapeElement =
                                 element as LineShapeElement;
@@ -710,6 +725,15 @@ export const useCanvasOperations = () => {
                     x - radius < rect.x + rect.width &&
                     y + radius > rect.y &&
                     y - radius < rect.y + rect.height
+                );
+            }
+            case 'image': {
+                const { x, y, width, height } = element;
+                return (
+                    x < rect.x + rect.width &&
+                    x + width > rect.x &&
+                    y < rect.y + rect.height &&
+                    y + height > rect.y
                 );
             }
             case 'line':
@@ -1000,6 +1024,12 @@ export const useCanvasOperations = () => {
                 const dy = y - ey;
                 return dx * dx + dy * dy <= radius * radius;
             }
+            case 'image': {
+                const { x: ex, y: ey, width, height } = element;
+                return (
+                    x >= ex && x <= ex + width && y >= ey && y <= ey + height
+                );
+            }
             case 'line':
             case 'line-shape': {
                 const { points } = element;
@@ -1163,19 +1193,16 @@ export const useCanvasOperations = () => {
                 if (element.type === 'line') {
                     const lineElement = element as LineElement;
                     const newPoints = [...lineElement.points];
-
                     for (let i = 0; i < newPoints.length; i += 2) {
                         newPoints[i] = newPoints[i] * scaleX;
                         newPoints[i + 1] = newPoints[i + 1] * scaleY;
                     }
-
                     return { ...lineElement, points: newPoints };
                 } else if (
                     element.type === 'rect' ||
                     element.type === 'rectangle'
                 ) {
-                    const rectElement = element as any; // Using any to handle both rect types
-
+                    const rectElement = element as any;
                     return {
                         ...rectElement,
                         x: rectElement.x * scaleX,
@@ -1185,7 +1212,6 @@ export const useCanvasOperations = () => {
                     };
                 } else if (element.type === 'circle') {
                     const circleElement = element as CircleElement;
-
                     return {
                         ...circleElement,
                         x: circleElement.x * scaleX,
@@ -1195,16 +1221,13 @@ export const useCanvasOperations = () => {
                 } else if (element.type === 'line-shape') {
                     const lineElement = element as LineShapeElement;
                     const newPoints = [...lineElement.points];
-
                     for (let i = 0; i < newPoints.length; i += 2) {
                         newPoints[i] = newPoints[i] * scaleX;
                         newPoints[i + 1] = newPoints[i + 1] * scaleY;
                     }
-
                     return { ...lineElement, points: newPoints };
                 } else if (element.type === 'triangle') {
                     const triangleElement = element as TriangleElement;
-
                     return {
                         ...triangleElement,
                         x: triangleElement.x * scaleX,
@@ -1212,11 +1235,18 @@ export const useCanvasOperations = () => {
                         radius:
                             triangleElement.radius * Math.min(scaleX, scaleY),
                     };
+                } else if (element.type === 'image') {
+                    const imageElement = element as ImageElement;
+                    return {
+                        ...imageElement,
+                        x: imageElement.x * scaleX,
+                        y: imageElement.y * scaleY,
+                        width: imageElement.width * scaleX,
+                        height: imageElement.height * scaleY,
+                    };
                 }
-
                 return element;
             });
-
             scaledElementsByLayer.set(layerId, scaledElements);
         }
 
