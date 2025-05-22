@@ -22,8 +22,8 @@ interface ElementRendererProps {
 const ElementRenderer: React.FC<ElementRendererProps> = ({
     element,
     isSelected,
-    onSelect,
     onTextEdit,
+    onSelect,
 }) => {
     const selectionProps = isSelected
         ? {
@@ -31,38 +31,22 @@ const ElementRenderer: React.FC<ElementRendererProps> = ({
               shadowBlur: 10,
               shadowOpacity: 0.6,
               shadowOffset: { x: 0, y: 0 },
-              strokeWidth: (element.strokeWidth || 1) + 2,
+              strokeWidth: (element.strokeWidth || 1) + 1,
               stroke: '#0066FF',
           }
         : {};
 
     const hitAreaProps = {
         // Increase hit area for better touch/click detection
-        perfectDrawEnabled: false,
+        perfectDrawEnabled: true,
         listening: true,
-        hitStrokeWidth: 10, // Make the hit area larger than the visual stroke
-    };
-
-    const handleClick = (e: any) => {
-        e.cancelBubble = true;
-
-        // Special handling for text elements - enable editing on double-click
-        if (element.type === 'text' && e.evt.type === 'dblclick') {
-            if (typeof onTextEdit === 'function') {
-                onTextEdit(element.id);
-            }
-            return;
-        }
-
-        onSelect(element.id);
+        hitStrokeWidth: 40, // Make the hit area larger than the visual stroke
     };
 
     // Common props for all shapes
     const commonProps = {
         id: element.id,
         name: `element-${element.id}`,
-        onClick: handleClick,
-        onTap: handleClick,
         ...hitAreaProps,
         ...(isSelected ? selectionProps : {}),
     };
@@ -162,32 +146,88 @@ const ElementRenderer: React.FC<ElementRendererProps> = ({
             );
         case 'text':
             const textElement = element as TextElement;
+
+            // Calculate text dimensions with padding for hit area
+            const textWidth =
+                textElement.width ||
+                (textElement.text?.length * textElement.fontSize) / 2 ||
+                20;
+            const textHeight = textElement.height || textElement.fontSize || 20;
+            const padding = 10;
+
             return (
-                <Text
-                    x={textElement.x}
-                    y={textElement.y}
-                    text={textElement.text}
-                    fontSize={textElement.fontSize}
-                    fontFamily={textElement.fontFamily}
-                    fill={textElement.fill}
-                    width={textElement.width}
-                    height={textElement.height}
-                    rotation={textElement.rotation || 0}
-                    onDblClick={e => {
-                        e.cancelBubble = true;
-                        if (typeof onTextEdit === 'function') {
-                            onTextEdit(element.id);
-                        }
-                    }}
-                    onDblTap={e => {
-                        e.cancelBubble = true;
-                        if (typeof onTextEdit === 'function') {
-                            onTextEdit(element.id);
-                        }
-                    }}
-                    {...commonProps}
-                    {...commonProps}
-                />
+                <>
+                    {/* Invisible hit area for better interaction */}
+                    <Rect
+                        x={textElement.x - padding}
+                        y={textElement.y - padding}
+                        width={textWidth + padding * 2}
+                        height={textHeight + padding * 2}
+                        stroke={isSelected ? '#0066FF' : 'black'}
+                        strokeWidth={1}
+                        opacity={0.3}
+                        fill="transparent"
+                        // Important: Use the same ID as the text element
+                        id={element.id}
+                        name={`element-${element.id}`}
+                        onClick={e => {
+                            e.cancelBubble = true;
+                            onSelect(element.id);
+                        }}
+                        onMouseDown={e => {
+                            // Don't cancel bubble here - let it propagate for drag detection
+                            onSelect(element.id);
+                        }}
+                        onDblClick={e => {
+                            e.cancelBubble = true;
+                            console.log('Text hit area double clicked');
+                            onTextEdit && onTextEdit(element.id);
+                        }}
+                        onDblTap={e => {
+                            e.cancelBubble = true;
+                            console.log('Text hit area double tapped');
+                            onTextEdit && onTextEdit(element.id);
+                        }}
+                        // Apply common props but override some behaviors
+                        perfectDrawEnabled={false}
+                        listening={true}
+                        hitStrokeWidth={20}
+                        {...(isSelected ? selectionProps : {})}
+                    />
+                    <Text
+                        x={textElement.x}
+                        y={textElement.y}
+                        text={textElement.text}
+                        fontSize={textElement.fontSize}
+                        fontFamily={textElement.fontFamily}
+                        fill={textElement.fill}
+                        width={textElement.width}
+                        height={textElement.height}
+                        rotation={textElement.rotation || 0}
+                        // Use the same ID as the hit area
+                        id={element.id}
+                        name={`element-${element.id}`}
+                        onClick={e => {
+                            e.cancelBubble = true;
+                            onSelect(element.id);
+                        }}
+                        onMouseDown={e => {
+                            // Don't cancel bubble here - let it propagate for drag detection
+                            onSelect(element.id);
+                        }}
+                        onDblClick={e => {
+                            e.cancelBubble = true;
+                            console.log('Text element double clicked');
+                            onTextEdit && onTextEdit(element.id);
+                        }}
+                        onDblTap={e => {
+                            e.cancelBubble = true;
+                            console.log('Text element double tapped');
+                            onTextEdit && onTextEdit(element.id);
+                        }}
+                        {...commonProps}
+                    />
+                </>
             );
         default:
             return null;

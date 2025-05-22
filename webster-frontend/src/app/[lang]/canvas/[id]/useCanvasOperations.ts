@@ -117,6 +117,8 @@ export const useCanvasOperations = () => {
 
     // Handle mouse down event on canvas
     const handleMouseDown = (e: any) => {
+        console.log('--------');
+        console.log('useCanvasOperations handleMouseDown', e);
         const stage = e.target.getStage();
         const pos = stage.getPointerPosition();
         const activeLayer = layers.find(layer => layer.id === activeLayerId);
@@ -152,10 +154,7 @@ export const useCanvasOperations = () => {
             return;
         }
         if (tool === 'select') {
-            // Use direct hit detection instead of relying on event bubbling
             const shapes = stage.getAllIntersections(pos);
-
-            // Filter out the background and find actionable shapes
             const targetShapes = shapes.filter(
                 shape =>
                     shape !== stage &&
@@ -168,129 +167,137 @@ export const useCanvasOperations = () => {
             );
 
             if (targetShapes.length > 0) {
-                // Now find which element this shape corresponds to
                 let foundElement = null;
                 let foundElementId = null;
 
-                // Loop through all elements in all layers
-                elementsByLayer.forEach((elements, layerId) => {
-                    elements.forEach(element => {
-                        // Add specific case for text elements
-                        if (
-                            element.type === 'text' &&
-                            targetShapes[0].getClassName() === 'Text'
-                        ) {
-                            const elementPos = { x: element.x, y: element.y };
-                            const shapePos = {
-                                x: targetShapes[0].attrs.x,
-                                y: targetShapes[0].attrs.y,
-                            };
-
-                            if (
-                                Math.abs(elementPos.x - shapePos.x) < 5 &&
-                                Math.abs(elementPos.y - shapePos.y) < 5
-                            ) {
+                // Check if we clicked on an element by looking at the shape's ID
+                for (const shape of targetShapes) {
+                    const shapeId = shape.attrs.id;
+                    if (shapeId) {
+                        // Look for the element with this ID in our element layers
+                        elementsByLayer.forEach((elements, layerId) => {
+                            const element = elements.find(
+                                el => el.id === shapeId,
+                            );
+                            if (element) {
                                 foundElement = element;
-                                foundElementId = element.id;
+                                foundElementId = shapeId;
                             }
-                        } else if (
-                            (element.type === 'rectangle' ||
-                                element.type === 'rect' ||
-                                element.type === 'circle' ||
-                                element.type === 'triangle') &&
-                            'x' in element &&
-                            'y' in element
-                        ) {
-                            // Existing logic for other element types
-                            const elementPos = { x: element.x, y: element.y };
-                            const shapePos = {
-                                x: targetShapes[0].attrs.x,
-                                y: targetShapes[0].attrs.y,
-                            };
+                        });
 
-                            if (
-                                Math.abs(elementPos.x - shapePos.x) < 5 &&
-                                Math.abs(elementPos.y - shapePos.y) < 5
-                            ) {
-                                foundElement = element;
-                                foundElementId = element.id;
-                            }
-                        } else if (
-                            element.type === 'line' ||
-                            element.type === 'line-shape'
-                        ) {
-                            // Existing logic for line elements
-                            if (
-                                targetShapes[0].getClassName() === 'Line' &&
-                                'points' in element &&
-                                'points' in targetShapes[0].attrs &&
-                                element.points.length > 0 &&
-                                targetShapes[0].attrs.points.length > 0
-                            ) {
+                        if (foundElement) break;
+                    }
+                }
+
+                // Fallback to position-based matching if ID lookup failed
+                if (!foundElement) {
+                    elementsByLayer.forEach((elements, layerId) => {
+                        elements.forEach(element => {
+                            if (element.type === 'text') {
+                                // For text elements, check if click is within the text bounds (with padding)
+                                const textWidth =
+                                    element.width ||
+                                    (element.text?.length * element.fontSize) /
+                                        2 ||
+                                    20;
+                                const textHeight =
+                                    element.height || element.fontSize || 20;
+                                const padding = 10;
+
                                 if (
-                                    Math.abs(
-                                        element.points[0] -
-                                            targetShapes[0].attrs.points[0],
-                                    ) < 5 &&
-                                    Math.abs(
-                                        element.points[1] -
-                                            targetShapes[0].attrs.points[1],
-                                    ) < 5
+                                    pos.x >= element.x - padding &&
+                                    pos.x <= element.x + textWidth + padding &&
+                                    pos.y >= element.y - padding &&
+                                    pos.y <= element.y + textHeight + padding
                                 ) {
                                     foundElement = element;
                                     foundElementId = element.id;
                                 }
+                            } else if (
+                                (element.type === 'rectangle' ||
+                                    element.type === 'rect' ||
+                                    element.type === 'circle' ||
+                                    element.type === 'triangle') &&
+                                'x' in element &&
+                                'y' in element
+                            ) {
+                                // Existing logic for other shapes
+                                const elementPos = {
+                                    x: element.x,
+                                    y: element.y,
+                                };
+                                const shapePos = {
+                                    x: targetShapes[0].attrs.x,
+                                    y: targetShapes[0].attrs.y,
+                                };
+                                if (
+                                    Math.abs(elementPos.x - shapePos.x) < 5 &&
+                                    Math.abs(elementPos.y - shapePos.y) < 5
+                                ) {
+                                    foundElement = element;
+                                    foundElementId = element.id;
+                                }
+                            } else if (
+                                element.type === 'line' ||
+                                element.type === 'line-shape'
+                            ) {
+                                // Existing line logic
+                                if (
+                                    targetShapes[0].getClassName() === 'Line' &&
+                                    'points' in element &&
+                                    'points' in targetShapes[0].attrs &&
+                                    element.points.length > 0 &&
+                                    targetShapes[0].attrs.points.length > 0
+                                ) {
+                                    if (
+                                        Math.abs(
+                                            element.points[0] -
+                                                targetShapes[0].attrs.points[0],
+                                        ) < 5 &&
+                                        Math.abs(
+                                            element.points[1] -
+                                                targetShapes[0].attrs.points[1],
+                                        ) < 5
+                                    ) {
+                                        foundElement = element;
+                                        foundElementId = element.id;
+                                    }
+                                }
                             }
-                        }
+                        });
                     });
-                });
+                }
 
                 if (foundElement && foundElementId) {
-                    // Check if shift key is pressed for multi-select
                     const isShiftPressed =
                         e.evt && (e.evt.shiftKey || e.evt.ctrlKey);
 
                     if (isShiftPressed) {
-                        // Toggle selection of the clicked element
                         const newSelectedIds = [...selectedElementIds];
                         const index = newSelectedIds.indexOf(foundElementId);
-
                         if (index !== -1) {
-                            // Remove if already selected
                             newSelectedIds.splice(index, 1);
                         } else {
-                            // Add if not selected
                             newSelectedIds.push(foundElementId);
                         }
-
                         setSelectedElementIds(newSelectedIds);
                     } else {
-                        // If element is already selected and no shift key, keep selection for dragging
                         if (!selectedElementIds.includes(foundElementId)) {
                             setSelectedElementIds([foundElementId]);
                         }
                     }
 
+                    // Set up for potential dragging
                     setIsMoving(true);
                     dragStartPos.current = pos;
                 } else if (!e.evt.shiftKey) {
-                    // Clear selection only if shift is not pressed
                     setSelectedElementIds([]);
                 }
             } else {
-                // Start area selection if we're clicking on empty space
                 if (!e.evt.shiftKey) {
                     setSelectedElementIds([]);
                 }
-
-                // Start selection rectangle
-                setSelectionRect({
-                    x: pos.x,
-                    y: pos.y,
-                    width: 0,
-                    height: 0,
-                });
-
+                setSelectionRect({ x: pos.x, y: pos.y, width: 0, height: 0 });
                 setIsSelecting(true);
                 setStartPoint({ x: pos.x, y: pos.y });
             }
