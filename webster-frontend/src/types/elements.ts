@@ -91,6 +91,21 @@ export interface TextElement {
     rotation?: number;
 }
 
+export interface ImageElement {
+    id: string;
+    type: 'image';
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+    src: string; // base64 data URL or image URL
+    originalWidth: number;
+    originalHeight: number;
+    rotation?: number;
+    opacity?: number;
+    layerId: string;
+}
+
 export type DrawingElement =
     | LineElement
     | RectElement
@@ -98,6 +113,7 @@ export type DrawingElement =
     | LineShapeElement
     | RectangleElement
     | TriangleElement
+    | ImageElement
     | TextElement;
 
 export interface Resolution {
@@ -115,6 +131,7 @@ export type ToolType =
     | 'line'
     | 'triangle'
     | 'select'
+    | 'image'
     | 'text';
 
 export const POPULAR_RESOLUTIONS: Resolution[] = [
