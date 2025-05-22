@@ -40,6 +40,7 @@ const Canvas: React.FC<CanvasProps> = ({
         textEditingId,
         textValue,
         setTextValue,
+        activeLayerId,
     } = useDrawing();
 
     // Add selection rectangle state directly in Canvas component
@@ -47,22 +48,42 @@ const Canvas: React.FC<CanvasProps> = ({
     const [isSelecting, setIsSelecting] = useState(false);
     const { handleTextEdit, handleTextEditDone } = useCanvasOperations();
 
-    const handleStageClick = (e: any) => {
-        // Don't clear selection if we clicked on a text element
+    const [lastClickInfo, setLastClickInfo] = useState({
+        time: 0,
+        target: null,
+    });
+
+    const handleStageClick = e => {
+        console.log('----------------');
+        console.log('Canvas.handleStageClick', e);
+
         const stage = e.target.getStage();
         if (!stage) return;
 
         const pos = stage.getPointerPosition();
-
-        // Check if we clicked on a text element
         const layers = stage.getLayers();
         let hitText = false;
 
-        // Check all layers for text hits
+        // Check if we clicked on a text element with more generous hit area
         layers.forEach(layer => {
             const textNodes = layer.find('Text');
             textNodes.forEach(textNode => {
-                const textNodeRect = textNode.getClientRect();
+                const textNodeWidth =
+                    textNode.width() ||
+                    (textNode.text()?.length * textNode.fontSize()) / 2 ||
+                    20;
+                const textNodeHeight =
+                    textNode.height() || textNode.fontSize() || 20;
+
+                // Add padding to the hit area
+                const padding = 10;
+                const textNodeRect = {
+                    x: textNode.x() - padding,
+                    y: textNode.y() - padding,
+                    width: textNodeWidth + padding * 2,
+                    height: textNodeHeight + padding * 2,
+                };
+
                 if (
                     pos.x >= textNodeRect.x &&
                     pos.x <= textNodeRect.x + textNodeRect.width &&
@@ -70,6 +91,23 @@ const Canvas: React.FC<CanvasProps> = ({
                     pos.y <= textNodeRect.y + textNodeRect.height
                 ) {
                     hitText = true;
+
+                    // Don't clear selection if we hit a text element
+                    const now = Date.now();
+                    const lastClickTime = textNode.attrs._lastClickTime || 0;
+
+                    // Store the click time on the node for double-click detection
+                    textNode.attrs._lastClickTime = now;
+
+                    // Check if this is a double click (within 300ms)
+                    if (now - lastClickTime < 300) {
+                        console.log('Double click detected on text');
+                        // Find the element ID and trigger text edit
+                        const elementId = textNode.attrs.id;
+                        if (elementId && typeof handleTextEdit === 'function') {
+                            handleTextEdit(elementId);
+                        }
+                    }
                 }
             });
         });
@@ -82,19 +120,65 @@ const Canvas: React.FC<CanvasProps> = ({
 
     // Custom mouse handlers that incorporate selection rectangle
     const handleCanvasMouseDown = e => {
-        // If we're using the select tool and clicking on the stage (not an element)
-        if (tool === 'select' && e.target === e.target.getStage()) {
-            const stage = e.target.getStage();
-            const pos = stage.getPointerPosition();
+        console.log('----------------');
+        console.log('Canvas.handleCanvasMouseDown', e);
 
-            // Start selection rectangle
-            setSelectionRect({
-                x: pos.x,
-                y: pos.y,
-                width: 0,
-                height: 0,
-            });
-            setIsSelecting(true);
+        const stage = e.target.getStage();
+        const pos = stage.getPointerPosition();
+        const now = Date.now();
+
+        // Check for double click on any element (including text)
+        if (
+            e.target === lastClickInfo.target &&
+            now - lastClickInfo.time < 300
+        ) {
+            console.log('Double click detected manually');
+
+            // If it's a Text node or Rect with text element ID, trigger edit
+            if (
+                e.target.className === 'Text' ||
+                (e.target.className === 'Rect' &&
+                    e.target.attrs.id &&
+                    elementsByLayer
+                        .get(activeLayerId)
+                        ?.find(
+                            el =>
+                                el.id === e.target.attrs.id &&
+                                el.type === 'text',
+                        ))
+            ) {
+                const elementId = e.target.attrs.id;
+                if (elementId) {
+                    console.log(
+                        'Double click on text, starting edit:',
+                        elementId,
+                    );
+                    handleTextEdit(elementId);
+                    e.cancelBubble = true;
+
+                    // Reset click info
+                    setLastClickInfo({ time: 0, target: null });
+                    return;
+                }
+            }
+        }
+
+        // Store current click info for future double click detection
+        setLastClickInfo({ time: now, target: e.target });
+
+        if (tool === 'select') {
+            // Simplified selection logic - let the main handler in useCanvasOperations deal with it
+            // Only start rectangle selection if we clicked on the stage itself
+            if (e.target === e.target.getStage()) {
+                console.log('Starting rectangle selection');
+                setSelectionRect({
+                    x: pos.x,
+                    y: pos.y,
+                    width: 0,
+                    height: 0,
+                });
+                setIsSelecting(true);
+            }
         }
 
         // Call the original mouse down handler
