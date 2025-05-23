@@ -71,6 +71,9 @@ export const useCanvasOperations = () => {
     const [selectionRect, setSelectionRect] = useState(null);
     const [isSelecting, setIsSelecting] = useState(false);
 
+    const lastMousePos = useRef({ x: 0, y: 0 }); // Add this new ref
+    const dragOffset = useRef({ x: 0, y: 0 });
+
     // Handle resize
     useEffect(() => {
         return () => {
@@ -294,9 +297,15 @@ export const useCanvasOperations = () => {
                         }
                     }
 
-                    // Set up for potential dragging
+                    // Clear selection rectangle when starting to move
+                    setSelectionRect(null);
+                    setIsSelecting(false);
+
+                    // Set up for dragging with improved tracking
                     setIsMoving(true);
                     dragStartPos.current = pos;
+                    lastMousePos.current = pos; // Track last mouse position
+                    dragOffset.current = { x: 0, y: 0 }; // Reset offset
                 } else if (!e.evt.shiftKey) {
                     setSelectedElementIds([]);
                 }
@@ -431,10 +440,9 @@ export const useCanvasOperations = () => {
 
     // Handle mouse move event on canvas
     const handleMouseMove = (e: any) => {
-        // Update condition to include isSelecting
+        // Update condition to include isSelecting but prioritize isMoving
         if (!isDrawing && !isMoving && !isSelecting) return;
 
-        // Rest of your existing code...
         const activeLayer = layers.find(layer => layer.id === activeLayerId);
         if (!activeLayer || !activeLayer.visible || activeLayer.locked) return;
 
@@ -442,35 +450,23 @@ export const useCanvasOperations = () => {
         const point = stage.getPointerPosition();
         const pos = stage.getPointerPosition();
 
-        // Handle area selection
-        if (isSelecting && tool === 'select') {
-            if (!startPoint) return;
-
-            setSelectionRect({
-                x: Math.min(startPoint.x, pos.x),
-                y: Math.min(startPoint.y, pos.y),
-                width: Math.abs(pos.x - startPoint.x),
-                height: Math.abs(pos.y - startPoint.y),
-            });
-
-            return;
-        }
-
+        // Handle element movement first (highest priority)
         if (isMoving && selectedElementIds.length > 0) {
-            const dx = pos.x - dragStartPos.current.x;
-            const dy = pos.y - dragStartPos.current.y;
+            // Calculate delta from last mouse position (not from start)
+            const dx = pos.x - lastMousePos.current.x;
+            const dy = pos.y - lastMousePos.current.y;
 
-            // Update position of all selected elements
+            // Update cumulative offset
+            dragOffset.current.x += dx;
+            dragOffset.current.y += dy;
+
             const updatedElementsByLayer = new Map(elementsByLayer);
-
-            // For each layer
             updatedElementsByLayer.forEach((elements, layerId) => {
                 const updatedElements = elements.map(element => {
                     if (!selectedElementIds.includes(element.id)) {
                         return element;
                     }
 
-                    // Move the element based on its type
                     switch (element.type) {
                         case 'line':
                             const lineElement = element as LineElement;
@@ -507,6 +503,7 @@ export const useCanvasOperations = () => {
                                 x: triangleElement.x + dx,
                                 y: triangleElement.y + dy,
                             };
+
                         case 'text':
                             const textElement = element as TextElement;
                             return {
@@ -540,32 +537,43 @@ export const useCanvasOperations = () => {
                             return element;
                     }
                 });
-
                 updatedElementsByLayer.set(layerId, updatedElements);
             });
 
             setElementsByLayer(updatedElementsByLayer);
-            dragStartPos.current = pos;
+
+            // Update last mouse position for next iteration
+            lastMousePos.current = pos;
+            return; // Exit early to prevent selection rectangle updates
+        }
+
+        // Handle area selection only if not moving
+        if (isSelecting && tool === 'select' && !isMoving) {
+            if (!startPoint) return;
+
+            setSelectionRect({
+                x: Math.min(startPoint.x, pos.x),
+                y: Math.min(startPoint.y, pos.y),
+                width: Math.abs(pos.x - startPoint.x),
+                height: Math.abs(pos.y - startPoint.y),
+            });
+
             return;
         }
 
-        // Get active layer elements
+        // Rest of existing drawing logic for shapes and lines...
         const activeElements = getActiveLayerElements();
         if (activeElements.length === 0) return;
 
         const lastElement = activeElements[activeElements.length - 1];
 
         if (tool === 'rectangle' && lastElement.type === 'rectangle') {
-            // For rectangle, update width and height based on drag
             if (!startPoint) return;
-
             const updatedRect: RectangleElement = {
                 ...(lastElement as RectangleElement),
                 width: point.x - startPoint.x,
                 height: point.y - startPoint.y,
             };
-
-            // Replace the last element
             const updatedElements = [
                 ...activeElements.slice(0, -1),
                 updatedRect,
@@ -575,20 +583,14 @@ export const useCanvasOperations = () => {
         }
 
         if (tool === 'circle' && lastElement.type === 'circle') {
-            // For circle, update radius based on distance from start
             if (!startPoint) return;
-
-            // Calculate radius as distance from center
             const dx = point.x - startPoint.x;
             const dy = point.y - startPoint.y;
             const radius = Math.sqrt(dx * dx + dy * dy);
-
             const updatedCircle: CircleElement = {
                 ...(lastElement as CircleElement),
                 radius,
             };
-
-            // Replace the last element
             const updatedElements = [
                 ...activeElements.slice(0, -1),
                 updatedCircle,
@@ -598,15 +600,11 @@ export const useCanvasOperations = () => {
         }
 
         if (tool === 'line' && lastElement.type === 'line-shape') {
-            // For line, update end point
             if (!startPoint) return;
-
             const updatedLine: LineShapeElement = {
                 ...(lastElement as LineShapeElement),
                 points: [startPoint.x, startPoint.y, point.x, point.y],
             };
-
-            // Replace the last element
             const updatedElements = [
                 ...activeElements.slice(0, -1),
                 updatedLine,
@@ -616,20 +614,14 @@ export const useCanvasOperations = () => {
         }
 
         if (tool === 'triangle' && lastElement.type === 'triangle') {
-            // For triangle, update size based on distance from start
             if (!startPoint) return;
-
-            // Calculate radius as distance from center to corner
             const dx = point.x - startPoint.x;
             const dy = point.y - startPoint.y;
             const radius = Math.sqrt(dx * dx + dy * dy);
-
             const updatedTriangle: TriangleElement = {
                 ...(lastElement as TriangleElement),
                 radius,
             };
-
-            // Replace the last element
             const updatedElements = [
                 ...activeElements.slice(0, -1),
                 updatedTriangle,
@@ -639,11 +631,8 @@ export const useCanvasOperations = () => {
         }
 
         if (lastElement.type === 'line') {
-            // Add point to the last line
             const lineElement = lastElement as LineElement;
             lineElement.points = lineElement.points.concat([point.x, point.y]);
-
-            // Replace last element with updated one
             const updatedElements = [
                 ...activeElements.slice(0, -1),
                 lineElement,
@@ -654,11 +643,9 @@ export const useCanvasOperations = () => {
 
     // Handle mouse up event on canvas
     const handleMouseUp = () => {
-        if (isSelecting && selectionRect) {
-            // Finalize area selection
+        // Handle selection rectangle completion (only if not moving)
+        if (isSelecting && selectionRect && !isMoving) {
             const newSelectedIds = [];
-
-            // Find all elements that intersect with the selection rectangle
             elementsByLayer.forEach((elements, layerId) => {
                 elements.forEach(element => {
                     if (isElementInSelectionRect(element, selectionRect)) {
@@ -667,7 +654,6 @@ export const useCanvasOperations = () => {
                 });
             });
 
-            // If shift key is pressed, add to existing selection
             if (
                 window.event &&
                 (window.event.shiftKey || window.event.ctrlKey)
@@ -683,11 +669,15 @@ export const useCanvasOperations = () => {
             setSelectionRect(null);
         }
 
+        // Handle end of moving
         if (isMoving) {
             setIsMoving(false);
+            // Reset drag tracking
+            dragOffset.current = { x: 0, y: 0 };
             recordHistory();
         }
 
+        // Handle end of drawing
         setIsDrawing(false);
         setStartPoint(null);
 

@@ -37,9 +37,6 @@ export class Canvas {
     @Column({ type: 'uuid' })
     userId!: string;
 
-    @Column({ type: 'timestamp', nullable: true })
-    lastModified?: Date | null;
-
     @CreateDateColumn({ type: 'timestamp' })
     createdAt!: Date;
 
