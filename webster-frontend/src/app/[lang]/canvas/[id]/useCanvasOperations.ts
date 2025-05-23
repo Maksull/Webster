@@ -1350,7 +1350,10 @@ export const useCanvasOperations = () => {
     const handleSave = async () => {
         if (!stageRef.current) {
             console.error('Cannot save: Stage reference not available');
-            return;
+            return {
+                success: false,
+                message: `Failed to save canvas`,
+            };
         }
 
         try {
@@ -1398,12 +1401,13 @@ export const useCanvasOperations = () => {
                 throw new Error(errorData.message || 'Failed to save canvas');
             }
 
-            alert('Drawing saved successfully!');
+            return { success: true, message: 'Drawing saved successfully!' };
         } catch (error) {
             console.error('Error saving canvas:', error);
-            alert(
-                `Failed to save canvas: ${error instanceof Error ? error.message : 'Unknown error'}`,
-            );
+            return {
+                success: false,
+                message: `Failed to save canvas: ${error instanceof Error ? error.message : 'Unknown error'}`,
+            };
         }
     };
 

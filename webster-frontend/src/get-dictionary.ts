@@ -198,6 +198,12 @@ export type Dictionary = {
         canvasSize: string;
         toolSettings: string;
         brushSize: string;
+        text: string;
+        image: string;
+        opacity: string;
+        textStyles: string;
+        fontSize: string;
+        fontFamily: string;
     };
     transparentBackground: string;
 };

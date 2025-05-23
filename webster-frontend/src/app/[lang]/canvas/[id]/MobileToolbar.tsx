@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import ToolButton from './ToolButton';
 import {
     Pencil,
@@ -21,6 +21,7 @@ import {
 import { useHistory } from './useHistory';
 import { useDrawing } from '@/contexts';
 import { ImageElement } from '@/types/elements';
+import AlertModal from '@/components/AlertModal';
 
 const MobileToolbar: React.FC = () => {
     const {
@@ -39,20 +40,39 @@ const MobileToolbar: React.FC = () => {
 
     const { handleUndo, handleRedo, canUndo, canRedo } = useHistory();
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const [modal, setModal] = useState({
+        open: false,
+        type: 'success' as 'success' | 'error',
+        message: '',
+    });
+
+    const notify = (type: 'success' | 'error', message: string) => {
+        setModal({ open: true, type, message });
+    };
+
+    const handleImageUploadWithNotify = async (
+        event: React.ChangeEvent<HTMLInputElement>,
+    ) => {
+        const result = handleImageUpload(event);
+        notify(result.success ? 'success' : 'error', result.message);
+    };
 
     const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
         if (!file || !file.type.startsWith('image/')) {
-            alert('Please select a valid image file');
-            return;
+            return {
+                success: false,
+                message: 'Please select a valid image file',
+            };
         }
 
         // Check file size (limit to 10MB)
         if (file.size > 10 * 1024 * 1024) {
-            alert(
-                'Image file is too large. Please select an image smaller than 10MB.',
-            );
-            return;
+            return {
+                success: false,
+                message:
+                    'Image file is too large. Please select an image smaller than 10MB.',
+            };
         }
 
         const reader = new FileReader();
@@ -111,6 +131,11 @@ const MobileToolbar: React.FC = () => {
         if (fileInputRef.current) {
             fileInputRef.current.value = '';
         }
+
+        return {
+            success: true,
+            message: 'Image is being uploaded and added to the canvas.',
+        };
     };
 
     const triggerImageUpload = () => {
@@ -119,12 +144,18 @@ const MobileToolbar: React.FC = () => {
 
     return (
         <div className="md:hidden flex justify-center items-center h-12 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 flex-shrink-0 overflow-x-auto">
+            <AlertModal
+                open={modal.open}
+                type={modal.type}
+                message={modal.message}
+                onClose={() => setModal({ ...modal, open: false })}
+            />
             {/* Hidden file input */}
             <input
                 ref={fileInputRef}
                 type="file"
                 accept="image/*"
-                onChange={handleImageUpload}
+                onChange={handleImageUploadWithNotify}
                 style={{ display: 'none' }}
             />
 

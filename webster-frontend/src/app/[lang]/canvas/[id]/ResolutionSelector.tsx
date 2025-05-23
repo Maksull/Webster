@@ -1,5 +1,6 @@
 'use client';
 
+import AlertModal from '@/components/AlertModal';
 import { useDrawing } from '@/contexts';
 import { Dictionary } from '@/get-dictionary';
 import { POPULAR_RESOLUTIONS, Resolution } from '@/types/elements';
@@ -21,12 +22,22 @@ const ResolutionSelector: React.FC<ResolutionSelectorProps> = ({
         dimensions.height.toString(),
     );
 
+    const [modal, setModal] = useState({
+        open: false,
+        type: 'success' as 'success' | 'error',
+        message: '',
+    });
+
     const handleCustomResolutionSubmit = () => {
         const width = parseInt(customWidth, 10);
         const height = parseInt(customHeight, 10);
 
         if (isNaN(width) || isNaN(height) || width < 100 || height < 100) {
-            alert('Please enter valid dimensions (minimum 100x100)');
+            setModal({
+                open: true,
+                type: 'error',
+                message: 'Please enter valid dimensions (minimum 100x100)',
+            });
             return;
         }
 
@@ -37,10 +48,21 @@ const ResolutionSelector: React.FC<ResolutionSelectorProps> = ({
         };
 
         onResolutionChange(customResolution);
+        setModal({
+            open: true,
+            type: 'success',
+            message: 'Resolution succesfully changed!',
+        });
     };
 
     return (
         <div className="mb-4">
+            <AlertModal
+                open={modal.open}
+                type={modal.type}
+                message={modal.message}
+                onClose={() => setModal({ ...modal, open: false })}
+            />
             <label className="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-2">
                 {dict.drawing?.canvasSize || 'Canvas Size'}
             </label>

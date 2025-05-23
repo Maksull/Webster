@@ -1,8 +1,9 @@
 'use client';
 
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import { useDrawing } from '@/contexts';
 import { ImageElement } from '@/types/elements';
+import AlertModal from '@/components/AlertModal';
 
 interface ImageUploaderProps {
     onImageInsert: (imageElement: ImageElement) => void;
@@ -11,20 +12,38 @@ interface ImageUploaderProps {
 const ImageUploader: React.FC<ImageUploaderProps> = ({ onImageInsert }) => {
     const fileInputRef = useRef<HTMLInputElement>(null);
     const { activeLayerId, color, opacity } = useDrawing();
+    const [modal, setModal] = useState({
+        open: false,
+        type: 'success' as 'success' | 'error',
+        message: '',
+    });
 
+    const notify = (type: 'success' | 'error', message: string) => {
+        setModal({ open: true, type, message });
+    };
+
+    const handleFileSelectWithNotify = async (
+        event: React.ChangeEvent<HTMLInputElement>,
+    ) => {
+        const result = handleFileSelect(event);
+        notify(result.success ? 'success' : 'error', result.message);
+    };
     const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
         if (!file || !file.type.startsWith('image/')) {
-            alert('Please select a valid image file');
-            return;
+            return {
+                success: false,
+                message: 'Please select a valid image file',
+            };
         }
 
         // Check file size (limit to 10MB)
         if (file.size > 10 * 1024 * 1024) {
-            alert(
-                'Image file is too large. Please select an image smaller than 10MB.',
-            );
-            return;
+            return {
+                success: false,
+                message:
+                    'Image file is too large. Please select an image smaller than 10MB.',
+            };
         }
 
         const reader = new FileReader();
@@ -77,6 +96,10 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({ onImageInsert }) => {
         if (fileInputRef.current) {
             fileInputRef.current.value = '';
         }
+        return {
+            success: true,
+            message: 'Image is being uploaded and added to the canvas.',
+        };
     };
 
     const triggerFileSelect = () => {
@@ -85,11 +108,17 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({ onImageInsert }) => {
 
     return (
         <>
+            <AlertModal
+                open={modal.open}
+                type={modal.type}
+                message={modal.message}
+                onClose={() => setModal({ ...modal, open: false })}
+            />
             <input
                 ref={fileInputRef}
                 type="file"
                 accept="image/*"
-                onChange={handleFileSelect}
+                onChange={handleFileSelectWithNotify}
                 style={{ display: 'none' }}
             />
             <button

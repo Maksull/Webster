@@ -48,8 +48,10 @@ export const useLayers = () => {
     // Delete a layer
     const deleteLayer = (layerId: string) => {
         if (layers.length <= 1) {
-            alert('Cannot delete the only layer');
-            return;
+            return {
+                success: false,
+                message: 'Cannot delete the only layer',
+            };
         }
 
         const updatedLayers = layers.filter(layer => layer.id !== layerId);
@@ -70,6 +72,10 @@ export const useLayers = () => {
         });
         setHistory(newHistory);
         setHistoryStep(newHistory.length - 1);
+        return {
+            success: true,
+            message: 'Layer deleted successfully!',
+        };
     };
 
     // Toggle layer visibility
