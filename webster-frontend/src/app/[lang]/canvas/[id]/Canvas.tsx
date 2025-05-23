@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Stage, Layer, Rect } from 'react-konva';
+import { Stage, Layer, Rect, Circle } from 'react-konva';
 import LayerRenderer from './LayerRenderer';
 import { useDrawing } from '@/contexts';
 import CanvasResizeHandles from './CanvasResizeHandles';
@@ -45,6 +45,9 @@ const Canvas: React.FC<CanvasProps> = ({
 
     // Add selection rectangle state directly in Canvas component
     const [selectionRect, setSelectionRect] = useState(null);
+    const [cursorPosition, setCursorPosition] = useState({ x: 0, y: 0 });
+    const { strokeWidth } = useDrawing();
+    const { color } = useDrawing();
     const [isSelecting, setIsSelecting] = useState(false);
     const { handleTextEdit, handleTextEditDone } = useCanvasOperations();
 
@@ -186,10 +189,13 @@ const Canvas: React.FC<CanvasProps> = ({
     };
 
     const handleCanvasMouseMove = e => {
+        const stage = e.target.getStage();
+        const pos = stage.getPointerPosition();
+        if (pos && (tool === 'pencil' || tool === 'eraser')) {
+            setCursorPosition(pos);
+        }
         // Update selection rectangle if we're selecting
         if (isSelecting && tool === 'select') {
-            const stage = e.target.getStage();
-            const pos = stage.getPointerPosition();
             const startX = selectionRect.x;
             const startY = selectionRect.y;
 
@@ -367,7 +373,9 @@ const Canvas: React.FC<CanvasProps> = ({
                                 ? 'cursor-pointer'
                                 : tool === 'select'
                                   ? 'cursor-default'
-                                  : 'cursor-crosshair'
+                                  : tool === 'pencil' || tool === 'eraser'
+                                    ? 'cursor-none'
+                                    : 'cursor-crosshair'
                         }`}>
                         <Layer>
                             <Rect
@@ -439,6 +447,23 @@ const Canvas: React.FC<CanvasProps> = ({
                                     fill="#0066FF"
                                     opacity={0.1}
                                     listening={false}
+                                />
+                            </Layer>
+                        )}
+                        {(tool === 'pencil' || tool === 'eraser') && (
+                            <Layer listening={false}>
+                                <Circle
+                                    x={cursorPosition.x}
+                                    y={cursorPosition.y}
+                                    radius={Math.max(strokeWidth / 2, 6)} // Ensure visibility even if strokeWidth is small
+                                    stroke="rgba(0, 0, 0, 0.6)"
+                                    strokeWidth={1}
+                                    dash={[2, 2]}
+                                    fill={
+                                        tool === 'pencil'
+                                            ? `${color}80`
+                                            : 'transparent'
+                                    }
                                 />
                             </Layer>
                         )}
