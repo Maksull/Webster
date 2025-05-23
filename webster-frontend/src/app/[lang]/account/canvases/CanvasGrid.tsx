@@ -25,7 +25,7 @@ export default function CanvasGrid({
             {canvases.map(canvas => (
                 <div
                     key={canvas.id}
-                    className="group relative bg-gray-50 dark:bg-gray-700 rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-all duration-200">
+                    className="group relative bg-gray-50 dark:bg-gray-700 rounded-lg overflow-hidden shadow-sm hover:shadow-xl hover:shadow-purple-500/10 hover:scale-[1.02] transition-all duration-300 ease-out">
                     <div className="relative aspect-video bg-gray-100 dark:bg-gray-600 overflow-hidden">
                         {canvas.thumbnail ? (
                             <div
@@ -38,13 +38,8 @@ export default function CanvasGrid({
                                 <ImageIcon className="h-8 w-8" />
                             </div>
                         )}
-                        {/* Canvas background color overlay */}
-                        <div
-                            className="absolute inset-0 bg-opacity-20 group-hover:opacity-80 transition-opacity duration-300"
-                            style={{
-                                backgroundColor:
-                                    canvas.backgroundColor || '#FFFFFF',
-                            }}></div>
+                        {/* Hover gradient overlay */}
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 ease-out"></div>
                     </div>
 
                     <div className="p-4">
@@ -59,10 +54,10 @@ export default function CanvasGrid({
                                 </p>
                             </div>
 
-                            <div className="flex space-x-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                            <div className="flex space-x-1 opacity-0 group-hover:opacity-100 transition-all duration-300 ease-out transform translate-y-1 group-hover:translate-y-0">
                                 <Link
                                     href={`/${lang}/canvas/${canvas.id}`}
-                                    className="p-1 text-gray-500 dark:text-gray-400 hover:text-purple-600 dark:hover:text-purple-400"
+                                    className="p-1 text-gray-500 dark:text-gray-400 hover:text-purple-600 dark:hover:text-purple-400 hover:bg-white/20 dark:hover:bg-gray-800/50 rounded transition-all duration-200"
                                     title={
                                         dict.account?.editCanvas ||
                                         'Edit canvas'
@@ -77,7 +72,7 @@ export default function CanvasGrid({
                                         deleteCanvas(canvas.id);
                                     }}
                                     disabled={isDeleting === canvas.id}
-                                    className="p-1 text-gray-500 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 disabled:opacity-50 relative z-20"
+                                    className="p-1 text-gray-500 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-white/20 dark:hover:bg-gray-800/50 rounded disabled:opacity-50 relative z-20 transition-all duration-200"
                                     title={
                                         dict.account?.deleteCanvas ||
                                         'Delete canvas'
@@ -92,7 +87,7 @@ export default function CanvasGrid({
                         </div>
 
                         <div className="mt-2">
-                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 dark:bg-purple-900/50 text-purple-800 dark:text-purple-300">
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 dark:bg-purple-900/50 text-purple-800 dark:text-purple-300 group-hover:bg-purple-200 dark:group-hover:bg-purple-800/60 transition-colors duration-300">
                                 {canvas.width}x{canvas.height}
                             </span>
                         </div>
