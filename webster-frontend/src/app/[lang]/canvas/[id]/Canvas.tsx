@@ -462,7 +462,7 @@ const Canvas: React.FC<CanvasProps> = ({
                                     fill={
                                         tool === 'pencil'
                                             ? `${color}80`
-                                            : 'transparent'
+                                            : 'white'
                                     }
                                 />
                             </Layer>
