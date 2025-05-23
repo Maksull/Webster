@@ -48,9 +48,6 @@ export default function CanvasManager() {
                             ...canvas,
                             createdAt: new Date(canvas.createdAt),
                             updatedAt: new Date(canvas.updatedAt),
-                            lastModified: canvas.lastModified
-                                ? new Date(canvas.lastModified)
-                                : null,
                         }),
                     );
                     setCanvases(processedCanvases);
@@ -167,14 +164,10 @@ export default function CanvasManager() {
             return (
                 Number(new Date(b.createdAt)) - Number(new Date(a.createdAt))
             );
-        } else if (sortBy === 'lastModified') {
-            const bDate = b.lastModified
-                ? Number(new Date(b.lastModified))
-                : Number(new Date(b.updatedAt));
-            const aDate = a.lastModified
-                ? Number(new Date(a.lastModified))
-                : Number(new Date(a.updatedAt));
-            return bDate - aDate;
+        } else if (sortBy === 'updatedAt') {
+            return (
+                Number(new Date(b.updatedAt)) - Number(new Date(a.updatedAt))
+            );
         }
         return 0;
     });

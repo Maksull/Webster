@@ -15,7 +15,6 @@ export class CanvasService {
         const canvas = this.canvasRepository.create({
             ...data,
             userId,
-            lastModified: new Date(),
         });
 
         const savedCanvas = await this.canvasRepository.save(canvas);
@@ -25,7 +24,7 @@ export class CanvasService {
     async getUserCanvases(userId: string): Promise<CanvasResponseDto[]> {
         const canvases = await this.canvasRepository.find({
             where: { userId },
-            order: { lastModified: 'DESC' },
+            order: { updatedAt: 'DESC' },
         });
 
         return canvases.map(canvas => this.mapToResponseDto(canvas));
@@ -64,7 +63,6 @@ export class CanvasService {
         const updatedCanvas = {
             ...canvas,
             ...data,
-            lastModified: new Date(),
         };
 
         await this.canvasRepository.save(updatedCanvas);
@@ -108,7 +106,6 @@ export class CanvasService {
             elementsByLayer: canvas.elementsByLayer,
             thumbnail: canvas.thumbnail ?? null,
             userId: canvas.userId,
-            lastModified: canvas.lastModified ?? null,
             createdAt: canvas.createdAt,
             updatedAt: canvas.updatedAt,
         };

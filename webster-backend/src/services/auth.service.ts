@@ -218,7 +218,7 @@ export class AuthService {
     async login(loginData: LoginDto): Promise<{ user: User; token: string }> {
         const user = await this.userRepository.findOne({
             where: { username: loginData.username },
-            select: ['id', 'username', 'email', 'password', 'firstName', 'lastName', 'role', 'isEmailVerified', 'avatar'],
+            select: ['id', 'username', 'email', 'password', 'firstName', 'lastName', 'role', 'isEmailVerified', 'avatar', 'createdAt'],
         });
 
         if (!user || !this.comparePassword(loginData.password, user.password)) {
@@ -241,6 +241,7 @@ export class AuthService {
             role: user.role,
             isEmailVerified: user.isEmailVerified,
             avatar: user.avatar,
+            createdAt: user.createdAt,
             // Add other public fields as needed, explicitly excluding password
         };
 

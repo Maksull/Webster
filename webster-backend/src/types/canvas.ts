@@ -33,7 +33,6 @@ export interface CanvasResponseDto {
     elementsByLayer: Record<string, DrawingElement[]>;
     thumbnail?: string | null;
     userId: string;
-    lastModified?: Date | null;
     createdAt: Date;
     updatedAt: Date;
 }
