@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import ToolButton from './ToolButton';
 import {
     Pencil,
@@ -26,6 +26,7 @@ import { Dictionary } from '@/get-dictionary';
 import { useHistory } from './useHistory';
 import { useDrawing } from '@/contexts';
 import { ImageElement } from '@/types/elements';
+import AlertModal from '@/components/AlertModal';
 
 interface DesktopToolbarProps {
     dict: Dictionary;
@@ -50,6 +51,22 @@ const DesktopToolbar: React.FC<DesktopToolbarProps> = ({ dict, onClear }) => {
     } = useDrawing();
 
     const { handleUndo, handleRedo, canUndo, canRedo } = useHistory();
+    const [modal, setModal] = useState({
+        open: false,
+        type: 'success' as 'success' | 'error',
+        message: '',
+    });
+
+    const notify = (type: 'success' | 'error', message: string) => {
+        setModal({ open: true, type, message });
+    };
+
+    const handleImageUploadWithNotify = async (
+        event: React.ChangeEvent<HTMLInputElement>,
+    ) => {
+        const result = handleImageUpload(event);
+        notify(result.success ? 'success' : 'error', result.message);
+    };
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const handleZoomIn = () => {
@@ -67,16 +84,19 @@ const DesktopToolbar: React.FC<DesktopToolbarProps> = ({ dict, onClear }) => {
     const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
         if (!file || !file.type.startsWith('image/')) {
-            alert('Please select a valid image file');
-            return;
+            return {
+                success: false,
+                message: 'Please select a valid image file',
+            };
         }
 
         // Check file size (limit to 10MB)
         if (file.size > 10 * 1024 * 1024) {
-            alert(
-                'Image file is too large. Please select an image smaller than 10MB.',
-            );
-            return;
+            return {
+                success: false,
+                message:
+                    'Image file is too large. Please select an image smaller than 10MB.',
+            };
         }
 
         const reader = new FileReader();
@@ -135,6 +155,11 @@ const DesktopToolbar: React.FC<DesktopToolbarProps> = ({ dict, onClear }) => {
         if (fileInputRef.current) {
             fileInputRef.current.value = '';
         }
+
+        return {
+            success: true,
+            message: 'Image is being uploaded and added to the canvas.',
+        };
     };
 
     const triggerImageUpload = () => {
@@ -143,12 +168,18 @@ const DesktopToolbar: React.FC<DesktopToolbarProps> = ({ dict, onClear }) => {
 
     return (
         <div className="hidden md:flex w-16 flex-shrink-0 bg-white dark:bg-gray-800 border-r border-slate-200 dark:border-gray-700 flex-col items-center py-4 gap-2">
+            <AlertModal
+                open={modal.open}
+                type={modal.type}
+                message={modal.message}
+                onClose={() => setModal({ ...modal, open: false })}
+            />
             {/* Hidden file input */}
             <input
                 ref={fileInputRef}
                 type="file"
                 accept="image/*"
-                onChange={handleImageUpload}
+                onChange={handleImageUploadWithNotify}
                 style={{ display: 'none' }}
             />
 

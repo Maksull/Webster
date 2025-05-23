@@ -4,13 +4,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
 import { useDictionary } from '@/contexts/DictionaryContext';
-import {
-    Shield,
-    AlertCircle,
-    CheckCircle,
-    RefreshCw,
-    ArrowLeft,
-} from 'lucide-react';
+import { AlertCircle, CheckCircle, Paintbrush } from 'lucide-react';
 
 export default function VerifyEmailForm() {
     const { user, isLoading, verifyEmail, resendVerificationCode } = useAuth();
@@ -156,17 +150,24 @@ export default function VerifyEmailForm() {
 
     return (
         <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 py-12 px-4 sm:px-6 lg:px-8 transition-colors duration-300">
-            <main className="max-w-md w-full space-y-8 bg-white dark:bg-gray-800 rounded-xl shadow-lg p-8 transition-all duration-300">
-                <div className="form-heading text-center">
+            {/* Background Blobs */}
+            <div className="absolute top-0 left-0 w-full h-full overflow-hidden z-0 opacity-20 pointer-events-none">
+                <div className="absolute -top-24 -left-24 w-96 h-96 bg-purple-200 dark:bg-purple-900 rounded-full blur-3xl"></div>
+                <div className="absolute top-1/3 -right-24 w-72 h-72 bg-pink-200 dark:bg-pink-900 rounded-full blur-3xl"></div>
+                <div className="absolute -bottom-24 left-1/3 w-80 h-80 bg-indigo-200 dark:bg-indigo-900 rounded-full blur-3xl"></div>
+            </div>
+
+            <main className="max-w-md w-full space-y-8 bg-white dark:bg-gray-800 rounded-xl shadow-lg p-8 transition-all duration-300 z-10">
+                <div className="text-center">
                     <div className="flex justify-center">
-                        <span className="h-20 w-20 rounded-full bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center">
-                            <Shield className="h-10 w-10 text-indigo-600 dark:text-indigo-400" />
+                        <span className="h-20 w-20 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 dark:from-purple-600 dark:to-pink-600 flex items-center justify-center shadow-lg transform hover:scale-105 transition-transform duration-300">
+                            <Paintbrush className="h-10 w-10 text-white" />
                         </span>
                     </div>
-                    <h2 className="mt-6 text-3xl font-extrabold text-gray-900 dark:text-white transition-colors duration-300">
+                    <h2 className="mt-6 text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-pink-600 dark:from-purple-400 dark:to-pink-400">
                         {dict.auth?.verifyEmailTitle || 'Verify Your Email'}
                     </h2>
-                    <p className="mt-2 text-sm text-gray-600 dark:text-gray-400 transition-colors duration-300">
+                    <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
                         {dict.auth?.verifyEmailDescription ||
                             'Please enter the verification code sent to your email address'}
                     </p>
@@ -178,45 +179,26 @@ export default function VerifyEmailForm() {
                 </div>
 
                 {error && (
-                    <div className="rounded-lg bg-red-50 dark:bg-red-900/20 p-4 border-l-4 border-red-500 animate-fadeIn">
-                        <div className="flex">
-                            <span className="flex-shrink-0">
-                                <AlertCircle
-                                    className="h-5 w-5 text-red-400"
-                                    aria-hidden="true"
-                                />
-                            </span>
-                            <p className="ml-3 text-sm font-medium text-red-800 dark:text-red-200">
-                                {error}
-                            </p>
-                        </div>
+                    <div className="mb-4 p-4 bg-red-50 dark:bg-red-900/50 text-red-700 dark:text-red-200 rounded-md flex items-center">
+                        <AlertCircle className="w-5 h-5 mr-2" />
+                        {error}
                     </div>
                 )}
 
                 {success && (
-                    <div className="rounded-lg bg-green-50 dark:bg-green-900/20 p-4 border-l-4 border-green-500 animate-fadeIn">
-                        <div className="flex">
-                            <span className="flex-shrink-0">
-                                <CheckCircle
-                                    className="h-5 w-5 text-green-400"
-                                    aria-hidden="true"
-                                />
-                            </span>
-                            <p className="ml-3 text-sm font-medium text-green-800 dark:text-green-200">
-                                {success}
-                            </p>
-                        </div>
+                    <div className="mb-4 p-4 bg-green-50 dark:bg-green-900/50 text-green-700 dark:text-green-200 rounded-md flex items-center">
+                        <CheckCircle className="w-5 h-5 mr-2" />
+                        {success}
                     </div>
                 )}
 
-                <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-                    <fieldset>
-                        <legend className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3 text-center">
+                <form className="space-y-6" onSubmit={handleSubmit}>
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 text-center mb-4">
                             {dict.auth?.verificationCodeLabel ||
-                                'Verification Code'}
-                        </legend>
-
-                        <div className="flex justify-center gap-2">
+                                'Enter 6-digit code'}
+                        </label>
+                        <div className="flex justify-center space-x-2">
                             {code.map((digit, index) => (
                                 <input
                                     key={index}
@@ -236,25 +218,22 @@ export default function VerifyEmailForm() {
                                     ref={el => {
                                         inputRefs.current[index] = el;
                                     }}
-                                    className="w-12 h-14 text-center font-bold text-xl border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white transition-colors duration-200"
-                                    style={{ appearance: 'textfield' }}
-                                    aria-label={`Digit ${index + 1} of verification code`}
+                                    className="w-12 h-12 text-center text-2xl border border-gray-300 dark:border-dark-border rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 dark:bg-dark-bg text-gray-900 dark:text-white bg-gray-50 dark:bg-gray-700/50"
                                 />
                             ))}
                         </div>
-
-                        <p className="mt-3 text-xs text-center text-gray-500 dark:text-gray-400">
+                        <p className="mt-2 text-sm text-center text-gray-500 dark:text-gray-400">
                             {dict.auth?.codeInstructions ||
-                                'Enter the 6-digit code sent to your email'}
+                                'Code expires in 15 minutes'}
                         </p>
-                    </fieldset>
+                    </div>
 
                     <button
                         type="submit"
                         disabled={
                             isVerifying || code.some(digit => digit === '')
                         }
-                        className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-75 disabled:cursor-not-allowed transition-colors duration-200 shadow-sm hover:shadow">
+                        className="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-md text-sm font-medium text-white bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 disabled:opacity-70 disabled:cursor-not-allowed transition-all duration-200 hover:shadow-lg mt-4">
                         {isVerifying ? (
                             <>
                                 <svg
@@ -268,11 +247,13 @@ export default function VerifyEmailForm() {
                                         cy="12"
                                         r="10"
                                         stroke="currentColor"
-                                        strokeWidth="4"></circle>
+                                        strokeWidth="4"
+                                    />
                                     <path
                                         className="opacity-75"
                                         fill="currentColor"
-                                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                                    />
                                 </svg>
                                 {dict.auth?.verifying || 'Verifying...'}
                             </>
@@ -280,45 +261,35 @@ export default function VerifyEmailForm() {
                             dict.auth?.verifyButton || 'Verify Email'
                         )}
                     </button>
+
+                    <div className="text-center">
+                        <button
+                            type="button"
+                            onClick={handleResendCode}
+                            disabled={isResending || countdown > 0}
+                            className="cursor-pointer text-sm text-purple-600 hover:text-pink-600 dark:text-purple-400 dark:hover:text-pink-400 transition-colors duration-200">
+                            {isResending
+                                ? dict.auth?.verifyEmail.resending ||
+                                  'Resending...'
+                                : countdown > 0
+                                  ? (
+                                        dict.auth?.verifyEmail.waitResend ||
+                                        'Resend code in {seconds}s'
+                                    ).replace('{seconds}', countdown.toString())
+                                  : dict.auth?.verifyEmail.resendCode ||
+                                    'Resend code'}
+                        </button>
+                    </div>
+
+                    <div className="text-center">
+                        <Link
+                            href={`/${lang}/login`}
+                            className="inline-flex items-center justify-center w-full text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-pink-600 dark:hover:text-pink-400 transition-colors duration-200">
+                            {dict.auth?.verifyEmail.backToLogin ||
+                                'Back to login'}
+                        </Link>
+                    </div>
                 </form>
-
-                <section className="text-center">
-                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
-                        {dict.auth?.noCodeReceived || "Didn't receive a code?"}
-                    </p>
-                    <button
-                        onClick={handleResendCode}
-                        disabled={isResending || resendDisabled}
-                        className="inline-flex items-center text-sm font-medium text-indigo-600 hover:text-indigo-500 dark:text-indigo-400 dark:hover:text-indigo-300 disabled:opacity-50 disabled:cursor-not-allowed px-3 py-1.5 rounded-md hover:bg-indigo-50 dark:hover:bg-indigo-900/30 transition-all duration-200">
-                        {isResending ? (
-                            <>
-                                <RefreshCw className="animate-spin -ml-1 mr-2 h-4 w-4" />
-                                {dict.auth?.resending || 'Resending...'}
-                            </>
-                        ) : resendDisabled ? (
-                            <>
-                                <RefreshCw className="mr-2 h-4 w-4" />
-                                {dict.auth?.resendIn || 'Resend in'} {countdown}
-                                s
-                            </>
-                        ) : (
-                            <>
-                                <RefreshCw className="mr-2 h-4 w-4" />
-                                {dict.auth?.resendCode ||
-                                    'Resend verification code'}
-                            </>
-                        )}
-                    </button>
-                </section>
-
-                <nav className="mt-6 border-t border-gray-200 dark:border-gray-700 pt-4">
-                    <Link
-                        href={`/${lang}/account`}
-                        className="inline-flex items-center justify-center w-full text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors duration-200">
-                        <ArrowLeft className="mr-2 h-4 w-4" />
-                        {dict.auth?.backToAccount || 'Back to account'}
-                    </Link>
-                </nav>
             </main>
         </div>
     );

@@ -107,6 +107,7 @@
         "codeInstructions": "Enter the 6-digit code sent to your email",
         "verifying": "Verifying...",
         "verifyButton": "Verify Email",
+        "verifyEmailDescription": "Please enter the verification code sent to your email address",
         "noCodeReceived": "Didn't receive a code?",
         "resending": "Resending...",
         "resendIn": "Resend in",
@@ -194,7 +195,13 @@
         "clear": "Clear",
         "canvasSize": "Canvas Size",
         "toolSettings": "Tool Settings",
-        "brushSize": "Brush Size"
+        "brushSize": "Brush Size",
+        "text": "Text",
+        "image": "Insert Image",
+        "opacity": "Opacity",
+        "textStyles": "Text Styles",
+        "fontSize": "Font Size",
+        "fontFamily": "Font Family"
     },
     "transparentBackground": "Transparent Background"
 }
