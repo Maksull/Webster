@@ -250,22 +250,29 @@ export const useCanvasOperations = (callbacks = {}) => {
                                     }
                                 }
                             } else if (element.type === 'arrow') {
-                            if (
-                                targetShapes[0].getClassName() === 'Arrow' &&
-                                'points' in element &&
-                                'points' in targetShapes[0].attrs &&
-                                element.points.length > 0 &&
-                                targetShapes[0].attrs.points.length > 0
-                            ) {
                                 if (
-                                    Math.abs(element.points[0] - targetShapes[0].attrs.points[0]) < 5 &&
-                                    Math.abs(element.points[1] - targetShapes[0].attrs.points[1]) < 5
+                                    targetShapes[0].getClassName() ===
+                                        'Arrow' &&
+                                    'points' in element &&
+                                    'points' in targetShapes[0].attrs &&
+                                    element.points.length > 0 &&
+                                    targetShapes[0].attrs.points.length > 0
                                 ) {
-                                    foundElement = element;
-                                    foundElementId = element.id;
+                                    if (
+                                        Math.abs(
+                                            element.points[0] -
+                                                targetShapes[0].attrs.points[0],
+                                        ) < 5 &&
+                                        Math.abs(
+                                            element.points[1] -
+                                                targetShapes[0].attrs.points[1],
+                                        ) < 5
+                                    ) {
+                                        foundElement = element;
+                                        foundElementId = element.id;
+                                    }
                                 }
                             }
-                        }
                         });
                     });
                 }
@@ -610,7 +617,6 @@ export const useCanvasOperations = (callbacks = {}) => {
             return;
         }
 
-
         if (tool === 'triangle' && lastElement.type === 'triangle') {
             if (!startPoint) return;
             const dx = point.x - startPoint.x;
@@ -653,7 +659,6 @@ export const useCanvasOperations = (callbacks = {}) => {
             recordHistory();
         }
     };
-
 
     // ... (rest of the functions remain the same - handleBucketClick, isPointInElement, etc.)
 
@@ -877,7 +882,8 @@ export const useCanvasOperations = (callbacks = {}) => {
                 );
             }
             case 'line':
-            case 'line-shape': {
+            case 'line-shape':
+            case 'arrow': {
                 const { points } = element;
                 for (let i = 0; i < points.length - 2; i += 2) {
                     const x1 = points[i];

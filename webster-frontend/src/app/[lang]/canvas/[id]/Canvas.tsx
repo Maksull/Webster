@@ -309,7 +309,8 @@ const Canvas: React.FC<CanvasProps> = ({
                 );
             }
             case 'line':
-            case 'line-shape': {
+            case 'line-shape':
+            case 'arrow': {
                 const { points } = element;
                 for (let i = 0; i < points.length; i += 2) {
                     const pointX = points[i];
