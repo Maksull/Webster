@@ -20,6 +20,7 @@ import {
     Maximize,
     MousePointer,
     Type,
+    ArrowUpRight,
     Image as ImageIcon,
 } from 'lucide-react';
 import { Dictionary } from '@/get-dictionary';
@@ -227,6 +228,12 @@ const DesktopToolbar: React.FC<DesktopToolbarProps> = ({ dict, onClear }) => {
                 tool="line"
                 icon={Minus}
                 title={dict.drawing?.line || 'Line'}
+            />
+
+            <ToolButton
+                tool="arrow"
+                icon={ArrowUpRight}
+                title={dict.drawing?.arrow || 'Arrow'}
             />
 
             <ToolButton

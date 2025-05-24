@@ -11,6 +11,7 @@ import {
     Resolution,
     RectElement,
     TextElement,
+    ArrowElement,
     ImageElement,
 } from '@/types/elements';
 import { API_URL } from '@/config';
@@ -151,6 +152,7 @@ export const useCanvasOperations = (callbacks = {}) => {
                     (shape.getClassName() === 'Rect' ||
                         shape.getClassName() === 'Circle' ||
                         shape.getClassName() === 'Line' ||
+                        shape.getClassName() === 'Arrow' ||
                         shape.getClassName() === 'RegularPolygon' ||
                         shape.getClassName() === 'Text' ||
                         shape.getClassName() === 'Image'),
@@ -247,7 +249,23 @@ export const useCanvasOperations = (callbacks = {}) => {
                                         foundElementId = element.id;
                                     }
                                 }
+                            } else if (element.type === 'arrow') {
+                            if (
+                                targetShapes[0].getClassName() === 'Arrow' &&
+                                'points' in element &&
+                                'points' in targetShapes[0].attrs &&
+                                element.points.length > 0 &&
+                                targetShapes[0].attrs.points.length > 0
+                            ) {
+                                if (
+                                    Math.abs(element.points[0] - targetShapes[0].attrs.points[0]) < 5 &&
+                                    Math.abs(element.points[1] - targetShapes[0].attrs.points[1]) < 5
+                                ) {
+                                    foundElement = element;
+                                    foundElementId = element.id;
+                                }
                             }
+                        }
                         });
                     });
                 }
@@ -303,7 +321,8 @@ export const useCanvasOperations = (callbacks = {}) => {
             tool === 'rectangle' ||
             tool === 'circle' ||
             tool === 'line' ||
-            tool === 'triangle'
+            tool === 'triangle' ||
+            tool === 'arrow'
         ) {
             setStartPoint({ x: pos.x, y: pos.y });
 
@@ -374,7 +393,24 @@ export const useCanvasOperations = (callbacks = {}) => {
                 const activeElements = getActiveLayerElements();
                 const updatedElements = [...activeElements, newTriangle];
                 updateActiveLayerElements(updatedElements);
+            } else if (tool === 'arrow') {
+                // Create initial arrow with start and end points at same position
+                const newArrow: ArrowElement = {
+                    points: [pos.x, pos.y, pos.x, pos.y], // start and end the same initially
+                    stroke: color,
+                    strokeWidth,
+                    id: Date.now().toString(),
+                    type: 'arrow',
+                    layerId: activeLayerId,
+                    opacity: opacity,
+                };
+
+                // Add element to active layer
+                const activeElements = getActiveLayerElements();
+                const updatedElements = [...activeElements, newArrow];
+                updateActiveLayerElements(updatedElements);
             }
+
             setIsDrawing(true);
             return;
         }
@@ -428,6 +464,7 @@ export const useCanvasOperations = (callbacks = {}) => {
 
                     switch (element.type) {
                         case 'line':
+                        case 'arrow':
                             const lineElement = element as LineElement;
                             const newPoints = [...lineElement.points];
                             for (let i = 0; i < newPoints.length; i += 2) {
@@ -556,6 +593,24 @@ export const useCanvasOperations = (callbacks = {}) => {
             return;
         }
 
+        if (tool === 'arrow' && lastElement.type === 'arrow') {
+            if (!startPoint) return;
+
+            const updatedArrow: ArrowElement = {
+                ...(lastElement as ArrowElement),
+                points: [startPoint.x, startPoint.y, pos.x, pos.y],
+            };
+
+            const updatedElements = [
+                ...activeElements.slice(0, -1),
+                updatedArrow,
+            ];
+
+            updateActiveLayerElements(updatedElements);
+            return;
+        }
+
+
         if (tool === 'triangle' && lastElement.type === 'triangle') {
             if (!startPoint) return;
             const dx = point.x - startPoint.x;
@@ -598,6 +653,7 @@ export const useCanvasOperations = (callbacks = {}) => {
             recordHistory();
         }
     };
+
 
     // ... (rest of the functions remain the same - handleBucketClick, isPointInElement, etc.)
 
