@@ -10,7 +10,7 @@ interface CanvasHeaderProps {
     dict: Dictionary;
     lang: string;
     onSave: () => void;
-    onDownload: () => void;
+    onDownload: (options: { format: 'png' | 'jpeg' | 'pdf'; quality?: number; pixelRatio?: number }) => void;
 }
 
 const CanvasHeader: React.FC<CanvasHeaderProps> = ({
@@ -26,6 +26,7 @@ const CanvasHeader: React.FC<CanvasHeaderProps> = ({
         canvasName || dict.drawing?.untitledDesign || 'Untitled Design',
     );
     const inputRef = useRef<HTMLInputElement>(null);
+    const [downloadFormat, setDownloadFormat] = useState<'png' | 'jpeg' | 'pdf'>('png');
 
     // Update local state when canvas name changes from context
     useEffect(() => {
@@ -116,16 +117,37 @@ const CanvasHeader: React.FC<CanvasHeaderProps> = ({
             <div className="hidden md:flex items-center space-x-3">
                 <button
                     onClick={onSave}
-                    className="flex items-center h-9 px-3 py-0 border border-slate-200 dark:border-gray-700 rounded-lg text-sm font-medium text-slate-700 dark:text-gray-200 bg-white dark:bg-gray-800 hover:bg-slate-50 dark:hover:bg-gray-700 transition-colors">
+                    className="flex items-center h-9 px-3 py-0 border border-slate-200 dark:border-gray-700 rounded-lg text-sm font-medium text-slate-700 dark:text-gray-200 bg-white dark:bg-gray-800 hover:bg-slate-50 dark:hover:bg-gray-700 transition-colors"
+                >
                     <Save className="h-4 w-4 mr-1.5" />
                     {dict.drawing?.save || 'Save'}
                 </button>
-                <button
-                    onClick={onDownload}
-                    className="flex items-center h-9 px-3 py-0 bg-gradient-to-r from-indigo-500 to-violet-500 hover:from-indigo-600 hover:to-violet-600 text-white rounded-lg text-sm font-medium transition-colors shadow-sm">
-                    <Download className="h-4 w-4 mr-1.5" />
-                    {dict.drawing?.download || 'Download'}
-                </button>
+
+                {/* Download Button with Integrated Format Selection */}
+                <div className="relative flex items-center">
+                    <button
+                        onClick={() =>
+                            onDownload({
+                                format: downloadFormat,
+                                quality: downloadFormat === 'jpeg' ? 0.8 : undefined,
+                                pixelRatio: 2,
+                            })
+                        }
+                        className="flex items-center h-9 px-3 py-0 bg-gradient-to-r from-indigo-500 to-violet-500 hover:from-indigo-600 hover:to-violet-600 text-white rounded-lg text-sm font-medium transition-colors shadow-sm"
+                    >
+                        <Download className="h-4 w-4 mr-1.5" />
+                        {dict.drawing?.download || 'Download'}
+                    </button>
+                    <select
+                        value={downloadFormat}
+                        onChange={(e) => setDownloadFormat(e.target.value as 'png' | 'jpeg' | 'pdf')}
+                        className="h-9 px-2 py-0 bg-white dark:bg-gray-800 border border-slate-200 dark:border-gray-700 rounded-lg text-sm font-medium text-slate-700 dark:text-gray-200 hover:bg-slate-50 dark:hover:bg-gray-700 transition-colors appearance-none cursor-pointer ml-2"
+                    >
+                        <option value="png">PNG</option>
+                        <option value="jpeg">JPEG</option>
+                        <option value="pdf">PDF</option>
+                    </select>
+                </div>
             </div>
         </header>
     );

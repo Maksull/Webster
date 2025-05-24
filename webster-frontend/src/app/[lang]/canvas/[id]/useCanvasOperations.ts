@@ -16,6 +16,13 @@ import {
 } from '@/types/elements';
 import { API_URL } from '@/config';
 import { useDrawing } from '@/contexts';
+import { jsPDF } from 'jspdf';
+
+interface DownloadOptions {
+    format: 'png' | 'jpeg' | 'pdf';
+    quality?: number; // For JPEG quality (0 to 1)
+    pixelRatio?: number; // For canvas scaling
+}
 
 export const useCanvasOperations = (callbacks = {}) => {
     const { clearSelectionRect } = callbacks;
@@ -1245,15 +1252,45 @@ export const useCanvasOperations = (callbacks = {}) => {
         }
     };
 
-    const handleDownload = () => {
-        if (stageRef.current) {
-            const dataURL = stageRef.current.toDataURL({ pixelRatio: 2 });
-            const link = document.createElement('a');
-            link.download = `PixelPerfect_Drawing_${new Date().toISOString()}.png`;
-            link.href = dataURL;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
+    const handleDownload = ({ format, quality = 1, pixelRatio = 2 }: DownloadOptions) => {
+        if (!stageRef.current) return;
+
+        const stage = stageRef.current;
+        const timestamp = new Date().toISOString().replace(/[:.]/g, '-'); // Clean timestamp for filename
+        const filename = `PixelPerfect_Drawing_${timestamp}.${format}`;
+
+        try {
+            if (format === 'pdf') {
+                // Generate PDF using jsPDF
+                const dataURL = stage.toDataURL({ pixelRatio });
+                const img = new Image();
+                img.src = dataURL;
+                img.onload = () => {
+                    const { width, height } = stage.size();
+                    const pdf = new jsPDF({
+                        orientation: width > height ? 'landscape' : 'portrait',
+                        unit: 'px',
+                        format: [width, height],
+                    });
+                    pdf.addImage(dataURL, 'PNG', 0, 0, width, height);
+                    pdf.save(filename);
+                };
+            } else {
+                // Generate PNG or JPEG
+                const dataURL = stage.toDataURL({
+                    mimeType: `image/${format}`,
+                    quality: format === 'jpeg' ? quality : undefined,
+                    pixelRatio,
+                });
+                const link = document.createElement('a');
+                link.download = filename;
+                link.href = dataURL;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            }
+        } catch (error) {
+            console.error('Error downloading file:', error);
         }
     };
 
