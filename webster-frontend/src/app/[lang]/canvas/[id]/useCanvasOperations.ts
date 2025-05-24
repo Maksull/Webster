@@ -172,6 +172,7 @@ export const useCanvasOperations = () => {
                     (shape.getClassName() === 'Rect' ||
                         shape.getClassName() === 'Circle' ||
                         shape.getClassName() === 'Line' ||
+                        shape.getClassName() === 'Arrow' ||
                         shape.getClassName() === 'RegularPolygon' ||
                         shape.getClassName() === 'Text' ||
                         shape.getClassName() === 'Image'),
@@ -274,7 +275,23 @@ export const useCanvasOperations = () => {
                                         foundElementId = element.id;
                                     }
                                 }
+                            } else if (element.type === 'arrow') {
+                            if (
+                                targetShapes[0].getClassName() === 'Arrow' &&
+                                'points' in element &&
+                                'points' in targetShapes[0].attrs &&
+                                element.points.length > 0 &&
+                                targetShapes[0].attrs.points.length > 0
+                            ) {
+                                if (
+                                    Math.abs(element.points[0] - targetShapes[0].attrs.points[0]) < 5 &&
+                                    Math.abs(element.points[1] - targetShapes[0].attrs.points[1]) < 5
+                                ) {
+                                    foundElement = element;
+                                    foundElementId = element.id;
+                                }
                             }
+                        }
                         });
                     });
                 }
@@ -488,6 +505,7 @@ export const useCanvasOperations = () => {
 
                     switch (element.type) {
                         case 'line':
+                        case 'arrow':
                             const lineElement = element as LineElement;
                             const newPoints = [...lineElement.points];
                             for (let i = 0; i < newPoints.length; i += 2) {
@@ -764,7 +782,8 @@ export const useCanvasOperations = () => {
                 );
             }
             case 'line':
-            case 'line-shape': {
+            case 'line-shape':
+            case 'arrow': {
                 const { points } = element;
                 for (let i = 0; i < points.length; i += 2) {
                     const pointX = points[i];
