@@ -198,7 +198,14 @@ const Canvas: React.FC<CanvasProps> = ({
         const stage = e.target.getStage();
         const pos = stage.getPointerPosition();
 
-        if (pos && (tool === 'pencil' || tool === 'eraser')) {
+        if (
+            pos &&
+            (tool === 'pencil' ||
+                tool === 'brush' ||
+                tool === 'pen' ||
+                tool === 'marker' ||
+                tool === 'eraser')
+        ) {
             setCursorPosition(pos);
         }
 
@@ -412,7 +419,11 @@ const Canvas: React.FC<CanvasProps> = ({
                                 ? 'cursor-pointer'
                                 : tool === 'select'
                                   ? 'cursor-default'
-                                  : tool === 'pencil' || tool === 'eraser'
+                                  : tool === 'pencil' ||
+                                      tool === 'brush' ||
+                                      tool === 'pen' ||
+                                      tool === 'marker' ||
+                                      tool === 'eraser'
                                     ? 'cursor-none'
                                     : 'cursor-crosshair'
                         }`}>
@@ -498,7 +509,11 @@ const Canvas: React.FC<CanvasProps> = ({
                                 </Layer>
                             )}
 
-                        {(tool === 'pencil' || tool === 'eraser') && (
+                        {(tool === 'pencil' ||
+                            tool === 'brush' ||
+                            tool === 'pen' ||
+                            tool === 'marker' ||
+                            tool === 'eraser') && (
                             <Layer listening={false}>
                                 <Circle
                                     x={cursorPosition.x}
@@ -508,9 +523,9 @@ const Canvas: React.FC<CanvasProps> = ({
                                     strokeWidth={1}
                                     dash={[2, 2]}
                                     fill={
-                                        tool === 'pencil'
-                                            ? `${color}80`
-                                            : 'white'
+                                        tool === 'eraser'
+                                            ? 'white'
+                                            : `${color}80`
                                     }
                                 />
                             </Layer>

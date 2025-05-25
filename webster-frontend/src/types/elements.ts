@@ -1,4 +1,6 @@
 export interface LineElement {
+    id: string;
+    type: 'line';
     points: number[];
     stroke: string;
     strokeWidth: number;
@@ -6,10 +8,15 @@ export interface LineElement {
     lineCap: 'round' | 'butt' | 'square';
     lineJoin: 'round' | 'bevel' | 'miter';
     globalCompositeOperation: 'source-over' | 'destination-out';
-    id: string;
-    type: 'line';
     layerId: string;
-    opacity: number;
+
+    // Optional style enhancements
+    opacity?: number;
+    dash?: number[];
+    shadowColor?: string;
+    shadowBlur?: number;
+    shadowOffsetX?: number;
+    shadowOffsetY?: number;
 }
 
 export interface ArrowElement {
@@ -143,6 +150,9 @@ export interface Resolution {
 export type ToolType =
     | 'pencil'
     | 'eraser'
+    | 'brush'
+    | 'marker'
+    | 'pen'
     | 'bucket'
     | 'rectangle'
     | 'circle'

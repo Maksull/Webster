@@ -90,6 +90,14 @@ const ElementRenderer: React.FC<ElementRendererProps> = ({
                     globalCompositeOperation={
                         lineElement.globalCompositeOperation
                     }
+                    opacity={lineElement.opacity}
+                    dash={lineElement.dash}
+                    shadowColor={lineElement.shadowColor}
+                    shadowBlur={lineElement.shadowBlur}
+                    shadowOffset={{
+                        x: lineElement.shadowOffsetX ?? 0,
+                        y: lineElement.shadowOffsetY ?? 0,
+                    }}
                     {...commonProps}
                 />
             );

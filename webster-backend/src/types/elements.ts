@@ -17,6 +17,14 @@ export interface LineElement {
     lineJoin: 'round' | 'bevel' | 'miter';
     globalCompositeOperation: 'source-over' | 'destination-out';
     layerId: string;
+
+    // Optional style enhancements
+    opacity?: number;
+    dash?: number[];
+    shadowColor?: string;
+    shadowBlur?: number;
+    shadowOffsetX?: number;
+    shadowOffsetY?: number;
 }
 
 export interface RectElement {
