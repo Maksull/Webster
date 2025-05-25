@@ -11,6 +11,7 @@
   "dependencies": {
     "@formatjs/intl-localematcher": "^0.6.1",
     "date-fns": "^4.1.0",
+    "jspdf": "^3.0.1",
     "lucide-react": "^0.503.0",
     "negotiator": "^1.0.0",
     "next": "^15.3.1",
@@ -31,8 +32,8 @@
     "eslint-config-prettier": "^10.0.1",
     "eslint-plugin-prettier": "^5.2.3",
     "postcss": "^8.5.3",
+    "tailwind-scrollbar": "^4.0.2",
     "tailwindcss": "^4",
-    "typescript": "^5",
-    "tailwind-scrollbar": "^4.0.2"
+    "typescript": "^5"
   }
 }
