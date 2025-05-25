@@ -3,7 +3,6 @@
 import React, { useRef, useState } from 'react';
 import ToolButton from './ToolButton';
 import {
-    Pencil,
     Eraser,
     Droplet,
     Square,
@@ -27,6 +26,7 @@ import { useHistory } from './useHistory';
 import { useDrawing } from '@/contexts';
 import { ImageElement } from '@/types/elements';
 import AlertModal from '@/components/AlertModal';
+import ToolSelector from './ToolSelector';
 
 interface DesktopToolbarProps {
     dict: Dictionary;
@@ -190,10 +190,10 @@ const DesktopToolbar: React.FC<DesktopToolbarProps> = ({ dict, onClear }) => {
                 title={dict.drawing?.select || 'Select'}
             />
 
-            <ToolButton
-                tool="pencil"
-                icon={Pencil}
-                title={dict.drawing?.pencil || 'Pencil'}
+            <ToolSelector
+                activeTool={tool}
+                onSelect={selected => setTool(selected)}
+                dict={dict}
             />
 
             <ToolButton

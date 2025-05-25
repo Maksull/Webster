@@ -17,6 +17,7 @@ import {
 } from '@/types/elements';
 import { API_URL } from '@/config';
 import { useDrawing } from '@/contexts';
+import Konva from 'konva';
 
 export const useCanvasOperations = () => {
     const {
@@ -417,11 +418,63 @@ export const useCanvasOperations = () => {
 
         setIsDrawing(true);
 
+        function getOpacity(tool: string): number {
+            switch (tool) {
+                case 'pen':
+                    return 1.0;
+                case 'pencil':
+                    return 0.8;
+                case 'marker':
+                    return 0.3;
+                case 'brush':
+                    return 0.6;
+                case 'eraser':
+                    return 1.0;
+                default:
+                    return 1.0;
+            }
+        }
+
+        function getShadowBlur(tool: string): number {
+            if (tool === 'brush') return 4;
+            return 0;
+        }
+
+        function getShadowColor(tool: string): string | undefined {
+            return tool === 'brush' ? '#000000' : undefined;
+        }
+
+        function getDashStyle(tool: string): number[] | undefined {
+            switch (tool) {
+                case 'pencil':
+                    return [1, 2];
+                case 'brush':
+                    return [5, 4, 1, 3];
+                default:
+                    return undefined;
+            }
+        }
+
+        function getTension(tool: string): number {
+            switch (tool) {
+                case 'pen':
+                    return 0.5;
+                case 'pencil':
+                case 'brush':
+                    return 0.2;
+                case 'marker':
+                    return 0.3;
+                default:
+                    return 0.5;
+            }
+        }
+        type LineConfig = ConstructorParameters<typeof Konva.Line>[0];
+
         const newLine: LineElement = {
             points: [pos.x, pos.y],
             stroke: tool === 'eraser' ? '#ffffff' : color,
             strokeWidth,
-            tension: 0.5,
+            tension: getTension(tool),
             lineCap: 'round',
             lineJoin: 'round',
             globalCompositeOperation:
@@ -429,7 +482,10 @@ export const useCanvasOperations = () => {
             id: Date.now().toString(),
             type: 'line',
             layerId: activeLayerId,
-            opacity: opacity,
+            opacity: getOpacity(tool),
+            shadowColor: getShadowColor(tool),
+            shadowBlur: getShadowBlur(tool),
+            dash: getDashStyle(tool),
         };
 
         // Add element to active layer
