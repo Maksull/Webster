@@ -99,7 +99,11 @@ export type Dictionary = {
             waitResend: string;
             resendCode: string;
             backToLogin: string;
+            backToProfile: string;
         };
+        verifyNewEmailTitle: string;
+        verifyNewEmailDescription: string;
+        codeNewInstructions: string;
         verifyEmailTitle: string;
         verifyEmailDescription: string;
         emailVerifiedSuccess: string;
@@ -117,6 +121,13 @@ export type Dictionary = {
         backToAccount: string;
     };
     account: {
+        deleteAccountPlaceholder: string;
+        changeEmail: string;
+        currentPassword: string;
+        newPassword: string;
+        save: string;
+        change: string;
+        newEmail: string;
         editCanvas: string;
         deleteCanvas: string;
         fetchCanvasesError: string;
@@ -175,6 +186,7 @@ export type Dictionary = {
         logout: string;
     };
     drawing: {
+        arrow: string;
         untitledDesign: string;
         back: string;
         editName: string;

@@ -96,8 +96,12 @@
             "resending": "Resending...",
             "waitResend": "Resend code in {seconds}s",
             "resendCode": "Resend code",
-            "backToLogin": "Back to login"
+            "backToLogin": "Back to login",
+            "backToProfile": "Back to profile"
         },
+        "verifyNewEmailTitle": "Verify Your New Email",
+        "verifyNewEmailDescription": "Please enter the verification code sent to your new email address",
+        "codeNewInstructions": "Enter a 6-digit code, sent to your new email adress",
         "verifyEmailTitle": "Verify Your Email",
         "emailVerifiedSuccess": "Email verified successfully! You will be redirected shortly.",
         "verificationFailed": "Verification failed. Please try again.",
@@ -115,6 +119,13 @@
         "backToAccount": "Back to account"
     },
     "account": {
+        "deleteAccountPlaceholder": "Enter your username",
+        "changeEmail": "Change Email",
+        "currentPassword": "Current Password",
+        "newPassword": "New Password",
+        "save": "Save",
+        "change": "Change",
+        "newEmail": "New Email",
         "editCanvas": "Edit canvas",
         "deleteCanvas": "Delete canvas",
         "fetchCanvasesError": "Failed to load your canvases",
@@ -173,6 +184,7 @@
         "logout": "Logout"
     },
     "drawing": {
+        "arrow": "Arrow",
         "untitledDesign": "Untitled Design",
         "back": "Back",
         "editName": "Click to edit name",
