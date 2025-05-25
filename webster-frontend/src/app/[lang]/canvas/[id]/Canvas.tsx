@@ -1,5 +1,5 @@
 'use client';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Stage, Layer, Rect, Circle } from 'react-konva';
 import LayerRenderer from './LayerRenderer';
 import { useDrawing } from '@/contexts';
@@ -7,6 +7,7 @@ import CanvasResizeHandles from './CanvasResizeHandles';
 import TextEditor from './TextEditor';
 import { useCanvasOperations } from './useCanvasOperations';
 import { createPortal } from 'react-dom';
+import { useEraserCursor } from './useEraserCursorю';
 
 interface CanvasProps {
     onMouseDown: (e: any) => void;
@@ -44,6 +45,7 @@ const Canvas: React.FC<CanvasProps> = ({
         strokeWidth,
         color,
     } = useDrawing();
+    useEraserCursor(stageRef, tool, elementsByLayer);
 
     const [selectionRect, setSelectionRect] = useState(null);
     const [selectionStartPoint, setSelectionStartPoint] = useState(null);
