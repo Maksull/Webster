@@ -41,13 +41,13 @@ const Canvas: React.FC<CanvasProps> = ({
         setTextValue,
         activeLayerId,
         isMoving,
+        strokeWidth,
+        color,
     } = useDrawing();
 
     const [selectionRect, setSelectionRect] = useState(null);
     const [selectionStartPoint, setSelectionStartPoint] = useState(null);
     const [cursorPosition, setCursorPosition] = useState({ x: 0, y: 0 });
-    const { strokeWidth } = useDrawing();
-    const { color } = useDrawing();
     const [isSelecting, setIsSelecting] = useState(false);
 
     const { handleTextEdit, handleTextEditDone } = useCanvasOperations({
