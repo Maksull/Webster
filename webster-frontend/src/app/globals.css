@@ -37,7 +37,6 @@ body {
   background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
 }
 
-/* Dark mode version */
 .dark .bg-checkerboard {
   background-image: linear-gradient(45deg, #444 25%, transparent 25%),
     linear-gradient(-45deg, #444 25%, transparent 25%),
@@ -46,10 +45,14 @@ body {
 }
 
 .scrollbar-hide {
-  scrollbar-width: none; /* Firefox */
-  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;
+  -ms-overflow-style: none;
 }
 
 .scrollbar-hide::-webkit-scrollbar {
-  display: none; /* Chrome, Safari, Opera */
+  display: none;
+}
+
+.konvajs-content {
+  cursor: crosshair;
 }

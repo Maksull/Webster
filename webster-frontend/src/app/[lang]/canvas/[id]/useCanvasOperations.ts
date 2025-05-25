@@ -85,6 +85,83 @@ export const useCanvasOperations = (callbacks = {}) => {
         };
     }, []);
 
+    const handleEraserClick = (e: any) => {
+        const stage = e.target.getStage();
+        const pos = stage.getPointerPosition();
+
+        // Get all shapes at the clicked position
+        const shapes = stage.getAllIntersections(pos);
+        const targetShapes = shapes.filter(
+            shape =>
+                shape !== stage &&
+                shape.getClassName() !== 'Stage' &&
+                (shape.getClassName() === 'Rect' ||
+                    shape.getClassName() === 'Circle' ||
+                    shape.getClassName() === 'Line' ||
+                    shape.getClassName() === 'Arrow' ||
+                    shape.getClassName() === 'RegularPolygon' ||
+                    shape.getClassName() === 'Text' ||
+                    shape.getClassName() === 'Image'),
+        );
+
+        let elementToRemove = null;
+        let elementLayerId = null;
+
+        // First, try to find element by shape ID
+        if (targetShapes.length > 0) {
+            for (const shape of targetShapes) {
+                const shapeId = shape.attrs.id;
+                if (shapeId) {
+                    elementsByLayer.forEach((elements, layerId) => {
+                        const element = elements.find(el => el.id === shapeId);
+                        if (element) {
+                            elementToRemove = element;
+                            elementLayerId = layerId;
+                        }
+                    });
+                    if (elementToRemove) break;
+                }
+            }
+        }
+
+        // If not found by ID, try position-based detection
+        if (!elementToRemove) {
+            elementsByLayer.forEach((elements, layerId) => {
+                elements.forEach(element => {
+                    if (isPointInElement(pos.x, pos.y, element)) {
+                        elementToRemove = element;
+                        elementLayerId = layerId;
+                    }
+                });
+            });
+        }
+
+        // Remove the element if found
+        if (elementToRemove && elementLayerId) {
+            const updatedElementsByLayer = new Map(elementsByLayer);
+            const layerElements =
+                updatedElementsByLayer.get(elementLayerId) || [];
+            const updatedElements = layerElements.filter(
+                el => el.id !== elementToRemove.id,
+            );
+            updatedElementsByLayer.set(elementLayerId, updatedElements);
+
+            setElementsByLayer(updatedElementsByLayer);
+
+            // Clear selection if the removed element was selected
+            if (selectedElementIds.includes(elementToRemove.id)) {
+                setSelectedElementIds(
+                    selectedElementIds.filter(id => id !== elementToRemove.id),
+                );
+            }
+
+            recordHistory();
+            return true; // Indicate that an element was removed
+        }
+
+        return false; // No element was removed
+    };
+
     const handleTextEdit = (id: string) => {
         const activeElements = getActiveLayerElements();
         const textElement = activeElements.find(
@@ -120,12 +197,18 @@ export const useCanvasOperations = (callbacks = {}) => {
         const stage = e.target.getStage();
         const pos = stage.getPointerPosition();
         const activeLayer = layers.find(layer => layer.id === activeLayerId);
+
         if (!activeLayer || !activeLayer.visible || activeLayer.locked) return;
+
+        // Handle eraser tool - remove clicked objects
+        if (tool === 'eraser') {
+            handleEraserClick(e);
+            return; // Exit early for eraser
+        }
 
         if (tool === 'text') {
             const stage = e.target.getStage();
             const pos = stage.getPointerPosition();
-
             const newText: TextElement = {
                 x: pos.x,
                 y: pos.y,
@@ -169,7 +252,6 @@ export const useCanvasOperations = (callbacks = {}) => {
                 let foundElement = null;
                 let foundElementId = null;
 
-                // First try to find element by shape ID
                 for (const shape of targetShapes) {
                     const shapeId = shape.attrs.id;
                     if (shapeId) {
@@ -186,7 +268,6 @@ export const useCanvasOperations = (callbacks = {}) => {
                     }
                 }
 
-                // If not found by ID, search by position matching
                 if (!foundElement) {
                     elementsByLayer.forEach((elements, layerId) => {
                         elements.forEach(element => {
@@ -429,6 +510,7 @@ export const useCanvasOperations = (callbacks = {}) => {
             return;
         }
 
+        // Handle drawing tools (pencil, brush, pen, marker) - eraser is now handled above
         setIsDrawing(true);
 
         function getOpacity(tool: string): number {
@@ -441,8 +523,6 @@ export const useCanvasOperations = (callbacks = {}) => {
                     return 0.3;
                 case 'brush':
                     return 0.6;
-                case 'eraser':
-                    return 1.0;
                 default:
                     return 1.0;
             }
@@ -484,13 +564,12 @@ export const useCanvasOperations = (callbacks = {}) => {
 
         const newLine: LineElement = {
             points: [pos.x, pos.y],
-            stroke: tool === 'eraser' ? '#ffffff' : color,
+            stroke: color,
             strokeWidth,
             tension: getTension(tool),
             lineCap: 'round',
             lineJoin: 'round',
-            globalCompositeOperation:
-                tool === 'eraser' ? 'destination-out' : 'source-over',
+            globalCompositeOperation: 'source-over',
             id: Date.now().toString(),
             type: 'line',
             layerId: activeLayerId,
@@ -1306,7 +1385,11 @@ export const useCanvasOperations = (callbacks = {}) => {
         }
     };
 
-    const handleDownload = ({ format, quality = 1, pixelRatio = 2 }: DownloadOptions) => {
+    const handleDownload = ({
+        format,
+        quality = 1,
+        pixelRatio = 2,
+    }: DownloadOptions) => {
         if (!stageRef.current) return;
 
         const stage = stageRef.current;
