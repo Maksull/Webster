@@ -4,7 +4,6 @@
 import React from 'react';
 import {
     X,
-    Pencil,
     Eraser,
     Droplet,
     Square,
@@ -26,6 +25,7 @@ import {
 import { Dictionary } from '@/get-dictionary';
 import { useHistory } from './useHistory';
 import { useDrawing } from '@/contexts';
+import ToolDropdown from './MobileToolSelector';
 
 interface MobileMenuProps {
     dict: Dictionary;
@@ -73,19 +73,11 @@ const MobileMenu: React.FC<MobileMenuProps> = ({
                     </button>
                 </div>
                 <div className="flex flex-col gap-3">
-                    <button
-                        className={`flex items-center px-3 py-2 rounded-lg ${
-                            tool === 'pencil'
-                                ? 'bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400'
-                                : 'text-gray-600 dark:text-gray-400'
-                        }`}
-                        onClick={() => {
-                            setTool('pencil');
-                            toggleMobileMenu();
-                        }}>
-                        <Pencil className="h-5 w-5 mr-2" />
-                        Pencil
-                    </button>
+                    <ToolDropdown
+                        tool={tool}
+                        setTool={setTool}
+                        toggleMobileMenu={toggleMobileMenu}
+                    />
                     <button
                         className={`flex items-center px-3 py-2 rounded-lg ${
                             tool === 'eraser'
