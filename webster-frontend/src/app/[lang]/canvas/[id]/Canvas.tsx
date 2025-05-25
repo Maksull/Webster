@@ -49,7 +49,14 @@ const Canvas: React.FC<CanvasProps> = ({
     const { strokeWidth } = useDrawing();
     const { color } = useDrawing();
     const [isSelecting, setIsSelecting] = useState(false);
-    const { handleTextEdit, handleTextEditDone } = useCanvasOperations();
+
+    const { handleTextEdit, handleTextEditDone } = useCanvasOperations({
+        clearSelectionRect: () => {
+            setSelectionRect(null);
+            setIsSelecting(false);
+            setSelectionStartPoint(null);
+        },
+    });
     const [lastClickInfo, setLastClickInfo] = useState({
         time: 0,
         target: null,
@@ -91,17 +98,12 @@ const Canvas: React.FC<CanvasProps> = ({
                 ) {
                     hitText = true;
 
-                    // Don't clear selection if we hit a text element
                     const now = Date.now();
                     const lastClickTime = textNode.attrs._lastClickTime || 0;
-
-                    // Store the click time on the node for double-click detection
                     textNode.attrs._lastClickTime = now;
 
-                    // Check if this is a double click (within 300ms)
                     if (now - lastClickTime < 300) {
                         console.log('Double click detected on text');
-                        // Find the element ID and trigger text edit
                         const elementId = textNode.attrs.id;
                         if (elementId && typeof handleTextEdit === 'function') {
                             handleTextEdit(elementId);
@@ -133,7 +135,6 @@ const Canvas: React.FC<CanvasProps> = ({
         ) {
             console.log('Double click detected manually');
 
-            // If it's a Text node or Rect with text element ID, trigger edit
             if (
                 e.target.className === 'Text' ||
                 (e.target.className === 'Rect' &&
@@ -154,8 +155,6 @@ const Canvas: React.FC<CanvasProps> = ({
                     );
                     handleTextEdit(elementId);
                     e.cancelBubble = true;
-
-                    // Reset click info
                     setLastClickInfo({ time: 0, target: null });
                     return;
                 }
@@ -166,15 +165,17 @@ const Canvas: React.FC<CanvasProps> = ({
         setLastClickInfo({ time: now, target: e.target });
 
         if (tool === 'select') {
-            // Clear any existing selection rectangle when starting any select operation
+            // First, always clear any existing selection rectangle state
             setSelectionRect(null);
             setIsSelecting(false);
             setSelectionStartPoint(null);
 
-            // Only start rectangle selection if we clicked on the stage itself
-            if (e.target === e.target.getStage()) {
-                console.log('Starting rectangle selection');
-                setSelectionStartPoint({ x: pos.x, y: pos.y }); // Store original start point
+            // Check if we clicked on the stage itself (empty space)
+            const clickedOnStage = e.target === e.target.getStage();
+
+            if (clickedOnStage) {
+                console.log('Starting rectangle selection on empty space');
+                setSelectionStartPoint({ x: pos.x, y: pos.y });
                 setSelectionRect({
                     x: pos.x,
                     y: pos.y,
@@ -182,6 +183,10 @@ const Canvas: React.FC<CanvasProps> = ({
                     height: 0,
                 });
                 setIsSelecting(true);
+            } else {
+                // We clicked on an object - this will be handled by useCanvasOperations
+                // Make sure we don't set up selection rectangle
+                console.log('Clicked on object, no selection rectangle');
             }
         }
 
@@ -204,7 +209,7 @@ const Canvas: React.FC<CanvasProps> = ({
             setCursorPosition(pos);
         }
 
-        // Only handle selection rectangle if we're selecting AND not moving
+        // Only update selection rectangle if we're actually selecting (not moving objects)
         if (
             isSelecting &&
             tool === 'select' &&
@@ -223,8 +228,8 @@ const Canvas: React.FC<CanvasProps> = ({
     };
 
     const handleCanvasMouseUp = e => {
-        // Only process selection rectangle if we were selecting and not moving
-        if (isSelecting && !isMoving && selectionRect) {
+        // Handle selection rectangle completion only if we were actually selecting
+        if (isSelecting && !isMoving && selectionRect && tool === 'select') {
             const selectedIds = [];
             elementsByLayer.forEach((elements, layerId) => {
                 elements.forEach(element => {
@@ -241,20 +246,20 @@ const Canvas: React.FC<CanvasProps> = ({
             } else {
                 setSelectedElementIds(selectedIds);
             }
-
-            setIsSelecting(false);
-            setSelectionRect(null);
-            setSelectionStartPoint(null);
         }
+
+        // Always clear selection rectangle state on mouse up
+        // This ensures no leftover selection rectangles appear
+        setIsSelecting(false);
+        setSelectionRect(null);
+        setSelectionStartPoint(null);
 
         onMouseUp();
     };
 
-    // Improved element intersection detection
     const isElementInSelectionRect = (element, rect) => {
         if (!rect) return false;
 
-        // Ensure rect has positive width and height
         const rectLeft = rect.x;
         const rectRight = rect.x + rect.width;
         const rectTop = rect.y;
@@ -266,8 +271,6 @@ const Canvas: React.FC<CanvasProps> = ({
                 const { x, y, width, height } = element;
                 const elementRight = x + width;
                 const elementBottom = y + height;
-
-                // Check if rectangles overlap (any part)
                 return !(
                     elementRight < rectLeft ||
                     x > rectRight ||
@@ -275,15 +278,12 @@ const Canvas: React.FC<CanvasProps> = ({
                     y > rectBottom
                 );
             }
-
             case 'circle': {
                 const { x, y, radius } = element;
                 const elementLeft = x - radius;
                 const elementRight = x + radius;
                 const elementTop = y - radius;
                 const elementBottom = y + radius;
-
-                // Check if circle overlaps with selection rectangle
                 return !(
                     elementRight < rectLeft ||
                     elementLeft > rectRight ||
@@ -291,15 +291,12 @@ const Canvas: React.FC<CanvasProps> = ({
                     elementTop > rectBottom
                 );
             }
-
             case 'triangle': {
                 const { x, y, radius } = element;
                 const elementLeft = x - radius;
                 const elementRight = x + radius;
                 const elementTop = y - radius;
                 const elementBottom = y + radius;
-
-                // Simplified bounding box check for triangle
                 return !(
                     elementRight < rectLeft ||
                     elementLeft > rectRight ||
@@ -307,12 +304,10 @@ const Canvas: React.FC<CanvasProps> = ({
                     elementTop > rectBottom
                 );
             }
-
             case 'image': {
                 const { x, y, width, height } = element;
                 const elementRight = x + width;
                 const elementBottom = y + height;
-
                 return !(
                     elementRight < rectLeft ||
                     x > rectRight ||
@@ -320,11 +315,10 @@ const Canvas: React.FC<CanvasProps> = ({
                     y > rectBottom
                 );
             }
-
             case 'line':
-            case 'line-shape': {
+            case 'line-shape':
+            case 'arrow': {
                 const { points } = element;
-                // Check if any point of the line is within selection rectangle
                 for (let i = 0; i < points.length; i += 2) {
                     const pointX = points[i];
                     const pointY = points[i + 1];
@@ -339,14 +333,12 @@ const Canvas: React.FC<CanvasProps> = ({
                 }
                 return false;
             }
-
             case 'text': {
                 const { x, y, width, height, fontSize, text } = element;
                 const textWidth = width || (text?.length * fontSize) / 2 || 0;
                 const textHeight = height || fontSize || 0;
                 const elementRight = x + textWidth;
                 const elementBottom = y + textHeight;
-
                 return !(
                     elementRight < rectLeft ||
                     x > rectRight ||
@@ -354,7 +346,6 @@ const Canvas: React.FC<CanvasProps> = ({
                     y > rectBottom
                 );
             }
-
             default:
                 return false;
         }
@@ -386,7 +377,6 @@ const Canvas: React.FC<CanvasProps> = ({
         if (!textEditingId) return null;
 
         const position = getTextEditorPosition();
-
         return createPortal(
             <TextEditor
                 value={textValue}
@@ -463,6 +453,11 @@ const Canvas: React.FC<CanvasProps> = ({
                                     }
                                     selectedElementIds={selectedElementIds}
                                     onSelectElement={id => {
+                                        // Clear selection rectangle when selecting individual elements
+                                        setSelectionRect(null);
+                                        setIsSelecting(false);
+                                        setSelectionStartPoint(null);
+
                                         // Handle shift key for multi-select
                                         if (
                                             window.event &&
@@ -493,23 +488,26 @@ const Canvas: React.FC<CanvasProps> = ({
                             );
                         })}
 
-                        {/* Only render selection rectangle if selecting and not moving */}
-                        {selectionRect && tool === 'select' && !isMoving && (
-                            <Layer>
-                                <Rect
-                                    x={selectionRect.x}
-                                    y={selectionRect.y}
-                                    width={selectionRect.width}
-                                    height={selectionRect.height}
-                                    stroke="#0066FF"
-                                    strokeWidth={2}
-                                    dash={[5, 5]}
-                                    fill="#0066FF"
-                                    opacity={0.1}
-                                    listening={false}
-                                />
-                            </Layer>
-                        )}
+                        {/* Only render selection rectangle when actually selecting (not moving) */}
+                        {selectionRect &&
+                            tool === 'select' &&
+                            isSelecting &&
+                            !isMoving && (
+                                <Layer>
+                                    <Rect
+                                        x={selectionRect.x}
+                                        y={selectionRect.y}
+                                        width={selectionRect.width}
+                                        height={selectionRect.height}
+                                        stroke="#0066FF"
+                                        strokeWidth={2}
+                                        dash={[5, 5]}
+                                        fill="#0066FF"
+                                        opacity={0.1}
+                                        listening={false}
+                                    />
+                                </Layer>
+                            )}
 
                         {(tool === 'pencil' ||
                             tool === 'brush' ||

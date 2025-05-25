@@ -19,6 +19,23 @@ export interface LineElement {
     shadowOffsetY?: number;
 }
 
+export interface ArrowElement {
+    id: string;
+    type: 'arrow';
+    points: number[];
+    stroke: string;
+    strokeWidth: number;
+    fill?: string;
+    layerId: string;
+    pointerLength?: number;
+    pointerWidth?: number;
+    tension?: number;
+    lineCap?: CanvasLineCap;
+    lineJoin?: CanvasLineJoin;
+    opacity: number;
+}
+
+
 export interface RectElement {
     x: number;
     y: number;
@@ -115,6 +132,7 @@ export interface ImageElement {
 
 export type DrawingElement =
     | LineElement
+    | ArrowElement
     | RectElement
     | CircleElement
     | LineShapeElement
@@ -139,6 +157,7 @@ export type ToolType =
     | 'rectangle'
     | 'circle'
     | 'line'
+    | 'arrow'
     | 'triangle'
     | 'select'
     | 'image'

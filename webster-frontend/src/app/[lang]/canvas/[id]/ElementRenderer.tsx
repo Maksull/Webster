@@ -8,6 +8,7 @@ import {
     RegularPolygon,
     Text,
     Image as KonvaImage,
+    Arrow,
 } from 'react-konva';
 import {
     LineElement,
@@ -17,6 +18,7 @@ import {
     RectangleElement,
     TriangleElement,
     TextElement,
+    ArrowElement,
     ImageElement,
 } from '@/types/elements';
 
@@ -96,6 +98,22 @@ const ElementRenderer: React.FC<ElementRendererProps> = ({
                         x: lineElement.shadowOffsetX ?? 0,
                         y: lineElement.shadowOffsetY ?? 0,
                     }}
+                    {...commonProps}
+                />
+            );
+        case 'arrow':
+            const arrowElement = element as ArrowElement;
+            return (
+                <Arrow
+                    points={arrowElement.points}
+                    stroke={arrowElement.stroke}
+                    strokeWidth={arrowElement.strokeWidth}
+                    fill={arrowElement.fill}
+                    pointerLength={arrowElement.pointerLength || 10}
+                    pointerWidth={arrowElement.pointerWidth || 10}
+                    tension={arrowElement.tension || 0}
+                    lineCap={arrowElement.lineCap || 'round'}
+                    lineJoin={arrowElement.lineJoin || 'round'}
                     {...commonProps}
                 />
             );
@@ -231,6 +249,8 @@ const ElementRenderer: React.FC<ElementRendererProps> = ({
 
         case 'text':
             const textElement = element as TextElement;
+
+            // Calculate text dimensions with padding for hit area
             const textWidth =
                 textElement.width ||
                 (textElement.text?.length * textElement.fontSize) / 2 ||
