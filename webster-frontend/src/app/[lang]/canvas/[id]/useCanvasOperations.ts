@@ -16,7 +16,6 @@ import {
 } from '@/types/elements';
 import { API_URL } from '@/config';
 import { useDrawing } from '@/contexts';
-import Konva from 'konva';
 import { jsPDF } from 'jspdf';
 
 interface DownloadOptions {
@@ -482,7 +481,6 @@ export const useCanvasOperations = (callbacks = {}) => {
                     return 0.5;
             }
         }
-        type LineConfig = ConstructorParameters<typeof Konva.Line>[0];
 
         const newLine: LineElement = {
             points: [pos.x, pos.y],
