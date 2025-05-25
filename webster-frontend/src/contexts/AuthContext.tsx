@@ -254,7 +254,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 if (returnUrl && returnUrl.startsWith(`/${lang}/`)) {
                     router.push(returnUrl);
                 } else {
-                    router.push(`/${lang}/account`);
+                    setTimeout(() => {
+                        router.push(`/${lang}/account`);
+                    }, 500);
                 }
             } else {
                 throw new Error(result.message || 'Login failed');

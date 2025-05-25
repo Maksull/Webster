@@ -35,7 +35,6 @@ export interface ArrowElement {
     opacity: number;
 }
 
-
 export interface RectElement {
     x: number;
     y: number;
