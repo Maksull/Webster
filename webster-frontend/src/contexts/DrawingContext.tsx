@@ -1,23 +1,24 @@
 'use client';
-
 import React, {
     createContext,
     useContext,
     useState,
     useRef,
     useEffect,
+    useCallback,
 } from 'react';
-
 import { DrawingLayer, HistoryRecord } from '../types/layers';
 import {
     Resolution,
     ToolType,
     DrawingElement,
     POPULAR_RESOLUTIONS,
+    ImageElement,
 } from '@/types/elements';
 import { Canvas } from '@/types/canvas';
 
 interface DrawingContextProps {
+    // ... existing props ...
     dimensions: { width: number; height: number };
     setDimensions: React.Dispatch<
         React.SetStateAction<{ width: number; height: number }>
@@ -89,20 +90,33 @@ interface DrawingContextProps {
     canvasId?: string;
     canvasName?: string;
     setCanvasName: React.Dispatch<React.SetStateAction<string>>;
-    selectedElementIds: string[]; // Support multi-selection
+    selectedElementIds: string[];
     setSelectedElementIds: React.Dispatch<React.SetStateAction<string[]>>;
     isMoving: boolean;
     setIsMoving: React.Dispatch<React.SetStateAction<boolean>>;
-
     textEditingId: string | null;
     setTextEditingId: React.Dispatch<React.SetStateAction<string | null>>;
     textValue: string;
     setTextValue: React.Dispatch<React.SetStateAction<string>>;
-
     textFontSize: number;
     setTextFontSize: React.Dispatch<React.SetStateAction<number>>;
     textFontFamily: string;
     setTextFontFamily: React.Dispatch<React.SetStateAction<string>>;
+
+    // Image resize functionality
+    maintainAspectRatio: boolean;
+    setMaintainAspectRatio: React.Dispatch<React.SetStateAction<boolean>>;
+    isImageResizing: boolean;
+    setIsImageResizing: React.Dispatch<React.SetStateAction<boolean>>;
+    handleImageResizeStart: (corner: string, e: any) => boolean | void;
+    updateImageElement: (
+        elementId: string,
+        updates: Partial<ImageElement>,
+    ) => void;
+    getImageElement: (imageId: string) => ImageElement | null;
+    fitImageToCanvas: (imageId: string) => void;
+    fitImageToCanvasWithAspectRatio: (imageId: string) => void;
+    toggleAspectRatio: () => void;
 }
 
 export const DrawingContext = createContext<DrawingContextProps | undefined>(
@@ -119,6 +133,8 @@ export const DrawingProvider: React.FC<DrawingProviderProps> = ({
     initialCanvas,
 }) => {
     const DEFAULT_RESOLUTION = POPULAR_RESOLUTIONS[0];
+
+    // ... existing state declarations ...
     const [dimensions, setDimensions] = useState({
         width: initialCanvas?.width || DEFAULT_RESOLUTION.width,
         height: initialCanvas?.height || DEFAULT_RESOLUTION.height,
@@ -209,13 +225,318 @@ export const DrawingProvider: React.FC<DrawingProviderProps> = ({
     const [canvasName, setCanvasName] = useState<string>(
         initialCanvas?.name || '',
     );
-
-    const [opacity, setOpacity] = useState(1);
     const [textEditingId, setTextEditingId] = useState<string | null>(null);
     const [textValue, setTextValue] = useState('');
     const [textFontSize, setTextFontSize] = useState(20);
     const [textFontFamily, setTextFontFamily] = useState('Arial');
 
+    // Image resize state
+    const [maintainAspectRatio, setMaintainAspectRatio] = useState(true);
+    const [isImageResizing, setIsImageResizing] = useState(false);
+    const resizeStateRef = useRef({
+        corner: '',
+        startPos: { x: 0, y: 0 },
+        originalElement: null as ImageElement | null,
+        stage: null as any,
+    });
+
+    // Image resize functions
+    const updateImageElement = useCallback(
+        (elementId: string, updates: Partial<ImageElement>) => {
+            const updatedElementsByLayer = new Map(elementsByLayer);
+            updatedElementsByLayer.forEach((elements, layerId) => {
+                const updatedElements = elements.map(element => {
+                    if (element.id === elementId && element.type === 'image') {
+                        return { ...element, ...updates };
+                    }
+                    return element;
+                });
+                updatedElementsByLayer.set(layerId, updatedElements);
+            });
+            setElementsByLayer(updatedElementsByLayer);
+        },
+        [elementsByLayer, setElementsByLayer],
+    );
+
+    const getImageElement = useCallback(
+        (imageId: string): ImageElement | null => {
+            let imageElement: ImageElement | null = null;
+            elementsByLayer.forEach(elements => {
+                const found = elements.find(
+                    el => el.id === imageId && el.type === 'image',
+                ) as ImageElement;
+                if (found) {
+                    imageElement = found;
+                }
+            });
+            return imageElement;
+        },
+        [elementsByLayer],
+    );
+
+    const handleMouseMove = useCallback(
+        (e: MouseEvent | TouchEvent) => {
+            if (
+                !resizeStateRef.current.originalElement ||
+                !resizeStateRef.current.stage
+            )
+                return;
+
+            e.preventDefault();
+            e.stopPropagation();
+
+            let clientX = 0;
+            let clientY = 0;
+            if ('touches' in e) {
+                clientX = e.touches[0].clientX;
+                clientY = e.touches[0].clientY;
+            } else {
+                clientX = e.clientX;
+                clientY = e.clientY;
+            }
+
+            const stage = resizeStateRef.current.stage;
+            const stageContainer = stage.container();
+            const rect = stageContainer.getBoundingClientRect();
+            const stageX = (clientX - rect.left) / stage.scaleX();
+            const stageY = (clientY - rect.top) / stage.scaleY();
+
+            const deltaX = stageX - resizeStateRef.current.startPos.x;
+            const deltaY = stageY - resizeStateRef.current.startPos.y;
+
+            const original = resizeStateRef.current.originalElement;
+            let newX = original.x;
+            let newY = original.y;
+            let newWidth = original.width;
+            let newHeight = original.height;
+
+            const aspectRatio = original.width / original.height;
+            const corner = resizeStateRef.current.corner;
+
+            switch (corner) {
+                case 'top-left':
+                    newX = original.x + deltaX;
+                    newY = original.y + deltaY;
+                    newWidth = original.width - deltaX;
+                    newHeight = original.height - deltaY;
+                    if (maintainAspectRatio) {
+                        const scale = Math.min(
+                            newWidth / original.width,
+                            newHeight / original.height,
+                        );
+                        newWidth = original.width * scale;
+                        newHeight = original.height * scale;
+                        newX = original.x + original.width - newWidth;
+                        newY = original.y + original.height - newHeight;
+                    }
+                    break;
+                case 'top-right':
+                    newY = original.y + deltaY;
+                    newWidth = original.width + deltaX;
+                    newHeight = original.height - deltaY;
+                    if (maintainAspectRatio) {
+                        if (Math.abs(deltaX) > Math.abs(deltaY)) {
+                            newHeight = newWidth / aspectRatio;
+                            newY = original.y + original.height - newHeight;
+                        } else {
+                            newWidth = newHeight * aspectRatio;
+                        }
+                    }
+                    break;
+                case 'bottom-left':
+                    newX = original.x + deltaX;
+                    newWidth = original.width - deltaX;
+                    newHeight = original.height + deltaY;
+                    if (maintainAspectRatio) {
+                        if (Math.abs(deltaX) > Math.abs(deltaY)) {
+                            newHeight = newWidth / aspectRatio;
+                        } else {
+                            newWidth = newHeight * aspectRatio;
+                            newX = original.x + original.width - newWidth;
+                        }
+                    }
+                    break;
+                case 'bottom-right':
+                    newWidth = original.width + deltaX;
+                    newHeight = original.height + deltaY;
+                    if (maintainAspectRatio) {
+                        if (Math.abs(deltaX) > Math.abs(deltaY)) {
+                            newHeight = newWidth / aspectRatio;
+                        } else {
+                            newWidth = newHeight * aspectRatio;
+                        }
+                    }
+                    break;
+                case 'top-center':
+                    newY = original.y + deltaY;
+                    newHeight = original.height - deltaY;
+                    if (maintainAspectRatio) {
+                        newWidth = newHeight * aspectRatio;
+                        newX = original.x - (newWidth - original.width) / 2;
+                    }
+                    break;
+                case 'bottom-center':
+                    newHeight = original.height + deltaY;
+                    if (maintainAspectRatio) {
+                        newWidth = newHeight * aspectRatio;
+                        newX = original.x - (newWidth - original.width) / 2;
+                    }
+                    break;
+                case 'left-center':
+                    newX = original.x + deltaX;
+                    newWidth = original.width - deltaX;
+                    if (maintainAspectRatio) {
+                        newHeight = newWidth / aspectRatio;
+                        newY = original.y - (newHeight - original.height) / 2;
+                    }
+                    break;
+                case 'right-center':
+                    newWidth = original.width + deltaX;
+                    if (maintainAspectRatio) {
+                        newHeight = newWidth / aspectRatio;
+                        newY = original.y - (newHeight - original.height) / 2;
+                    }
+                    break;
+            }
+
+            newWidth = Math.max(20, newWidth);
+            newHeight = Math.max(20, newHeight);
+
+            updateImageElement(original.id, {
+                x: newX,
+                y: newY,
+                width: newWidth,
+                height: newHeight,
+            });
+        },
+        [maintainAspectRatio, updateImageElement],
+    );
+
+    const handleMouseUp = useCallback(() => {
+        console.log('Image resize ended');
+        setIsImageResizing(false);
+        resizeStateRef.current = {
+            corner: '',
+            startPos: { x: 0, y: 0 },
+            originalElement: null,
+            stage: null,
+        };
+
+        document.removeEventListener('mousemove', handleMouseMove);
+        document.removeEventListener('mouseup', handleMouseUp);
+        document.removeEventListener('touchmove', handleMouseMove);
+        document.removeEventListener('touchend', handleMouseUp);
+    }, [handleMouseMove]);
+
+    const handleImageResizeStart = useCallback(
+        (corner: string, e: any) => {
+            console.log('Image resize started for corner:', corner);
+            if (e.evt) {
+                e.evt.preventDefault();
+                e.evt.stopPropagation();
+            }
+
+            const stage = e.target.getStage();
+            if (!stage) {
+                console.error('No stage found');
+                return;
+            }
+
+            const pos = stage.getPointerPosition();
+            if (!pos) {
+                console.error('No pointer position found');
+                return;
+            }
+
+            let imageElement: ImageElement | null = null;
+            selectedElementIds.forEach(id => {
+                const element = getImageElement(id);
+                if (element) {
+                    imageElement = element;
+                }
+            });
+
+            if (!imageElement) {
+                console.error('No image element found for resize');
+                return;
+            }
+
+            console.log('Found image element for resize:', imageElement.id);
+            resizeStateRef.current = {
+                corner,
+                startPos: pos,
+                originalElement: { ...imageElement },
+                stage,
+            };
+
+            setIsImageResizing(true);
+
+            document.addEventListener('mousemove', handleMouseMove, {
+                passive: false,
+            });
+            document.addEventListener('mouseup', handleMouseUp);
+            document.addEventListener('touchmove', handleMouseMove, {
+                passive: false,
+            });
+            document.addEventListener('touchend', handleMouseUp);
+
+            return false;
+        },
+        [selectedElementIds, getImageElement, handleMouseMove, handleMouseUp],
+    );
+
+    const fitImageToCanvas = useCallback(
+        (imageId: string) => {
+            updateImageElement(imageId, {
+                x: 0,
+                y: 0,
+                width: dimensions.width,
+                height: dimensions.height,
+            });
+        },
+        [updateImageElement, dimensions],
+    );
+
+    const fitImageToCanvasWithAspectRatio = useCallback(
+        (imageId: string) => {
+            const imageElement = getImageElement(imageId);
+            if (!imageElement) return;
+
+            const imageAspectRatio = imageElement.width / imageElement.height;
+            const canvasAspectRatio = dimensions.width / dimensions.height;
+
+            let newWidth: number;
+            let newHeight: number;
+            let newX: number;
+            let newY: number;
+
+            if (imageAspectRatio > canvasAspectRatio) {
+                newWidth = dimensions.width;
+                newHeight = dimensions.width / imageAspectRatio;
+                newX = 0;
+                newY = (dimensions.height - newHeight) / 2;
+            } else {
+                newHeight = dimensions.height;
+                newWidth = dimensions.height * imageAspectRatio;
+                newX = (dimensions.width - newWidth) / 2;
+                newY = 0;
+            }
+
+            updateImageElement(imageId, {
+                x: newX,
+                y: newY,
+                width: newWidth,
+                height: newHeight,
+            });
+        },
+        [getImageElement, updateImageElement, dimensions],
+    );
+
+    const toggleAspectRatio = useCallback(() => {
+        setMaintainAspectRatio(prev => !prev);
+    }, []);
+
+    // ... existing functions ...
     useEffect(() => {
         if (!initialCanvas && layers.length === 0) {
             const defaultLayerId = Date.now().toString();
@@ -316,8 +637,17 @@ export const DrawingProvider: React.FC<DrawingProviderProps> = ({
         setTextFontSize,
         textFontFamily,
         setTextFontFamily,
-        opacity,
-        setOpacity,
+        // Image resize functionality
+        maintainAspectRatio,
+        setMaintainAspectRatio,
+        isImageResizing,
+        setIsImageResizing,
+        handleImageResizeStart,
+        updateImageElement,
+        getImageElement,
+        fitImageToCanvas,
+        fitImageToCanvasWithAspectRatio,
+        toggleAspectRatio,
     };
 
     return (

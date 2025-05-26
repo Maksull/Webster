@@ -127,6 +127,12 @@ export interface ImageElement {
     rotation?: number;
     opacity?: number;
     layerId: string;
+    scaleX?: number;
+    scaleY?: number;
+    offsetX?: number;
+    offsetY?: number;
+    skewX?: number;
+    skewY?: number;
 }
 
 export type DrawingElement =

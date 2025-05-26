@@ -7,7 +7,9 @@ import CanvasResizeHandles from './CanvasResizeHandles';
 import TextEditor from './TextEditor';
 import { useCanvasOperations } from './useCanvasOperations';
 import { createPortal } from 'react-dom';
-import { useEraserCursor } from './useEraserCursorю';
+import { useEraserCursor } from './useEraserCursor';
+import ImageToolbar from './ImageToolbar';
+import ImageResizeHandles from './ImageResizeHandles';
 
 interface CanvasProps {
     onMouseDown: (e: any) => void;
@@ -44,13 +46,19 @@ const Canvas: React.FC<CanvasProps> = ({
         isMoving,
         strokeWidth,
         color,
+        // Use context state instead of local state
+        isImageResizing,
+        setIsImageResizing,
+        handleImageResizeStart: contextHandleImageResizeStart,
     } = useDrawing();
+
     useEraserCursor(stageRef, tool, elementsByLayer);
 
     const [selectionRect, setSelectionRect] = useState(null);
     const [selectionStartPoint, setSelectionStartPoint] = useState(null);
     const [cursorPosition, setCursorPosition] = useState({ x: 0, y: 0 });
     const [isSelecting, setIsSelecting] = useState(false);
+    const [imageEditingId, setImageEditingId] = useState<string | null>(null);
 
     const { handleTextEdit, handleTextEditDone } = useCanvasOperations({
         clearSelectionRect: () => {
@@ -59,115 +67,117 @@ const Canvas: React.FC<CanvasProps> = ({
             setSelectionStartPoint(null);
         },
     });
+
     const [lastClickInfo, setLastClickInfo] = useState({
         time: 0,
         target: null,
     });
 
+    const handleImageResizeStart = () => {
+        setIsImageResizing(true);
+    };
+
+    const handleImageResizeEnd = () => {
+        setIsImageResizing(false);
+    };
+
     const handleStageClick = e => {
-        console.log('----------------');
-        console.log('Canvas.handleStageClick', e);
+        console.log('Canvas.handleStageClick', e.target.getClassName());
+        if (isImageResizing) return;
+
         const stage = e.target.getStage();
         if (!stage) return;
-
         const pos = stage.getPointerPosition();
-        const layers = stage.getLayers();
+
         let hitText = false;
+        let hitImage = false;
 
-        layers.forEach(layer => {
-            const textNodes = layer.find('Text');
-            textNodes.forEach(textNode => {
-                const textNodeWidth =
-                    textNode.width() ||
-                    (textNode.text()?.length * textNode.fontSize()) / 2 ||
-                    20;
-                const textNodeHeight =
-                    textNode.height() || textNode.fontSize() || 20;
-                const padding = 10;
+        elementsByLayer.forEach(elements => {
+            elements.forEach(element => {
+                if (element.type === 'image') {
+                    if (
+                        pos.x >= element.x &&
+                        pos.x <= element.x + element.width &&
+                        pos.y >= element.y &&
+                        pos.y <= element.y + element.height
+                    ) {
+                        hitImage = true;
 
-                const textNodeRect = {
-                    x: textNode.x() - padding,
-                    y: textNode.y() - padding,
-                    width: textNodeWidth + padding * 2,
-                    height: textNodeHeight + padding * 2,
-                };
-
-                if (
-                    pos.x >= textNodeRect.x &&
-                    pos.x <= textNodeRect.x + textNodeRect.width &&
-                    pos.y >= textNodeRect.y &&
-                    pos.y <= textNodeRect.y + textNodeRect.height
-                ) {
-                    hitText = true;
-
-                    const now = Date.now();
-                    const lastClickTime = textNode.attrs._lastClickTime || 0;
-                    textNode.attrs._lastClickTime = now;
-
-                    if (now - lastClickTime < 300) {
-                        console.log('Double click detected on text');
-                        const elementId = textNode.attrs.id;
-                        if (elementId && typeof handleTextEdit === 'function') {
-                            handleTextEdit(elementId);
+                        const now = Date.now();
+                        if (
+                            element._lastClickTime &&
+                            now - element._lastClickTime < 300
+                        ) {
+                            console.log('Double click detected on image');
+                            setImageEditingId(element.id);
+                            if (!selectedElementIds.includes(element.id)) {
+                                setSelectedElementIds([element.id]);
+                            }
                         }
+                        element._lastClickTime = now;
+                    }
+                } else if (element.type === 'text') {
+                    const textWidth =
+                        element.width ||
+                        (element.text?.length * element.fontSize) / 2 ||
+                        20;
+                    const textHeight = element.height || element.fontSize || 20;
+                    const padding = 10;
+
+                    if (
+                        pos.x >= element.x - padding &&
+                        pos.x <= element.x + textWidth + padding &&
+                        pos.y >= element.y - padding &&
+                        pos.y <= element.y + textHeight + padding
+                    ) {
+                        hitText = true;
+
+                        const now = Date.now();
+                        if (
+                            element._lastClickTime &&
+                            now - element._lastClickTime < 300
+                        ) {
+                            console.log('Double click detected on text');
+                            if (typeof handleTextEdit === 'function') {
+                                handleTextEdit(element.id);
+                            }
+                        }
+                        element._lastClickTime = now;
                     }
                 }
             });
         });
 
-        // Only clear selection if we didn't hit a text element
-        if (tool === 'select' && !hitText && e.target === e.target.getStage()) {
+        // Only clear selection if we didn't hit important elements
+        if (
+            tool === 'select' &&
+            !hitText &&
+            !hitImage &&
+            e.target === e.target.getStage()
+        ) {
             setSelectedElementIds([]);
+            setImageEditingId(null);
         }
     };
 
-    // Custom mouse handlers that incorporate selection rectangle
     const handleCanvasMouseDown = e => {
-        console.log('----------------');
-        console.log('Canvas.handleCanvasMouseDown', e);
+        console.log('Canvas.handleCanvasMouseDown', e.target.getClassName());
+
+        // Don't handle mouse down during image resizing
+        if (isImageResizing) {
+            console.log('Image is being resized, ignoring canvas mouse down');
+            return;
+        }
 
         const stage = e.target.getStage();
         const pos = stage.getPointerPosition();
         const now = Date.now();
 
-        // Check for double click on any element (including text)
-        if (
-            e.target === lastClickInfo.target &&
-            now - lastClickInfo.time < 300
-        ) {
-            console.log('Double click detected manually');
-
-            if (
-                e.target.className === 'Text' ||
-                (e.target.className === 'Rect' &&
-                    e.target.attrs.id &&
-                    elementsByLayer
-                        .get(activeLayerId)
-                        ?.find(
-                            el =>
-                                el.id === e.target.attrs.id &&
-                                el.type === 'text',
-                        ))
-            ) {
-                const elementId = e.target.attrs.id;
-                if (elementId) {
-                    console.log(
-                        'Double click on text, starting edit:',
-                        elementId,
-                    );
-                    handleTextEdit(elementId);
-                    e.cancelBubble = true;
-                    setLastClickInfo({ time: 0, target: null });
-                    return;
-                }
-            }
-        }
-
         // Store current click info for future double click detection
         setLastClickInfo({ time: now, target: e.target });
 
         if (tool === 'select') {
-            // First, always clear any existing selection rectangle state
+            // Clear selection rectangle state
             setSelectionRect(null);
             setIsSelecting(false);
             setSelectionStartPoint(null);
@@ -185,10 +195,7 @@ const Canvas: React.FC<CanvasProps> = ({
                     height: 0,
                 });
                 setIsSelecting(true);
-            } else {
-                // We clicked on an object - this will be handled by useCanvasOperations
-                // Make sure we don't set up selection rectangle
-                console.log('Clicked on object, no selection rectangle');
+                setImageEditingId(null);
             }
         }
 
@@ -197,6 +204,9 @@ const Canvas: React.FC<CanvasProps> = ({
     };
 
     const handleCanvasMouseMove = e => {
+        // Don't handle mouse move during image resizing
+        if (isImageResizing) return;
+
         const stage = e.target.getStage();
         const pos = stage.getPointerPosition();
 
@@ -211,7 +221,6 @@ const Canvas: React.FC<CanvasProps> = ({
             setCursorPosition(pos);
         }
 
-        // Only update selection rectangle if we're actually selecting (not moving objects)
         if (
             isSelecting &&
             tool === 'select' &&
@@ -230,7 +239,8 @@ const Canvas: React.FC<CanvasProps> = ({
     };
 
     const handleCanvasMouseUp = e => {
-        // Handle selection rectangle completion only if we were actually selecting
+        if (isImageResizing) return;
+
         if (isSelecting && !isMoving && selectionRect && tool === 'select') {
             const selectedIds = [];
             elementsByLayer.forEach((elements, layerId) => {
@@ -250,12 +260,9 @@ const Canvas: React.FC<CanvasProps> = ({
             }
         }
 
-        // Always clear selection rectangle state on mouse up
-        // This ensures no leftover selection rectangles appear
         setIsSelecting(false);
         setSelectionRect(null);
         setSelectionStartPoint(null);
-
         onMouseUp();
     };
 
@@ -353,6 +360,21 @@ const Canvas: React.FC<CanvasProps> = ({
         }
     };
 
+    const getSelectedImageId = () => {
+        if (selectedElementIds.length !== 1) return undefined;
+
+        const selectedId = selectedElementIds[0];
+        let isImage = false;
+        elementsByLayer.forEach(elements => {
+            const element = elements.find(el => el.id === selectedId);
+            if (element && element.type === 'image') {
+                isImage = true;
+            }
+        });
+
+        return isImage ? selectedId : undefined;
+    };
+
     const getTextEditorPosition = () => {
         if (!textEditingId || !stageRef.current) return { x: 0, y: 0 };
 
@@ -394,6 +416,12 @@ const Canvas: React.FC<CanvasProps> = ({
         <div
             id="canvas-container"
             className="flex-1 bg-slate-100 dark:bg-gray-900 overflow-auto relative">
+            {/* Image Toolbar - positioned above canvas */}
+            <ImageToolbar
+                selectedImageId={imageEditingId || getSelectedImageId()}
+                onClose={() => setImageEditingId(null)}
+            />
+
             <div className="absolute top-0 left-0 min-w-full min-h-full flex items-center justify-center p-4">
                 <div
                     style={{
@@ -440,7 +468,7 @@ const Canvas: React.FC<CanvasProps> = ({
                             />
                         </Layer>
 
-                        {/*Render each layer*/}
+                        {/* Render each layer */}
                         {layers.map(layer => {
                             const layerElements =
                                 elementsByLayer.get(layer.id) || [];
@@ -455,12 +483,10 @@ const Canvas: React.FC<CanvasProps> = ({
                                     }
                                     selectedElementIds={selectedElementIds}
                                     onSelectElement={id => {
-                                        // Clear selection rectangle when selecting individual elements
                                         setSelectionRect(null);
                                         setIsSelecting(false);
                                         setSelectionStartPoint(null);
 
-                                        // Handle shift key for multi-select
                                         if (
                                             window.event &&
                                             (window.event.shiftKey ||
@@ -486,15 +512,18 @@ const Canvas: React.FC<CanvasProps> = ({
                                         }
                                     }}
                                     onTextEdit={handleTextEdit}
+                                    onImageResizeStart={handleImageResizeStart}
+                                    onImageResizeEnd={handleImageResizeEnd}
                                 />
                             );
                         })}
 
-                        {/* Only render selection rectangle when actually selecting (not moving) */}
+                        {/* Selection rectangle */}
                         {selectionRect &&
                             tool === 'select' &&
                             isSelecting &&
-                            !isMoving && (
+                            !isMoving &&
+                            !isImageResizing && (
                                 <Layer>
                                     <Rect
                                         x={selectionRect.x}
@@ -511,6 +540,7 @@ const Canvas: React.FC<CanvasProps> = ({
                                 </Layer>
                             )}
 
+                        {/* Custom cursor for drawing tools */}
                         {(tool === 'pencil' ||
                             tool === 'brush' ||
                             tool === 'pen' ||
@@ -534,11 +564,47 @@ const Canvas: React.FC<CanvasProps> = ({
                         )}
                     </Stage>
 
+                    {/* Render HTML-based image resize handles for all selected images */}
+                    {selectedElementIds.map(elementId => {
+                        let imageElement = null;
+                        elementsByLayer.forEach(elements => {
+                            const found = elements.find(
+                                el =>
+                                    el.id === elementId && el.type === 'image',
+                            );
+                            if (found) {
+                                imageElement = found;
+                            }
+                        });
+
+                        if (imageElement) {
+                            return (
+                                <ImageResizeHandles
+                                    key={elementId}
+                                    imageElement={{
+                                        id: imageElement.id,
+                                        x: imageElement.x,
+                                        y: imageElement.y,
+                                        width: imageElement.width,
+                                        height: imageElement.height,
+                                    }}
+                                    isSelected={true}
+                                    onResizeStart={
+                                        contextHandleImageResizeStart
+                                    }
+                                />
+                            );
+                        }
+                        return null;
+                    })}
+
                     <CanvasResizeHandles
                         isDrawing={isDrawing}
                         onResizeStart={onResizeStart}
                     />
                     {renderTextEditor()}
+
+                    {/* Remove ImageToolbar from here - it's now above the canvas */}
                 </div>
             </div>
         </div>
