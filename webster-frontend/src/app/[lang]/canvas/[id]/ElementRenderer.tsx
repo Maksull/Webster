@@ -1,5 +1,4 @@
 'use client';
-
 import React, { useState, useEffect } from 'react';
 import {
     Line,
@@ -21,12 +20,16 @@ import {
     ArrowElement,
     ImageElement,
 } from '@/types/elements';
+import ImageResizeHandles from './ImageResizeHandles';
+import { useDrawing } from '@/contexts';
 
 interface ElementRendererProps {
     element: any;
     isSelected: boolean;
     onSelect: (id: string) => void;
     onTextEdit?: (id: string) => void;
+    onImageResizeStart?: () => void;
+    onImageResizeEnd?: () => void;
 }
 
 const ElementRenderer: React.FC<ElementRendererProps> = ({
@@ -34,10 +37,14 @@ const ElementRenderer: React.FC<ElementRendererProps> = ({
     isSelected,
     onTextEdit,
     onSelect,
+    onImageResizeStart,
+    onImageResizeEnd,
 }) => {
     const [imageObj, setImageObj] = useState<HTMLImageElement | null>(null);
 
-    // Load image for image elements
+    // Use drawing context instead of useImageResize hook
+    const { handleImageResizeStart } = useDrawing();
+
     useEffect(() => {
         if (element.type === 'image') {
             const img = new window.Image();
@@ -76,6 +83,35 @@ const ElementRenderer: React.FC<ElementRendererProps> = ({
         ...(isSelected ? selectionProps : {}),
     };
 
+    const handleImageResizeStartLocal = (corner: string, e: any) => {
+        console.log(
+            'ElementRenderer: Starting image resize for corner:',
+            corner,
+        );
+        if (onImageResizeStart) {
+            onImageResizeStart();
+        }
+        return handleImageResizeStart(corner, e);
+    };
+
+    useEffect(() => {
+        if (element.type === 'image' && isSelected) {
+            const handleGlobalMouseUp = () => {
+                if (onImageResizeEnd) {
+                    onImageResizeEnd();
+                }
+            };
+
+            document.addEventListener('mouseup', handleGlobalMouseUp);
+            document.addEventListener('touchend', handleGlobalMouseUp);
+
+            return () => {
+                document.removeEventListener('mouseup', handleGlobalMouseUp);
+                document.removeEventListener('touchend', handleGlobalMouseUp);
+            };
+        }
+    }, [element.type, isSelected, onImageResizeEnd]);
+
     switch (element.type) {
         case 'line':
             const lineElement = element as LineElement;
@@ -101,6 +137,7 @@ const ElementRenderer: React.FC<ElementRendererProps> = ({
                     {...commonProps}
                 />
             );
+
         case 'arrow':
             const arrowElement = element as ArrowElement;
             return (
@@ -201,9 +238,7 @@ const ElementRenderer: React.FC<ElementRendererProps> = ({
 
         case 'image':
             const imageElement = element as ImageElement;
-
             if (!imageObj) {
-                // Show a placeholder while image is loading
                 return (
                     <Rect
                         x={imageElement.x}
@@ -227,30 +262,36 @@ const ElementRenderer: React.FC<ElementRendererProps> = ({
             }
 
             return (
-                <KonvaImage
-                    x={imageElement.x}
-                    y={imageElement.y}
-                    width={imageElement.width}
-                    height={imageElement.height}
-                    image={imageObj}
-                    rotation={imageElement.rotation || 0}
-                    opacity={imageElement.opacity || 1}
-                    {...commonProps}
-                    onClick={e => {
-                        e.cancelBubble = true;
-                        onSelect(element.id);
-                    }}
-                    onMouseDown={e => {
-                        onSelect(element.id);
-                    }}
-                    draggable={false} // We handle dragging through our select tool
-                />
+                <>
+                    <KonvaImage
+                        x={imageElement.x}
+                        y={imageElement.y}
+                        width={imageElement.width}
+                        height={imageElement.height}
+                        image={imageObj}
+                        rotation={imageElement.rotation || 0}
+                        opacity={imageElement.opacity || 1}
+                        scaleX={imageElement.scaleX || 1}
+                        scaleY={imageElement.scaleY || 1}
+                        offsetX={imageElement.offsetX || 0}
+                        offsetY={imageElement.offsetY || 0}
+                        skewX={imageElement.skewX || 0}
+                        skewY={imageElement.skewY || 0}
+                        {...commonProps}
+                        onClick={e => {
+                            e.cancelBubble = true;
+                            onSelect(element.id);
+                        }}
+                        onMouseDown={e => {
+                            onSelect(element.id);
+                        }}
+                        draggable={false}
+                    />
+                </>
             );
 
         case 'text':
             const textElement = element as TextElement;
-
-            // Calculate text dimensions with padding for hit area
             const textWidth =
                 textElement.width ||
                 (textElement.text?.length * textElement.fontSize) / 2 ||
@@ -260,7 +301,7 @@ const ElementRenderer: React.FC<ElementRendererProps> = ({
 
             return (
                 <>
-                    {/* Hit area for text */}
+                    {/* Hit area for text selection */}
                     <Rect
                         x={textElement.x - padding}
                         y={textElement.y - padding}
@@ -304,7 +345,6 @@ const ElementRenderer: React.FC<ElementRendererProps> = ({
                         width={textElement.width}
                         height={textElement.height}
                         rotation={textElement.rotation || 0}
-                        // Use the same ID as the hit area
                         id={element.id}
                         name={`element-${element.id}`}
                         onClick={e => {
