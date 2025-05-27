@@ -43,18 +43,18 @@ export default function CanvasGrid({
                     </div>
 
                     <div className="p-4">
-                        <div className="flex justify-between items-start">
-                            <div>
-                                <h3 className="font-medium text-gray-900 dark:text-white">
+                        <div className="flex justify-between items-start mb-3">
+                            <div className="min-w-0 flex-1">
+                                <h3 className="font-medium text-gray-900 dark:text-white truncate">
                                     {canvas.name}
                                 </h3>
                                 <p className="text-sm text-gray-500 dark:text-gray-400 mt-1 flex items-center">
-                                    <Calendar className="h-3.5 w-3.5 mr-1" />
+                                    <Calendar className="h-3.5 w-3.5 mr-1 flex-shrink-0" />
                                     {canvas.updatedAt.toLocaleDateString()}
                                 </p>
                             </div>
 
-                            <div className="flex space-x-1 opacity-0 group-hover:opacity-100 transition-all duration-300 ease-out transform translate-y-1 group-hover:translate-y-0">
+                            <div className="flex space-x-1 opacity-0 group-hover:opacity-100 transition-all duration-300 ease-out transform translate-y-1 group-hover:translate-y-0 ml-2">
                                 <Link
                                     href={`/${lang}/canvas/${canvas.id}`}
                                     className="p-1 text-gray-500 dark:text-gray-400 hover:text-purple-600 dark:hover:text-purple-400 hover:bg-white/20 dark:hover:bg-gray-800/50 rounded transition-all duration-200"
@@ -86,7 +86,15 @@ export default function CanvasGrid({
                             </div>
                         </div>
 
-                        <div className="mt-2">
+                        {canvas.description && (
+                            <div className="mb-3">
+                                <p className="text-sm text-gray-600 dark:text-gray-300 line-clamp-3 leading-relaxed">
+                                    {canvas.description}
+                                </p>
+                            </div>
+                        )}
+
+                        <div>
                             <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 dark:bg-purple-900/50 text-purple-800 dark:text-purple-300 group-hover:bg-purple-200 dark:group-hover:bg-purple-800/60 transition-colors duration-300">
                                 {canvas.width}x{canvas.height}
                             </span>

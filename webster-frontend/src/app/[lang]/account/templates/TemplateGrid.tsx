@@ -61,24 +61,23 @@ export default function TemplateGrid({
                                 <File className="h-8 w-8" />
                             </div>
                         )}
-
                         {/* Hover gradient overlay */}
                         <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 ease-out"></div>
                     </div>
 
                     <div className="p-4">
-                        <div className="flex justify-between items-start">
-                            <div>
-                                <h3 className="font-medium text-gray-900 dark:text-white">
+                        <div className="flex justify-between items-start mb-3">
+                            <div className="min-w-0 flex-1">
+                                <h3 className="font-medium text-gray-900 dark:text-white truncate">
                                     {template.name}
                                 </h3>
                                 <p className="text-sm text-gray-500 dark:text-gray-400 mt-1 flex items-center">
-                                    <Calendar className="h-3.5 w-3.5 mr-1" />
+                                    <Calendar className="h-3.5 w-3.5 mr-1 flex-shrink-0" />
                                     {template.updatedAt.toLocaleDateString()}
                                 </p>
                             </div>
 
-                            <div className="flex space-x-1 opacity-0 group-hover:opacity-100 transition-all duration-300 ease-out transform translate-y-1 group-hover:translate-y-0">
+                            <div className="flex space-x-1 opacity-0 group-hover:opacity-100 transition-all duration-300 ease-out transform translate-y-1 group-hover:translate-y-0 ml-2">
                                 <button
                                     onClick={e => {
                                         e.preventDefault();
@@ -126,7 +125,15 @@ export default function TemplateGrid({
                             </div>
                         </div>
 
-                        <div className="mt-2">
+                        {template.description && (
+                            <div className="mb-3">
+                                <p className="text-sm text-gray-600 dark:text-gray-300 line-clamp-3 leading-relaxed">
+                                    {template.description}
+                                </p>
+                            </div>
+                        )}
+
+                        <div>
                             <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 dark:bg-purple-900/50 text-purple-800 dark:text-purple-300 group-hover:bg-purple-200 dark:group-hover:bg-purple-800/60 transition-colors duration-300">
                                 {template.width}x{template.height}
                             </span>
