@@ -42,7 +42,6 @@ export default function TemplateList({
     const handleDeleteTemplate = (templateId: string, templateName: string) => {
         deleteTemplate(templateId, templateName);
     };
-
     return (
         <div className="divide-y divide-gray-200 dark:divide-gray-700">
             {templates.map(template => (
@@ -61,7 +60,6 @@ export default function TemplateList({
                                 <File className="h-6 w-6" />
                             </div>
                         )}
-
                         {/* Template background color overlay */}
                         <div
                             className="absolute inset-0 opacity-10 group-hover:opacity-25 transition-opacity duration-300"
@@ -69,15 +67,22 @@ export default function TemplateList({
                                 backgroundColor:
                                     template.backgroundColor || '#FFFFFF',
                             }}></div>
-
+                        {/* Hover gradient overlay */}
                         <div className="absolute inset-0 bg-gradient-to-br from-black/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                     </div>
 
                     <div className="min-w-0 flex-1">
                         <div className="flex items-center justify-between">
-                            <h3 className="font-medium text-gray-900 dark:text-white truncate group-hover:text-purple-700 dark:group-hover:text-purple-300 transition-colors duration-300">
-                                {template.name}
-                            </h3>
+                            <div className="min-w-0 flex-1">
+                                <h3 className="font-medium text-gray-900 dark:text-white truncate group-hover:text-purple-700 dark:group-hover:text-purple-300 transition-colors duration-300">
+                                    {template.name}
+                                </h3>
+                                {template.description && (
+                                    <p className="text-sm text-gray-600 dark:text-gray-400 mt-1 line-clamp-2 leading-relaxed">
+                                        {template.description}
+                                    </p>
+                                )}
+                            </div>
 
                             <div className="ml-4 flex-shrink-0 flex space-x-1 opacity-70 group-hover:opacity-100 transition-all duration-300 transform translate-x-1 group-hover:translate-x-0">
                                 <button
@@ -123,7 +128,7 @@ export default function TemplateList({
                             </div>
                         </div>
 
-                        <div className="mt-1 flex items-center text-sm text-gray-500 dark:text-gray-400 space-x-4">
+                        <div className="mt-2 flex items-center text-sm text-gray-500 dark:text-gray-400 space-x-4">
                             <span className="inline-flex items-center group-hover:text-gray-600 dark:group-hover:text-gray-300 transition-colors duration-300">
                                 <Clock className="h-3.5 w-3.5 mr-1" />
                                 {template.updatedAt.toLocaleDateString()}

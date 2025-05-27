@@ -51,9 +51,16 @@ export default function CanvasList({
 
                     <div className="min-w-0 flex-1">
                         <div className="flex items-center justify-between">
-                            <h3 className="font-medium text-gray-900 dark:text-white truncate group-hover:text-purple-700 dark:group-hover:text-purple-300 transition-colors duration-300">
-                                {canvas.name}
-                            </h3>
+                            <div className="min-w-0 flex-1">
+                                <h3 className="font-medium text-gray-900 dark:text-white truncate group-hover:text-purple-700 dark:group-hover:text-purple-300 transition-colors duration-300">
+                                    {canvas.name}
+                                </h3>
+                                {canvas.description && (
+                                    <p className="text-sm text-gray-600 dark:text-gray-400 mt-1 line-clamp-2 leading-relaxed">
+                                        {canvas.description}
+                                    </p>
+                                )}
+                            </div>
 
                             <div className="ml-4 flex-shrink-0 flex space-x-1 opacity-70 group-hover:opacity-100 transition-all duration-300 transform translate-x-1 group-hover:translate-x-0">
                                 <Link
@@ -83,7 +90,7 @@ export default function CanvasList({
                             </div>
                         </div>
 
-                        <div className="mt-1 flex items-center text-sm text-gray-500 dark:text-gray-400 space-x-4">
+                        <div className="mt-2 flex items-center text-sm text-gray-500 dark:text-gray-400 space-x-4">
                             <span className="inline-flex items-center group-hover:text-gray-600 dark:group-hover:text-gray-300 transition-colors duration-300">
                                 <Clock className="h-3.5 w-3.5 mr-1" />
                                 {canvas.updatedAt.toLocaleDateString()}

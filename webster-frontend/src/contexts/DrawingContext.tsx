@@ -1,4 +1,5 @@
 'use client';
+
 import React, {
     createContext,
     useContext,
@@ -18,7 +19,6 @@ import {
 import { Canvas } from '@/types/canvas';
 
 interface DrawingContextProps {
-    // ... existing props ...
     dimensions: { width: number; height: number };
     setDimensions: React.Dispatch<
         React.SetStateAction<{ width: number; height: number }>
@@ -90,6 +90,8 @@ interface DrawingContextProps {
     canvasId?: string;
     canvasName?: string;
     setCanvasName: React.Dispatch<React.SetStateAction<string>>;
+    canvasDescription: string | null;
+    setCanvasDescription: React.Dispatch<React.SetStateAction<string | null>>;
     selectedElementIds: string[];
     setSelectedElementIds: React.Dispatch<React.SetStateAction<string[]>>;
     isMoving: boolean;
@@ -102,8 +104,6 @@ interface DrawingContextProps {
     setTextFontSize: React.Dispatch<React.SetStateAction<number>>;
     textFontFamily: string;
     setTextFontFamily: React.Dispatch<React.SetStateAction<string>>;
-
-    // Image resize functionality
     maintainAspectRatio: boolean;
     setMaintainAspectRatio: React.Dispatch<React.SetStateAction<boolean>>;
     isImageResizing: boolean;
@@ -134,14 +134,15 @@ export const DrawingProvider: React.FC<DrawingProviderProps> = ({
 }) => {
     const DEFAULT_RESOLUTION = POPULAR_RESOLUTIONS[0];
 
-    // ... existing state declarations ...
     const [dimensions, setDimensions] = useState({
         width: initialCanvas?.width || DEFAULT_RESOLUTION.width,
         height: initialCanvas?.height || DEFAULT_RESOLUTION.height,
     });
+
     const [backgroundColor, setBackgroundColor] = useState(
         initialCanvas?.backgroundColor || '#FFFFFF',
     );
+
     const [selectedResolution, setSelectedResolution] = useState<Resolution>(
         initialCanvas
             ? {
@@ -151,6 +152,7 @@ export const DrawingProvider: React.FC<DrawingProviderProps> = ({
               }
             : DEFAULT_RESOLUTION,
     );
+
     const [scale, setScale] = useState(1);
     const [tool, setTool] = useState<ToolType>('pencil');
     const [color, setColor] = useState('#000000');
@@ -161,12 +163,14 @@ export const DrawingProvider: React.FC<DrawingProviderProps> = ({
         x: number;
         y: number;
     } | null>(null);
+
     const [layers, setLayers] = useState<DrawingLayer[]>(() => {
         if (initialCanvas?.layers && initialCanvas.layers.length > 0) {
             return initialCanvas.layers;
         }
         return [];
     });
+
     const [elementsByLayer, setElementsByLayer] = useState<
         Map<string, DrawingElement[]>
     >(() => {
@@ -181,13 +185,16 @@ export const DrawingProvider: React.FC<DrawingProviderProps> = ({
         }
         return new Map();
     });
+
     const [activeLayerId, setActiveLayerId] = useState<string>(() => {
         if (initialCanvas?.layers && initialCanvas.layers.length > 0) {
             return initialCanvas.layers[0].id;
         }
         return '';
     });
+
     const [showLayersPanel, setShowLayersPanel] = useState<boolean>(false);
+
     const [history, setHistory] = useState<HistoryRecord[]>(() => {
         if (initialCanvas?.layers) {
             return [
@@ -201,12 +208,15 @@ export const DrawingProvider: React.FC<DrawingProviderProps> = ({
         }
         return [];
     });
+
     const [historyStep, setHistoryStep] = useState(0);
     const [showSettings, setShowSettings] = useState(false);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
     const stageRef = useRef<any>(null);
     const layerRefs = useRef<Map<string, any>>(new Map());
     const canvasWrapperRef = useRef<HTMLDivElement>(null);
+
     const [isResizing, setIsResizing] = useState(false);
     const [resizeDirection, setResizeDirection] = useState('');
     const [resizeStartPos, setResizeStartPos] = useState({ x: 0, y: 0 });
@@ -220,19 +230,24 @@ export const DrawingProvider: React.FC<DrawingProviderProps> = ({
         width: 0,
         height: 0,
     });
+
     const [selectedElementIds, setSelectedElementIds] = useState<string[]>([]);
     const [isMoving, setIsMoving] = useState(false);
+
     const [canvasName, setCanvasName] = useState<string>(
         initialCanvas?.name || '',
     );
+    const [canvasDescription, setCanvasDescription] = useState<string | null>(
+        initialCanvas?.description || null,
+    );
+
     const [textEditingId, setTextEditingId] = useState<string | null>(null);
     const [textValue, setTextValue] = useState('');
     const [textFontSize, setTextFontSize] = useState(20);
     const [textFontFamily, setTextFontFamily] = useState('Arial');
-
-    // Image resize state
     const [maintainAspectRatio, setMaintainAspectRatio] = useState(true);
     const [isImageResizing, setIsImageResizing] = useState(false);
+
     const resizeStateRef = useRef({
         corner: '',
         startPos: { x: 0, y: 0 },
@@ -240,7 +255,6 @@ export const DrawingProvider: React.FC<DrawingProviderProps> = ({
         stage: null as any,
     });
 
-    // Image resize functions
     const updateImageElement = useCallback(
         (elementId: string, updates: Partial<ImageElement>) => {
             const updatedElementsByLayer = new Map(elementsByLayer);
@@ -431,6 +445,7 @@ export const DrawingProvider: React.FC<DrawingProviderProps> = ({
     const handleImageResizeStart = useCallback(
         (corner: string, e: any) => {
             console.log('Image resize started for corner:', corner);
+
             if (e.evt) {
                 e.evt.preventDefault();
                 e.evt.stopPropagation();
@@ -462,6 +477,7 @@ export const DrawingProvider: React.FC<DrawingProviderProps> = ({
             }
 
             console.log('Found image element for resize:', imageElement.id);
+
             resizeStateRef.current = {
                 corner,
                 startPos: pos,
@@ -536,7 +552,6 @@ export const DrawingProvider: React.FC<DrawingProviderProps> = ({
         setMaintainAspectRatio(prev => !prev);
     }, []);
 
-    // ... existing functions ...
     useEffect(() => {
         if (!initialCanvas && layers.length === 0) {
             const defaultLayerId = Date.now().toString();
@@ -625,6 +640,8 @@ export const DrawingProvider: React.FC<DrawingProviderProps> = ({
         canvasId: initialCanvas?.id,
         canvasName,
         setCanvasName,
+        canvasDescription,
+        setCanvasDescription,
         selectedElementIds,
         setSelectedElementIds,
         isMoving,
@@ -637,7 +654,6 @@ export const DrawingProvider: React.FC<DrawingProviderProps> = ({
         setTextFontSize,
         textFontFamily,
         setTextFontFamily,
-        // Image resize functionality
         maintainAspectRatio,
         setMaintainAspectRatio,
         isImageResizing,
