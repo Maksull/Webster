@@ -156,6 +156,7 @@ export class AuthService {
             role: savedUser.role,
             isEmailVerified: savedUser.isEmailVerified,
             avatar: savedUser.avatar,
+            createdAt: savedUser.createdAt,
         };
 
         return { user: userResponse as User, token };
