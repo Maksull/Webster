@@ -2,7 +2,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, Menu, Save, Download } from 'lucide-react';
+import { ArrowLeft, Menu, Save, Download, Bookmark } from 'lucide-react';
 import { Dictionary } from '@/get-dictionary';
 import { useDrawing } from '@/contexts/DrawingContext';
 
@@ -15,6 +15,7 @@ interface CanvasHeaderProps {
         quality?: number;
         pixelRatio?: number;
     }) => void;
+    onSaveAsTemplate: () => void;
 }
 
 const CanvasHeader: React.FC<CanvasHeaderProps> = ({
@@ -22,9 +23,9 @@ const CanvasHeader: React.FC<CanvasHeaderProps> = ({
     lang,
     onSave,
     onDownload,
+    onSaveAsTemplate,
 }) => {
     const { setIsMobileMenuOpen, canvasName, setCanvasName } = useDrawing();
-
     const [isEditing, setIsEditing] = useState(false);
     const [nameInput, setNameInput] = useState(
         canvasName || dict.drawing?.untitledDesign || 'Untitled Design',
@@ -34,7 +35,6 @@ const CanvasHeader: React.FC<CanvasHeaderProps> = ({
         'png' | 'jpeg' | 'pdf'
     >('png');
 
-    // Update local state when canvas name changes from context
     useEffect(() => {
         setNameInput(
             canvasName || dict.drawing?.untitledDesign || 'Untitled Design',
@@ -73,7 +73,6 @@ const CanvasHeader: React.FC<CanvasHeaderProps> = ({
         }
     };
 
-    // Focus input when editing starts
     useEffect(() => {
         if (isEditing && inputRef.current) {
             inputRef.current.focus();
@@ -119,13 +118,21 @@ const CanvasHeader: React.FC<CanvasHeaderProps> = ({
                 <Menu className="h-5 w-5 text-slate-600 dark:text-gray-300" />
             </button>
 
-            {/* Desktop actions */}
+            {/* Desktop Actions */}
             <div className="hidden md:flex items-center space-x-3">
                 <button
                     onClick={onSave}
                     className="flex items-center h-9 px-3 py-0 border border-slate-200 dark:border-gray-700 rounded-lg text-sm font-medium text-slate-700 dark:text-gray-200 bg-white dark:bg-gray-800 hover:bg-slate-50 dark:hover:bg-gray-700 transition-colors">
                     <Save className="h-4 w-4 mr-1.5" />
                     {dict.drawing?.save || 'Save'}
+                </button>
+
+                <button
+                    onClick={onSaveAsTemplate}
+                    className="flex items-center h-9 px-3 py-0 border border-amber-200 dark:border-amber-700 rounded-lg text-sm font-medium text-amber-700 dark:text-amber-200 bg-amber-50 dark:bg-amber-900/20 hover:bg-amber-100 dark:hover:bg-amber-900/30 transition-colors"
+                    title="Save current canvas as a reusable template">
+                    <Bookmark className="h-4 w-4 mr-1.5" />
+                    Save as Template
                 </button>
 
                 {/* Download Button with Integrated Format Selection */}

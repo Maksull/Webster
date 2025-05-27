@@ -12,9 +12,11 @@ import SettingsPanel from './SettingsPanel';
 import { useCanvasOperations } from './useCanvasOperations';
 import { useHistory } from './useHistory';
 import ZoomControls from './ZoomControls';
+import TemplateCreationModal from './TemplateCreationModal';
 import { Canvas as CanvasType } from '@/types/canvas';
 import { DrawingProvider, useDrawing } from '@/contexts';
 import AlertModal from '@/components/AlertModal';
+import { API_URL } from '@/config';
 
 interface DrawingEditorProps {
     initialCanvas?: CanvasType | null;
@@ -22,13 +24,15 @@ interface DrawingEditorProps {
 
 const DrawingEditorContent: React.FC = () => {
     const { dict, lang } = useDictionary();
-    const { showLayersPanel, isMobileMenuOpen } = useDrawing();
+    const { showLayersPanel, isMobileMenuOpen, canvasId, canvasName } =
+        useDrawing();
     const { handleClear } = useHistory();
     const [modal, setModal] = useState({
         open: false,
         type: 'success' as 'success' | 'error',
         message: '',
     });
+    const [templateModal, setTemplateModal] = useState(false);
 
     const notify = (type: 'success' | 'error', message: string) => {
         setModal({ open: true, type, message });
@@ -37,6 +41,67 @@ const DrawingEditorContent: React.FC = () => {
     const handleSaveWithNotify = async () => {
         const result = await handleSave();
         notify(result.success ? 'success' : 'error', result.message);
+    };
+
+    const handleSaveAsTemplate = async (templateData: {
+        name: string;
+        description?: string;
+        isPublic: boolean;
+    }) => {
+        if (!canvasId) {
+            throw new Error('Canvas must be saved before creating a template');
+        }
+
+        try {
+            // First, ensure the canvas is saved with latest changes
+            const saveResult = await handleSave();
+            if (!saveResult.success) {
+                throw new Error(
+                    'Please save the canvas first before creating a template',
+                );
+            }
+
+            const response = await fetch(
+                `${API_URL}/templates/from-canvas/${canvasId}`,
+                {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        Authorization: `Bearer ${localStorage.getItem('token') || ''}`,
+                    },
+                    body: JSON.stringify(templateData),
+                },
+            );
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(
+                    errorData.message || 'Failed to create template',
+                );
+            }
+
+            const result = await response.json();
+            console.log('Template created successfully:', result);
+
+            notify(
+                'success',
+                `Template "${templateData.name}" created successfully!`,
+            );
+        } catch (error) {
+            console.error('Error creating template:', error);
+            throw error; // Re-throw to let the modal handle it
+        }
+    };
+
+    const openTemplateModal = () => {
+        if (!canvasId) {
+            notify(
+                'error',
+                'Please save your canvas first before creating a template',
+            );
+            return;
+        }
+        setTemplateModal(true);
     };
 
     const {
@@ -58,11 +123,21 @@ const DrawingEditorContent: React.FC = () => {
                 onClose={() => setModal({ ...modal, open: false })}
             />
 
+            <TemplateCreationModal
+                isOpen={templateModal}
+                onClose={() => setTemplateModal(false)}
+                onSave={handleSaveAsTemplate}
+                defaultName={
+                    canvasName ? `${canvasName} Template` : 'My Template'
+                }
+            />
+
             <CanvasHeader
                 dict={dict}
                 lang={lang}
                 onSave={handleSaveWithNotify}
                 onDownload={handleDownload}
+                onSaveAsTemplate={openTemplateModal}
             />
 
             {isMobileMenuOpen && (
@@ -71,6 +146,7 @@ const DrawingEditorContent: React.FC = () => {
                     onSave={handleSaveWithNotify}
                     onDownload={handleDownload}
                     onClear={handleClear}
+                    onSaveAsTemplate={openTemplateModal}
                 />
             )}
 
