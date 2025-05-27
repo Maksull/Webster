@@ -20,15 +20,12 @@ import {
     ArrowElement,
     ImageElement,
 } from '@/types/elements';
-import ImageResizeHandles from './ImageResizeHandles';
-import { useDrawing } from '@/contexts';
 
 interface ElementRendererProps {
     element: any;
     isSelected: boolean;
     onSelect: (id: string) => void;
     onTextEdit?: (id: string) => void;
-    onImageResizeStart?: () => void;
     onImageResizeEnd?: () => void;
 }
 
@@ -37,13 +34,9 @@ const ElementRenderer: React.FC<ElementRendererProps> = ({
     isSelected,
     onTextEdit,
     onSelect,
-    onImageResizeStart,
     onImageResizeEnd,
 }) => {
     const [imageObj, setImageObj] = useState<HTMLImageElement | null>(null);
-
-    // Use drawing context instead of useImageResize hook
-    const { handleImageResizeStart } = useDrawing();
 
     useEffect(() => {
         if (element.type === 'image') {
@@ -81,17 +74,6 @@ const ElementRenderer: React.FC<ElementRendererProps> = ({
         name: `element-${element.id}`,
         ...hitAreaProps,
         ...(isSelected ? selectionProps : {}),
-    };
-
-    const handleImageResizeStartLocal = (corner: string, e: any) => {
-        console.log(
-            'ElementRenderer: Starting image resize for corner:',
-            corner,
-        );
-        if (onImageResizeStart) {
-            onImageResizeStart();
-        }
-        return handleImageResizeStart(corner, e);
     };
 
     useEffect(() => {
