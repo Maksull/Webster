@@ -10,6 +10,7 @@ import { createPortal } from 'react-dom';
 import { useEraserCursor } from './useEraserCursor';
 import ImageToolbar from './ImageToolbar';
 import ImageResizeHandles from './ImageResizeHandles';
+import { TextElement } from '@/types/elements';
 
 interface CanvasProps {
     onMouseDown: (e: any) => void;
@@ -45,9 +46,13 @@ const Canvas: React.FC<CanvasProps> = ({
         activeLayerId,
         isMoving,
         strokeWidth,
-        color,
-        // Use context state instead of local state
         isImageResizing,
+        textFontFamily,
+        textFontSize,
+        setTextFontSize,
+        setTextFontFamily,
+        color,
+        setColor,
         setIsImageResizing,
         handleImageResizeStart: contextHandleImageResizeStart,
     } = useDrawing();
@@ -401,12 +406,40 @@ const Canvas: React.FC<CanvasProps> = ({
         if (!textEditingId) return null;
 
         const position = getTextEditorPosition();
+
+        // Get the current text element being edited
+        let currentTextElement: TextElement | null = null;
+        elementsByLayer.forEach(elements => {
+            const found = elements.find(
+                el => el.id === textEditingId && el.type === 'text',
+            ) as TextElement;
+            if (found) {
+                currentTextElement = found;
+            }
+        });
+
+        if (!currentTextElement) return null;
+
         return createPortal(
             <TextEditor
                 value={textValue}
                 onChange={setTextValue}
-                onDone={() => handleTextEditDone(textEditingId, textValue)}
+                onDone={() =>
+                    handleTextEditDone(
+                        textEditingId,
+                        textValue,
+                        textFontSize,
+                        textFontFamily,
+                        color,
+                    )
+                }
                 position={position}
+                fontSize={textFontSize}
+                onFontSizeChange={setTextFontSize}
+                fontFamily={textFontFamily}
+                onFontFamilyChange={setTextFontFamily}
+                color={color}
+                onColorChange={setColor}
             />,
             document.getElementById('canvas-container')!,
         );

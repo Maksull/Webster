@@ -70,6 +70,9 @@ export const useCanvasOperations = (callbacks = {}) => {
         textFontFamily,
         opacity,
         setBackgroundColor,
+        setTextFontFamily,
+        setTextFontSize,
+        setColor,
     } = useDrawing();
 
     const { recordHistory } = useHistory();
@@ -168,23 +171,42 @@ export const useCanvasOperations = (callbacks = {}) => {
         const textElement = activeElements.find(
             el => el.id === id,
         ) as TextElement;
+
         if (textElement) {
             setTextEditingId(id);
             setTextValue(textElement.text);
+            // Set the current text properties for editing
+            setTextFontSize(textElement.fontSize || 20);
+            setTextFontFamily(textElement.fontFamily || 'Arial');
+            setColor(textElement.fill || '#000000');
         }
     };
 
-    const handleTextEditDone = (id: string, value: string) => {
+    const handleTextEditDone = (
+        id: string,
+        value: string,
+        fontSize: number,
+        fontFamily: string,
+        color: string,
+    ) => {
         const updatedElementsByLayer = new Map(elementsByLayer);
+
         updatedElementsByLayer.forEach((elements, layerId) => {
             const updatedElements = elements.map(element => {
                 if (element.id === id && element.type === 'text') {
-                    return { ...element, text: value };
+                    return {
+                        ...element,
+                        text: value,
+                        fontSize: fontSize,
+                        fontFamily: fontFamily,
+                        fill: color,
+                    };
                 }
                 return element;
             });
             updatedElementsByLayer.set(layerId, updatedElements);
         });
+
         setElementsByLayer(updatedElementsByLayer);
         setTextEditingId(null);
         setTextValue('');

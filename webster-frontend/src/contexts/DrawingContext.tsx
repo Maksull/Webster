@@ -117,6 +117,8 @@ interface DrawingContextProps {
     fitImageToCanvas: (imageId: string) => void;
     fitImageToCanvasWithAspectRatio: (imageId: string) => void;
     toggleAspectRatio: () => void;
+    opacity: number;
+    setOpacity: React.Dispatch<React.SetStateAction<number>>;
 }
 
 export const DrawingContext = createContext<DrawingContextProps | undefined>(
@@ -194,6 +196,8 @@ export const DrawingProvider: React.FC<DrawingProviderProps> = ({
     });
 
     const [showLayersPanel, setShowLayersPanel] = useState<boolean>(false);
+
+    const [opacity, setOpacity] = useState(1);
 
     const [history, setHistory] = useState<HistoryRecord[]>(() => {
         if (initialCanvas?.layers) {
@@ -586,6 +590,8 @@ export const DrawingProvider: React.FC<DrawingProviderProps> = ({
     };
 
     const contextValue: DrawingContextProps = {
+        opacity,
+        setOpacity,
         dimensions,
         setDimensions,
         backgroundColor,
