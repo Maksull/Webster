@@ -1,11 +1,12 @@
 import { randomBytes, pbkdf2Sync } from 'crypto';
 import jwt from 'jsonwebtoken';
 import { addMinutes } from 'date-fns';
-import { User } from '../entities/index.js';
+import { Template, User } from '../entities/index.js';
 import { AppDataSource, environmentConfig } from '../config/index.js';
 import { EmailService } from './index.js';
 import { TokenBlacklist } from '../middlewares/index.js';
 import { ChangeEmailDto, ChangePasswordDto, LoginDto, RegisterUserDto } from '../types/index.js';
+import { defaultTemplates } from '@/types/defaultTemplates.js';
 
 const PBKDF2_ITERATIONS = 10000;
 const PBKDF2_KEY_LENGTH = 64;
@@ -136,15 +137,18 @@ export class AuthService {
 
         const savedUser = await this.userRepository.save(user);
 
+        // Send verification email (async, don't wait)
         this.emailService.sendVerificationEmail(savedUser.email, verificationCode).catch(error => {
             console.error(`Failed to send verification email to ${savedUser.email}:`, error);
         });
 
+        // Create default templates for the new user
+        await this.createDefaultTemplates(savedUser.id);
+
         const token = this.generateToken(savedUser);
 
-        // Create user response object by picking non-sensitive properties
         const userResponse = {
-            id: savedUser.id, // Assuming id is a public field
+            id: savedUser.id,
             username: savedUser.username,
             email: savedUser.email,
             firstName: savedUser.firstName,
@@ -152,10 +156,60 @@ export class AuthService {
             role: savedUser.role,
             isEmailVerified: savedUser.isEmailVerified,
             avatar: savedUser.avatar,
-            // Add other public fields as needed, explicitly excluding password
         };
 
-        return { user: userResponse as User, token }; // Cast back to User if necessary for type compatibility
+        return { user: userResponse as User, token };
+    }
+
+    private async createDefaultTemplates(userId: string): Promise<void> {
+        const templateRepository = AppDataSource.getRepository(Template);
+
+        try {
+            console.log(`Creating ${defaultTemplates.length} default templates for user ${userId}`);
+
+            // Create all templates in parallel for better performance
+            const templatePromises = defaultTemplates.map(async templateData => {
+                try {
+                    const template = templateRepository.create({
+                        name: templateData.name,
+                        description: templateData.description,
+                        width: templateData.width,
+                        height: templateData.height,
+                        backgroundColor: templateData.backgroundColor,
+                        layers: templateData.layers,
+                        elementsByLayer: templateData.elementsByLayer,
+                        thumbnail: templateData.thumbnail,
+                        createdBy: userId,
+                    });
+
+                    const savedTemplate = await templateRepository.save(template);
+                    console.log(`✓ Created template: ${templateData.name} (ID: ${savedTemplate.id})`);
+                    return savedTemplate;
+                } catch (error) {
+                    console.error(`✗ Failed to create template "${templateData.name}":`, error);
+                    throw error;
+                }
+            });
+
+            // Wait for all templates to be created
+            const createdTemplates = await Promise.allSettled(templatePromises);
+
+            // Log results
+            const successful = createdTemplates.filter(result => result.status === 'fulfilled').length;
+            const failed = createdTemplates.filter(result => result.status === 'rejected').length;
+
+            console.log(`Template creation summary for user ${userId}: ${successful} successful, ${failed} failed`);
+
+            // Log any failures
+            createdTemplates.forEach((result, index) => {
+                if (result.status === 'rejected') {
+                    console.error(`Template "${defaultTemplates[index]?.name}" creation failed:`, result.reason);
+                }
+            });
+        } catch (error) {
+            console.error(`Failed to create default templates for user ${userId}:`, error);
+            // Don't throw the error - we don't want registration to fail if template creation fails
+        }
     }
 
     async changePassword(userId: string, data: ChangePasswordDto): Promise<void> {

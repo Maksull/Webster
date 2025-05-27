@@ -4,7 +4,14 @@ import { useDictionary } from '@/contexts/DictionaryContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { User, ImageIcon, Lock, LogOut, ChevronRight } from 'lucide-react';
+import {
+    User,
+    ImageIcon,
+    Lock,
+    LogOut,
+    ChevronRight,
+    File,
+} from 'lucide-react';
 
 export default function AccountNavigation() {
     const { dict, lang } = useDictionary();
@@ -23,9 +30,7 @@ export default function AccountNavigation() {
         try {
             await logout();
             router.push(`/${lang}/login`);
-        } catch {
-            // Error handling is managed by the parent component
-        }
+        } catch {}
     };
 
     return (
@@ -77,6 +82,32 @@ export default function AccountNavigation() {
                     <ChevronRight
                         className={`ml-auto h-5 w-5 ${
                             isActive('canvases')
+                                ? 'text-purple-500'
+                                : 'text-gray-400'
+                        }`}
+                    />
+                </Link>
+
+                <Link
+                    href={`/${lang}/account/templates`}
+                    className={`flex items-center px-3 py-2 w-full text-left rounded-lg transition-colors duration-200 ${
+                        isActive('templates')
+                            ? 'bg-purple-50 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300'
+                            : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
+                    }`}>
+                    <File
+                        className={`mr-3 h-5 w-5 ${
+                            isActive('templates')
+                                ? 'text-purple-500'
+                                : 'text-gray-500 dark:text-gray-400'
+                        }`}
+                    />
+                    <span className="font-medium">
+                        {dict.account?.templatesTab || 'My Templates'}
+                    </span>
+                    <ChevronRight
+                        className={`ml-auto h-5 w-5 ${
+                            isActive('templates')
                                 ? 'text-purple-500'
                                 : 'text-gray-400'
                         }`}

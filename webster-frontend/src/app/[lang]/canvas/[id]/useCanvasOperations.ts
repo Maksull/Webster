@@ -1357,6 +1357,95 @@ export const useCanvasOperations = (callbacks = {}) => {
         }
     };
 
+    const handleSaveAsTemplate = async (): Promise<{
+        success: boolean;
+        message: string;
+    }> => {
+        if (!stageRef.current) {
+            console.error(
+                'Cannot save template: Stage reference not available',
+            );
+            return { success: false, message: 'Failed to save template' };
+        }
+
+        if (!canvasId) {
+            return {
+                success: false,
+                message: 'Canvas must be saved before creating a template',
+            };
+        }
+
+        try {
+            // First, ensure the canvas is saved with latest changes
+            const saveResult = await handleSave();
+            if (!saveResult.success) {
+                return {
+                    success: false,
+                    message:
+                        'Please save the canvas first before creating a template',
+                };
+            }
+
+            // Show a simple prompt for template name and description
+            const templateName = prompt(
+                'Enter template name:',
+                `${canvasName || 'Untitled'} Template`,
+            );
+            if (!templateName) {
+                return {
+                    success: false,
+                    message: 'Template creation cancelled',
+                };
+            }
+
+            const templateDescription = prompt(
+                'Enter template description (optional):',
+            );
+            const isPublic = confirm(
+                'Make this template public for other users?',
+            );
+
+            const templateData = {
+                name: templateName.trim(),
+                description: templateDescription?.trim() || null,
+                isPublic: isPublic,
+            };
+
+            const response = await fetch(
+                `${API_URL}/templates/from-canvas/${canvasId}`,
+                {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        Authorization: `Bearer ${localStorage.getItem('token') || ''}`,
+                    },
+                    body: JSON.stringify(templateData),
+                },
+            );
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(
+                    errorData.message || 'Failed to create template',
+                );
+            }
+
+            const result = await response.json();
+            console.log('Template created successfully:', result);
+
+            return {
+                success: true,
+                message: `Template "${templateName}" created successfully!`,
+            };
+        } catch (error) {
+            console.error('Error creating template:', error);
+            return {
+                success: false,
+                message: `Failed to create template: ${error instanceof Error ? error.message : 'Unknown error'}`,
+            };
+        }
+    };
+
     return {
         handleMouseDown,
         handleMouseMove,
@@ -1367,5 +1456,6 @@ export const useCanvasOperations = (callbacks = {}) => {
         handleDownload,
         handleTextEdit,
         handleTextEditDone,
+        handleSaveAsTemplate,
     };
 };
