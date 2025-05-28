@@ -15,7 +15,7 @@ import {
     ImageElement,
 } from '@/types/elements';
 import { API_URL } from '@/config';
-import { useDrawing } from '@/contexts';
+import { useAuth, useDrawing } from '@/contexts';
 import { jsPDF } from 'jspdf';
 
 interface DownloadOptions {
@@ -74,6 +74,8 @@ export const useCanvasOperations = (callbacks = {}) => {
         setTextFontSize,
         setColor,
     } = useDrawing();
+
+    const { isAuthenticated } = useAuth();
 
     const { recordHistory } = useHistory();
     const dragStartPos = useRef({ x: 0, y: 0 });
@@ -1271,10 +1273,7 @@ export const useCanvasOperations = (callbacks = {}) => {
     const handleSave = async () => {
         if (!stageRef.current) {
             console.error('Cannot save: Stage reference not available');
-            return {
-                success: false,
-                message: `Failed to save canvas`,
-            };
+            return { success: false, message: 'Failed to save canvas' };
         }
 
         try {
@@ -1301,6 +1300,22 @@ export const useCanvasOperations = (callbacks = {}) => {
                 lastModified: new Date().toISOString(),
             };
 
+            // Check if user is authenticated
+            if (!isAuthenticated) {
+                // Save to localStorage if not authenticated (single canvas)
+                localStorage.setItem(
+                    'local_canvas_data',
+                    JSON.stringify(canvasData),
+                );
+
+                return {
+                    success: true,
+                    message: 'Drawing saved locally! Sign in to save to cloud.',
+                    isLocal: true,
+                };
+            }
+
+            // If authenticated, save to server as usual
             const url = canvasId
                 ? `${API_URL}/canvases/${canvasId}`
                 : `${API_URL}/canvases`;
@@ -1320,18 +1335,95 @@ export const useCanvasOperations = (callbacks = {}) => {
                 throw new Error(errorData.message || 'Failed to save canvas');
             }
 
+            const result = await response.json();
             return {
                 success: true,
                 message: 'Drawing saved successfully!',
+                isLocal: false,
+                canvasId: result.data?.id || canvasId,
             };
         } catch (error) {
             console.error('Error saving canvas:', error);
+
+            // If API call fails but user is authenticated, offer to save locally as backup
+            if (isAuthenticated) {
+                try {
+                    const thumbnailDataURL = stageRef.current.toDataURL({
+                        pixelRatio: 0.5,
+                        mimeType: 'image/jpeg',
+                        quality: 0.8,
+                    });
+
+                    const elementsObject: Record<string, any> = {};
+                    elementsByLayer.forEach((elements, layerId) => {
+                        elementsObject[layerId] = elements;
+                    });
+
+                    const canvasData = {
+                        name: canvasName || 'Untitled Design',
+                        width: dimensions.width,
+                        height: dimensions.height,
+                        description: canvasDescription,
+                        backgroundColor: backgroundColor,
+                        layers,
+                        elementsByLayer: elementsObject,
+                        thumbnail: thumbnailDataURL,
+                        lastModified: new Date().toISOString(),
+                    };
+
+                    localStorage.setItem(
+                        'backup_canvas_data',
+                        JSON.stringify(canvasData),
+                    );
+
+                    return {
+                        success: false,
+                        message: `Failed to save to cloud: ${error instanceof Error ? error.message : 'Unknown error'}. A local backup was created.`,
+                        isLocal: true,
+                    };
+                } catch (backupError) {
+                    return {
+                        success: false,
+                        message: `Failed to save canvas: ${error instanceof Error ? error.message : 'Unknown error'}`,
+                    };
+                }
+            }
+
             return {
                 success: false,
-                message: `Failed to save canvas: ${
-                    error instanceof Error ? error.message : 'Unknown error'
-                }`,
+                message: `Failed to save canvas: ${error instanceof Error ? error.message : 'Unknown error'}`,
             };
+        }
+    };
+
+    // Helper function to load local canvas
+    const loadLocalCanvas = () => {
+        try {
+            const canvasData = localStorage.getItem('local_canvas_data');
+            if (canvasData) {
+                return JSON.parse(canvasData);
+            }
+            return null;
+        } catch (error) {
+            console.error('Error loading local canvas:', error);
+            return null;
+        }
+    };
+
+    // Helper function to check if local canvas exists
+    const hasLocalCanvas = () => {
+        return localStorage.getItem('local_canvas_data') !== null;
+    };
+
+    // Helper function to clear local canvas
+    const clearLocalCanvas = () => {
+        try {
+            localStorage.removeItem('local_canvas_data');
+            localStorage.removeItem('backup_canvas_data');
+            return true;
+        } catch (error) {
+            console.error('Error clearing local canvas:', error);
+            return false;
         }
     };
 
