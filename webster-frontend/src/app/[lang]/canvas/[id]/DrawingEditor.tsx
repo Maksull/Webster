@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { useDictionary } from '@/contexts/DictionaryContext';
+import { useAuth } from '@/contexts/AuthContext';
 import CanvasHeader from './CanvasHeader';
 import Canvas from './Canvas';
 import DesktopToolbar from './DesktopToolbar';
@@ -24,6 +25,7 @@ interface DrawingEditorProps {
 
 const DrawingEditorContent: React.FC = () => {
     const { dict, lang } = useDictionary();
+    const { isAuthenticated } = useAuth();
     const { showLayersPanel, isMobileMenuOpen, canvasId, canvasName } =
         useDrawing();
     const { handleClear } = useHistory();
@@ -53,7 +55,6 @@ const DrawingEditorContent: React.FC = () => {
         }
 
         try {
-            // First, ensure the canvas is saved with latest changes
             const saveResult = await handleSave();
             if (!saveResult.success) {
                 throw new Error(
@@ -82,18 +83,26 @@ const DrawingEditorContent: React.FC = () => {
 
             const result = await response.json();
             console.log('Template created successfully:', result);
-
             notify(
                 'success',
                 `Template "${templateData.name}" created successfully!`,
             );
         } catch (error) {
             console.error('Error creating template:', error);
-            throw error; // Re-throw to let the modal handle it
+            throw error;
         }
     };
 
     const openTemplateModal = () => {
+        // Check if user is authenticated first
+        if (!isAuthenticated) {
+            notify(
+                'error',
+                'Please sign in to create templates. Templates allow you to save your designs.',
+            );
+            return;
+        }
+
         if (!canvasId) {
             notify(
                 'error',
@@ -101,6 +110,7 @@ const DrawingEditorContent: React.FC = () => {
             );
             return;
         }
+
         setTemplateModal(true);
     };
 

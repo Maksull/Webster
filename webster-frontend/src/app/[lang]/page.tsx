@@ -1,5 +1,5 @@
 'use client';
-
+import { useState, useEffect } from 'react';
 import {
     Wand2,
     Image as ImageIcon,
@@ -9,12 +9,81 @@ import {
     BarChart2,
     ArrowRight,
     Star,
+    Loader2,
 } from 'lucide-react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useDictionary } from '@/contexts/DictionaryContext';
+import { useAuth } from '@/contexts/AuthContext'; // Import useAuth
+import { Template } from '@/types/template';
+import { API_URL } from '@/config';
+import Image from 'next/image';
 
 export default function Home() {
     const { dict, lang } = useDictionary();
+    const { isAuthenticated } = useAuth(); // Get authentication status
+    const router = useRouter();
+    const [templates, setTemplates] = useState<Template[]>([]);
+    const [templatesLoading, setTemplatesLoading] = useState(true);
+    const [templatesError, setTemplatesError] = useState<string | null>(null);
+
+    useEffect(() => {
+        fetchDefaultTemplates();
+    }, []);
+
+    const fetchDefaultTemplates = async () => {
+        try {
+            setTemplatesLoading(true);
+            const response = await fetch(`${API_URL}/templates/defaults`);
+            const data = await response.json();
+            if (data.status === 'success') {
+                setTemplates(data.data.templates);
+            } else {
+                throw new Error('Failed to fetch templates');
+            }
+        } catch (error) {
+            console.error('Error fetching default templates:', error);
+            setTemplatesError('Failed to load templates');
+        } finally {
+            setTemplatesLoading(false);
+        }
+    };
+
+    const handleUseTemplate = (template: Template) => {
+        try {
+            const canvasData = {
+                name: `${template.name} - Copy`,
+                width: template.width,
+                height: template.height,
+                description: template.description,
+                backgroundColor: template.backgroundColor,
+                layers: template.layers,
+                elementsByLayer: template.elementsByLayer,
+                thumbnail: template.thumbnail,
+                lastModified: new Date().toISOString(),
+            };
+
+            localStorage.setItem(
+                'local_canvas_data',
+                JSON.stringify(canvasData),
+            );
+
+            // Redirect based on authentication status
+            if (isAuthenticated) {
+                router.push(`/${lang}/account/templates`);
+            } else {
+                router.push(`/${lang}/canvas/new`);
+            }
+        } catch (error) {
+            console.error('Error using template:', error);
+            // Fallback redirect based on authentication status
+            if (isAuthenticated) {
+                router.push(`/${lang}/account/templates`);
+            } else {
+                router.push(`/${lang}/canvas/new`);
+            }
+        }
+    };
 
     const features = [
         {
@@ -59,7 +128,7 @@ export default function Home() {
         <div className="overflow-hidden">
             {/* Hero Section */}
             <div className="relative bg-gradient-to-b from-purple-50 to-white dark:from-gray-900 dark:to-gray-800 overflow-hidden">
-                {/* Background Shape */}
+                {/* Background decoration */}
                 <div className="hidden lg:block absolute top-0 right-0 -mt-24 -mr-24">
                     <div className="text-purple-100 dark:text-purple-900/20 transform rotate-45">
                         <svg
@@ -110,7 +179,14 @@ export default function Home() {
                                         {[...Array(4)].map((_, i) => (
                                             <div
                                                 key={i}
-                                                className={`inline-block h-8 w-8 rounded-full ring-2 ring-white dark:ring-gray-800 ${['bg-purple-400', 'bg-pink-400', 'bg-indigo-400', 'bg-rose-400'][i]}`}
+                                                className={`inline-block h-8 w-8 rounded-full ring-2 ring-white dark:ring-gray-800 ${
+                                                    [
+                                                        'bg-purple-400',
+                                                        'bg-pink-400',
+                                                        'bg-indigo-400',
+                                                        'bg-rose-400',
+                                                    ][i]
+                                                }`}
                                             />
                                         ))}
                                     </div>
@@ -124,7 +200,7 @@ export default function Home() {
                                 </div>
                             </div>
 
-                            {/* Editor Preview */}
+                            {/* Editor mockup */}
                             <div className="mt-12 lg:mt-0 lg:col-span-6">
                                 <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl overflow-hidden transform rotate-1 hover:rotate-0 transition-all duration-300">
                                     <div className="px-1 py-1 sm:p-2">
@@ -154,7 +230,7 @@ export default function Home() {
                                                     </div>
                                                 </div>
 
-                                                {/* Canvas mockup */}
+                                                {/* Canvas area */}
                                                 <div className="relative h-64 bg-white dark:bg-gray-600 rounded-lg mb-4 overflow-hidden">
                                                     <div className="absolute inset-0 grid grid-cols-2 grid-rows-2 gap-1 p-2">
                                                         <div className="bg-gradient-to-br from-purple-200 to-pink-200 dark:from-purple-800 dark:to-pink-800 rounded"></div>
@@ -171,7 +247,7 @@ export default function Home() {
                                                     </div>
                                                 </div>
 
-                                                {/* Toolbar mockup */}
+                                                {/* Tool buttons */}
                                                 <div className="flex flex-wrap gap-2 justify-center">
                                                     {[
                                                         'Crop',
@@ -198,8 +274,117 @@ export default function Home() {
                 </div>
             </div>
 
-            {/* Features Section */}
+            {/* Templates Section */}
             <div className="py-16 bg-white dark:bg-gray-800">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <div className="text-center">
+                        <p className="text-base text-purple-600 dark:text-purple-400 font-semibold tracking-wide uppercase">
+                            Templates
+                        </p>
+                        <h2 className="mt-2 text-3xl leading-8 font-extrabold tracking-tight text-gray-900 dark:text-white sm:text-4xl">
+                            Start with the Templates
+                        </h2>
+                        <p className="mt-4 max-w-2xl text-xl text-gray-500 dark:text-gray-400 mx-auto">
+                            Choose from our collection of designed templates and
+                            customize them to match your vision.
+                        </p>
+                    </div>
+                    <div className="mt-12">
+                        {templatesLoading ? (
+                            <div className="flex justify-center items-center py-12">
+                                <Loader2 className="h-8 w-8 animate-spin text-purple-600" />
+                                <span className="ml-2 text-gray-600 dark:text-gray-400">
+                                    Loading templates...
+                                </span>
+                            </div>
+                        ) : templatesError ? (
+                            <div className="text-center py-12">
+                                <p className="text-red-600 dark:text-red-400">
+                                    {templatesError}
+                                </p>
+                                <button
+                                    onClick={fetchDefaultTemplates}
+                                    className="mt-4 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors">
+                                    Try Again
+                                </button>
+                            </div>
+                        ) : (
+                            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                                {templates.map((template, index) => (
+                                    <div
+                                        key={index}
+                                        className="group bg-gray-50 dark:bg-gray-700 rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
+                                        {/* Template preview */}
+                                        <div className="relative aspect-video overflow-hidden">
+                                            <div
+                                                className="w-full h-full flex items-center justify-center text-white font-bold text-lg"
+                                                style={{
+                                                    backgroundColor:
+                                                        template.backgroundColor,
+                                                }}>
+                                                {template.thumbnail &&
+                                                template.thumbnail.length >
+                                                    0 ? (
+                                                    <Image
+                                                        src={template.thumbnail}
+                                                        alt={template.name}
+                                                        className="w-full h-full object-cover"
+                                                        width={template.width}
+                                                        height={template.height}
+                                                        style={{
+                                                            objectFit: 'cover',
+                                                        }}
+                                                    />
+                                                ) : (
+                                                    <div className="flex flex-col items-center justify-center space-y-2">
+                                                        <Sparkles className="h-8 w-8 text-purple-600" />
+                                                        <span className="text-sm text-gray-600 dark:text-gray-300">
+                                                            {template.width} ×{' '}
+                                                            {template.height}
+                                                        </span>
+                                                    </div>
+                                                )}
+                                            </div>
+
+                                            {/* Hover overlay */}
+                                            <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+                                                <button
+                                                    onClick={() =>
+                                                        handleUseTemplate(
+                                                            template,
+                                                        )
+                                                    }
+                                                    className="px-4 py-2 bg-white text-purple-600 rounded-lg font-medium hover:bg-purple-50 transition-colors">
+                                                    Use Template
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        {/* Template info */}
+                                        <div className="p-4">
+                                            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                                                {template.name}
+                                            </h3>
+                                            <p className="text-sm text-gray-600 dark:text-gray-300 mb-3">
+                                                {template.description}
+                                            </p>
+                                            <div className="flex items-center justify-between">
+                                                <span className="text-xs text-gray-500 dark:text-gray-400">
+                                                    {template.width} ×{' '}
+                                                    {template.height}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                </div>
+            </div>
+
+            {/* Features Section */}
+            <div className="py-16 bg-gray-50 dark:bg-gray-900">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="lg:text-center">
                         <p className="text-base text-purple-600 dark:text-purple-400 font-semibold tracking-wide uppercase">
@@ -214,13 +399,12 @@ export default function Home() {
                                 'Powerful tools made simple. Transform your ideas into stunning visuals without the learning curve.'}
                         </p>
                     </div>
-
                     <div className="mt-16">
                         <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
                             {features.map((feature, index) => (
                                 <div
                                     key={index}
-                                    className="group bg-gray-50 dark:bg-gray-700 rounded-xl p-6 shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-1">
+                                    className="group bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-1">
                                     <div className="flex items-center gap-4 mb-4">
                                         <div
                                             className={`rounded-lg p-3 ${
@@ -264,9 +448,9 @@ export default function Home() {
                     </h2>
                     <div className="mt-8 flex lg:mt-0 lg:flex-shrink-0 gap-4">
                         <Link
-                            href={`/${lang}/register`}
+                            href={`/${lang}/canvas/new`}
                             className="inline-flex items-center justify-center px-5 py-3 border border-transparent text-base font-medium rounded-lg text-purple-600 bg-white hover:bg-purple-50 shadow-md hover:shadow-lg transition-all duration-200">
-                            {dict.home.getStarted || 'Get Started Free'}
+                            {dict.home.getStarted || 'Get Started'}
                         </Link>
                         <Link
                             href="#features"
@@ -278,7 +462,7 @@ export default function Home() {
             </div>
 
             {/* Testimonials Section */}
-            <div className="py-16 bg-gray-50 dark:bg-gray-900 overflow-hidden">
+            <div className="py-16 bg-white dark:bg-gray-800 overflow-hidden">
                 <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="relative">
                         <div className="text-center">
@@ -291,7 +475,6 @@ export default function Home() {
                                     'See what our users are saying about their design experience'}
                             </p>
                         </div>
-
                         <div className="mt-12 grid gap-8 md:grid-cols-2 lg:grid-cols-3">
                             {[
                                 {
@@ -315,7 +498,7 @@ export default function Home() {
                             ].map((testimonial, i) => (
                                 <div
                                     key={i}
-                                    className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 flex flex-col">
+                                    className="bg-gray-50 dark:bg-gray-700 rounded-xl shadow-md p-6 flex flex-col">
                                     <div className="flex items-center mb-4">
                                         {[1, 2, 3, 4, 5].map(star => (
                                             <Star

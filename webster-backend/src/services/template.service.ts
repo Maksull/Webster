@@ -1,6 +1,7 @@
 import { Template, Canvas } from '../entities/index.js';
 import { AppDataSource } from '../config/index.js';
 import { TemplateResponseDto, CreateTemplateDto, CreateCanvasFromTemplateDto, CanvasResponseDto } from '../types/index.js';
+import { defaultTemplates, TemplateDefinition } from '../types/defaultTemplates.js';
 
 export const TEMPLATE_ERROR_MESSAGES = {
     TEMPLATE_NOT_FOUND: 'Template not found',
@@ -12,6 +13,10 @@ export const TEMPLATE_ERROR_MESSAGES = {
 export class TemplateService {
     private templateRepository = AppDataSource.getRepository(Template);
     private canvasRepository = AppDataSource.getRepository(Canvas);
+
+    async getDefaultTemplates(): Promise<TemplateDefinition[]> {
+        return defaultTemplates;
+    }
 
     async createTemplateFromCanvas(canvasId: string, userId: string, data: CreateTemplateDto): Promise<TemplateResponseDto> {
         const canvas = await this.canvasRepository.findOne({

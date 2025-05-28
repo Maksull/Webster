@@ -9,7 +9,29 @@ export class TemplateController {
         this.templateService = new TemplateService();
     }
 
-    async createTemplateFromCanvas(request: FastifyRequest<{ Params: { canvasId: string }; Body: CreateTemplateDto }>, reply: FastifyReply) {
+    async getDefaultTemplates(request: FastifyRequest, reply: FastifyReply) {
+        try {
+            const templates = await this.templateService.getDefaultTemplates();
+            return reply.status(200).send({
+                status: 'success',
+                data: { templates },
+            });
+        } catch (error) {
+            request.log.error(error);
+            return reply.status(500).send({
+                status: 'error',
+                message: 'Internal server error',
+            });
+        }
+    }
+
+    async createTemplateFromCanvas(
+        request: FastifyRequest<{
+            Params: { canvasId: string };
+            Body: CreateTemplateDto;
+        }>,
+        reply: FastifyReply,
+    ) {
         try {
             const userId = request.user?.userId;
             if (!userId) {
@@ -41,6 +63,7 @@ export class TemplateController {
                     });
                 }
             }
+
             request.log.error(error);
             return reply.status(500).send({
                 status: 'error',
@@ -77,7 +100,6 @@ export class TemplateController {
         try {
             const { id } = request.params;
             const userId = request.user?.userId;
-
             if (!userId) {
                 return reply.status(401).send({
                     status: 'error',
@@ -105,6 +127,7 @@ export class TemplateController {
                     });
                 }
             }
+
             request.log.error(error);
             return reply.status(500).send({
                 status: 'error',
@@ -113,7 +136,13 @@ export class TemplateController {
         }
     }
 
-    async createCanvasFromTemplate(request: FastifyRequest<{ Params: { id: string }; Body: CreateCanvasFromTemplateDto }>, reply: FastifyReply) {
+    async createCanvasFromTemplate(
+        request: FastifyRequest<{
+            Params: { id: string };
+            Body: CreateCanvasFromTemplateDto;
+        }>,
+        reply: FastifyReply,
+    ) {
         try {
             const userId = request.user?.userId;
             if (!userId) {
@@ -145,6 +174,7 @@ export class TemplateController {
                     });
                 }
             }
+
             request.log.error(error);
             return reply.status(500).send({
                 status: 'error',
@@ -185,6 +215,7 @@ export class TemplateController {
                     });
                 }
             }
+
             request.log.error(error);
             return reply.status(500).send({
                 status: 'error',

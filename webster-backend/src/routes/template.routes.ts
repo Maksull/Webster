@@ -52,7 +52,11 @@ const getTemplateSchema = {
 export async function templateRoutes(app: FastifyInstance) {
     const templateController = new TemplateController();
 
-    // Create template from canvas
+    // Get default templates (public endpoint)
+    app.get('/templates/defaults', async (request, reply) => {
+        return await templateController.getDefaultTemplates(request, reply);
+    });
+
     app.post(
         '/templates/from-canvas/:canvasId',
         {
@@ -61,13 +65,15 @@ export async function templateRoutes(app: FastifyInstance) {
         },
         async (request, reply) => {
             return await templateController.createTemplateFromCanvas(
-                request as FastifyRequest<{ Params: { canvasId: string }; Body: CreateTemplateDto }>,
+                request as FastifyRequest<{
+                    Params: { canvasId: string };
+                    Body: CreateTemplateDto;
+                }>,
                 reply,
             );
         },
     );
 
-    // Get user's templates
     app.get(
         '/templates',
         {
@@ -78,7 +84,6 @@ export async function templateRoutes(app: FastifyInstance) {
         },
     );
 
-    // Get specific template
     app.get(
         '/templates/:id',
         {
@@ -90,7 +95,6 @@ export async function templateRoutes(app: FastifyInstance) {
         },
     );
 
-    // Create canvas from template
     app.post(
         '/templates/:id/create-canvas',
         {
@@ -99,13 +103,15 @@ export async function templateRoutes(app: FastifyInstance) {
         },
         async (request, reply) => {
             return await templateController.createCanvasFromTemplate(
-                request as FastifyRequest<{ Params: { id: string }; Body: CreateCanvasFromTemplateDto }>,
+                request as FastifyRequest<{
+                    Params: { id: string };
+                    Body: CreateCanvasFromTemplateDto;
+                }>,
                 reply,
             );
         },
     );
 
-    // Delete template
     app.delete(
         '/templates/:id',
         {
