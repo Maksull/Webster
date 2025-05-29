@@ -1,6 +1,7 @@
 'use client';
 import React, { useEffect, useRef, useState } from 'react';
 import { Type, Palette, ChevronDown } from 'lucide-react';
+import { useDictionary } from '@/contexts';
 
 interface TextEditorProps {
     value: string;
@@ -32,18 +33,13 @@ const COMMON_COLORS = [
     '#000000',
     '#FFFFFF',
     '#FF0000',
-    '#00FF00',
-    '#0000FF',
+    '#FF8C00',
     '#FFFF00',
-    '#FF00FF',
-    '#00FFFF',
-    '#FFA500',
+    '#008000',
+    '#0000FF',
+    '#4B0082',
     '#800080',
     '#FFC0CB',
-    '#A52A2A',
-    '#808080',
-    '#000080',
-    '#008000',
 ];
 
 const TextEditor: React.FC<TextEditorProps> = ({
@@ -64,6 +60,7 @@ const TextEditor: React.FC<TextEditorProps> = ({
     const [fontSizeInput, setFontSizeInput] = useState(fontSize.toString());
     const colorPickerRef = useRef<HTMLDivElement>(null);
     const fontPickerRef = useRef<HTMLDivElement>(null);
+    const { dict } = useDictionary();
 
     useEffect(() => {
         if (inputRef.current) {
@@ -149,35 +146,14 @@ const TextEditor: React.FC<TextEditorProps> = ({
         }
     };
 
-    const handleBlur = (e: React.FocusEvent) => {
-        // Only handle blur from the textarea, not from the entire container
-        if (e.target.tagName === 'TEXTAREA') {
-            // Only close if focus is moving outside the entire text editor container
-            const currentTarget = e.currentTarget;
-            const relatedTarget = e.relatedTarget as Element;
-
-            // Check if the new focus target is within our text editor
-            if (!relatedTarget || !currentTarget.contains(relatedTarget)) {
-                // Check if we're moving to a toolbar element
-                const isMovingToToolbar =
-                    relatedTarget?.closest('[data-text-editor]');
-                if (!isMovingToToolbar) {
-                    setTimeout(() => {
-                        onDone();
-                    }, 100);
-                }
-            }
-        }
-    };
-
     return (
         <div
-            className="absolute z-30 bg-white dark:bg-gray-800 border border-indigo-500 shadow-lg rounded-lg overflow-hidden"
+            className="absolute z-10 bg-white dark:bg-gray-800 border border-indigo-500 shadow-lg rounded-lg overflow-hidden"
             style={{
                 left: `${position.x}px`,
                 top: `${position.y}px`,
-                transform: 'translate(-32%, -130%)',
-                minWidth: '300px',
+                transform: 'translate(-19%, -185%)',
+                minWidth: '350px',
             }}
             data-text-editor>
             {/* Toolbar */}
@@ -235,7 +211,7 @@ const TextEditor: React.FC<TextEditorProps> = ({
                     <button
                         onMouseDown={handleToolbarMouseDown}
                         onClick={() => setShowColorPicker(!showColorPicker)}
-                        className="flex items-center gap-1 px-2 py-1 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-500">
+                        className="flex items-center gap-x-2 px-2 py-1 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-500">
                         <Palette className="w-4 h-4 text-gray-600 dark:text-gray-300" />
                         <div
                             className="w-4 h-4 rounded border border-gray-300 dark:border-gray-600"
@@ -244,8 +220,8 @@ const TextEditor: React.FC<TextEditorProps> = ({
                     </button>
 
                     {showColorPicker && (
-                        <div className="absolute top-full left-0 mt-1 p-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded shadow-lg z-40">
-                            <div className="grid grid-cols-5 gap-1 mb-2">
+                        <div className="absolute top-full left-0 mt-2 p-3 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg z-40 min-w-[150px]">
+                            <div className="grid grid-cols-5 gap-2 mb-3">
                                 {COMMON_COLORS.map(colorOption => (
                                     <button
                                         key={colorOption}
@@ -254,7 +230,7 @@ const TextEditor: React.FC<TextEditorProps> = ({
                                             onColorChange(colorOption);
                                             setShowColorPicker(false);
                                         }}
-                                        className={`w-6 h-6 rounded border-2 hover:scale-110 transition-transform ${
+                                        className={`w-6 h-6 rounded-full border-2 hover:scale-110 transition-transform ${
                                             color === colorOption
                                                 ? 'border-indigo-500'
                                                 : 'border-gray-300 dark:border-gray-600'
@@ -264,12 +240,27 @@ const TextEditor: React.FC<TextEditorProps> = ({
                                     />
                                 ))}
                             </div>
-                            <input
-                                type="color"
-                                value={color}
-                                onChange={e => onColorChange(e.target.value)}
-                                className="w-full h-8 rounded border border-gray-300 dark:border-gray-600 cursor-pointer"
-                            />
+                            <div className="flex items-center">
+                                <label
+                                    htmlFor="customColor"
+                                    className="text-sm font-medium text-slate-700 dark:text-gray-300 mr-3">
+                                    {dict.drawing?.custom || 'Custom'}:
+                                </label>
+                                <div className="relative">
+                                    <input
+                                        type="color"
+                                        id="customColor"
+                                        value={color}
+                                        onChange={e =>
+                                            onColorChange(e.target.value)
+                                        }
+                                        className="w-10 h-10 p-0 border-0 rounded-full cursor-pointer"
+                                    />
+                                </div>
+                                <span className="ml-3 text-sm font-mono text-slate-600 dark:text-gray-400">
+                                    {color.toUpperCase()}
+                                </span>
+                            </div>
                         </div>
                     )}
                 </div>
@@ -281,13 +272,13 @@ const TextEditor: React.FC<TextEditorProps> = ({
                 value={value}
                 onChange={e => onChange(e.target.value)}
                 onKeyDown={handleKeyDown}
-                className="w-full p-3 focus:outline-none resize-none dark:bg-gray-800 dark:text-white"
+                className="w-full p-3 focus:outline-none resize-none dark:bg-gray-800 dark:text-white text-gray-800"
                 style={{
-                    minWidth: '300px',
-                    minHeight: '80px',
-                    fontSize: `${fontSize}px`,
+                    minWidth: '400px',
+                    minHeight: '120px',
+                    maxWidth: '400px',
+                    maxHeight: '120px',
                     fontFamily: fontFamily,
-                    color: color,
                 }}
                 placeholder="Enter your text..."
             />

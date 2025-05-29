@@ -8,6 +8,7 @@ import {
     Text,
     Image as KonvaImage,
     Arrow,
+    Group,
 } from 'react-konva';
 import {
     LineElement,
@@ -58,7 +59,8 @@ const ElementRenderer: React.FC<ElementRendererProps> = ({
               shadowBlur: 10,
               shadowOpacity: 0.6,
               shadowOffset: { x: 0, y: 0 },
-              strokeWidth: (element.strokeWidth || 1) + 1,
+              strokeWidth:
+                  element.strokeWidth !== 0 && (element.strokeWidth || 1) + 1,
               stroke: '#0066FF',
           }
         : {};
@@ -274,15 +276,40 @@ const ElementRenderer: React.FC<ElementRendererProps> = ({
 
         case 'text':
             const textElement = element as TextElement;
-            const textWidth =
-                textElement.width ||
-                (textElement.text?.length * textElement.fontSize) / 2 ||
-                20;
-            const textHeight = textElement.height || textElement.fontSize || 20;
+
+            const fontSize = textElement.fontSize || 16;
+            const fontFamily = textElement.fontFamily || 'Arial';
+            const text = textElement.text || '';
+            const lineHeight = 1; // Adjust as needed
+
+            // Create a temporary canvas context
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+
+            let textWidth = 20;
+            let textHeight = fontSize;
+
+            if (ctx) {
+                ctx.font = `${fontSize}px ${fontFamily}`;
+
+                const lines = text.split('\n');
+
+                // Measure width of each line
+                textWidth = Math.max(
+                    ...lines.map(line => ctx.measureText(line).width),
+                );
+
+                // Calculate height
+                textHeight = lines.length * fontSize * lineHeight;
+            }
+
             const padding = 10;
 
             return (
-                <>
+                <Group
+                    id={element.id}
+                    name={`element-${element.id}`}
+                    rotation={textElement.rotation || 0}>
                     {/* Hit area for text selection */}
                     <Rect
                         x={textElement.x - padding}
@@ -290,7 +317,8 @@ const ElementRenderer: React.FC<ElementRendererProps> = ({
                         width={textWidth + padding * 2}
                         height={textHeight + padding * 2}
                         stroke={isSelected ? '#0066FF' : 'black'}
-                        strokeWidth={1}
+                        data-hit-area="true"
+                        strokeWidth={0}
                         opacity={0.3}
                         fill="transparent"
                         id={element.id}
@@ -348,7 +376,7 @@ const ElementRenderer: React.FC<ElementRendererProps> = ({
                         }}
                         {...commonProps}
                     />
-                </>
+                </Group>
             );
 
         default:

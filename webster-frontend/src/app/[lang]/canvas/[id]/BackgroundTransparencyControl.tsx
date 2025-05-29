@@ -26,13 +26,16 @@ const BackgroundTransparencyControl: React.FC<
                 {dict?.transparentBackground || 'Transparent Background'}
             </label>
             <div
-                className="w-10 h-5 flex items-center bg-gray-300 dark:bg-gray-600 rounded-full p-1 cursor-pointer"
+                className={`w-12 h-6 flex items-center ${
+                    backgroundColor === 'transparent'
+                        ? 'bg-indigo-400'
+                        : 'bg-gray-300 dark:bg-gray-600'
+                } rounded-full p-1 cursor-pointer transition-colors duration-300`}
                 onClick={toggleTransparency}>
                 <div
-                    className={`bg-white dark:bg-gray-200 w-4 h-4 rounded-full shadow-md transform transition-transform duration-300 ${
-                        backgroundColor === 'transparent' ? 'translate-x-5' : ''
-                    }`}
-                />
+                    className={`bg-white dark:bg-gray-200 w-4 h-4 rounded-full shadow-md transform transition-transform duration-300 flex items-center justify-center text-xs ${
+                        backgroundColor === 'transparent' ? 'translate-x-6' : ''
+                    }`}></div>
             </div>
         </div>
     );

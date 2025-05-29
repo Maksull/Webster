@@ -485,8 +485,7 @@ const Canvas: React.FC<CanvasProps> = ({
                                   : tool === 'pencil' ||
                                       tool === 'brush' ||
                                       tool === 'pen' ||
-                                      tool === 'marker' ||
-                                      tool === 'eraser'
+                                      tool === 'marker'
                                     ? 'cursor-none'
                                     : 'cursor-crosshair'
                         }`}>
@@ -577,8 +576,7 @@ const Canvas: React.FC<CanvasProps> = ({
                         {(tool === 'pencil' ||
                             tool === 'brush' ||
                             tool === 'pen' ||
-                            tool === 'marker' ||
-                            tool === 'eraser') && (
+                            tool === 'marker') && (
                             <Layer listening={false}>
                                 <Circle
                                     x={cursorPosition.x}
@@ -587,11 +585,7 @@ const Canvas: React.FC<CanvasProps> = ({
                                     stroke="rgba(0, 0, 0, 0.6)"
                                     strokeWidth={1}
                                     dash={[2, 2]}
-                                    fill={
-                                        tool === 'eraser'
-                                            ? 'white'
-                                            : `${color}80`
-                                    }
+                                    fill={`${color}80`}
                                 />
                             </Layer>
                         )}

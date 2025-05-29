@@ -4,12 +4,7 @@ import { useDrawing } from '@/contexts';
 import React from 'react';
 
 const ShapeFillControl: React.FC = () => {
-    const { tool, shapeFill, setShapeFill } = useDrawing();
-
-    // Only show for shape tools
-    if (!['rectangle', 'circle', 'triangle'].includes(tool)) {
-        return null;
-    }
+    const { shapeFill, setShapeFill } = useDrawing();
 
     return (
         <div className="mt-4">

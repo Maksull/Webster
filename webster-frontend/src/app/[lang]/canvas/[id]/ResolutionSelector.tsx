@@ -4,7 +4,7 @@ import AlertModal from '@/components/AlertModal';
 import { useDrawing } from '@/contexts';
 import { Dictionary } from '@/get-dictionary';
 import { POPULAR_RESOLUTIONS, Resolution } from '@/types/elements';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 
 interface ResolutionSelectorProps {
     dict: Dictionary;
@@ -22,37 +22,44 @@ const ResolutionSelector: React.FC<ResolutionSelectorProps> = ({
         dimensions.height.toString(),
     );
 
+    useEffect(() => {
+        const newWidth = dimensions.width.toString();
+        const newHeight = dimensions.height.toString();
+
+        const timeout = setTimeout(() => {
+            if (customWidth !== newWidth) {
+                setCustomWidth(newWidth);
+            }
+            if (customHeight !== newHeight) {
+                setCustomHeight(newHeight);
+            }
+        }, 50); // delay in milliseconds, e.g. 300ms
+
+        return () => clearTimeout(timeout); // cleanup on unmount or before next effect run
+    }, [dimensions.width, dimensions.height]);
+
+
     const [modal, setModal] = useState({
         open: false,
         type: 'success' as 'success' | 'error',
         message: '',
     });
 
-    const handleCustomResolutionSubmit = () => {
-        const width = parseInt(customWidth, 10);
-        const height = parseInt(customHeight, 10);
+    const handleDimensionChange = (newWidth: string, newHeight: string) => {
+        const width = parseInt(newWidth, 10);
+        const height = parseInt(newHeight, 10);
 
-        if (isNaN(width) || isNaN(height) || width < 100 || height < 100) {
-            setModal({
-                open: true,
-                type: 'error',
-                message: 'Please enter valid dimensions (minimum 100x100)',
-            });
-            return;
+        setCustomWidth(newWidth);
+        setCustomHeight(newHeight);
+
+        if (!isNaN(width) && !isNaN(height) && width >= 100 && height >= 100) {
+            const customResolution: Resolution = {
+                name: `Custom (${width}×${height})`,
+                width,
+                height,
+            };
+            onResolutionChange(customResolution);
         }
-
-        const customResolution: Resolution = {
-            name: `Custom (${width}×${height})`,
-            width,
-            height,
-        };
-
-        onResolutionChange(customResolution);
-        setModal({
-            open: true,
-            type: 'success',
-            message: 'Resolution succesfully changed!',
-        });
     };
 
     return (
@@ -70,12 +77,11 @@ const ResolutionSelector: React.FC<ResolutionSelectorProps> = ({
                 {POPULAR_RESOLUTIONS.map(resolution => (
                     <button
                         key={`${resolution.width}x${resolution.height}`}
-                        className={`text-left px-3 py-2 rounded-lg text-sm ${
-                            selectedResolution.width === resolution.width &&
-                            selectedResolution.height === resolution.height
+                        className={`text-left px-3 py-2 rounded-lg text-sm ${selectedResolution.width === resolution.width &&
+                                selectedResolution.height === resolution.height
                                 ? 'bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400'
                                 : 'text-gray-600 dark:text-gray-400 hover:bg-slate-100 dark:hover:bg-gray-700'
-                        }`}
+                            }`}
                         onClick={() => onResolutionChange(resolution)}>
                         {resolution.name} ({resolution.width} ×{' '}
                         {resolution.height})
@@ -92,7 +98,9 @@ const ResolutionSelector: React.FC<ResolutionSelectorProps> = ({
                         type="number"
                         min="100"
                         value={customWidth}
-                        onChange={e => setCustomWidth(e.target.value)}
+                        onChange={e =>
+                            handleDimensionChange(e.target.value, customHeight)
+                        }
                         className="w-20 px-2 py-1 text-sm border border-slate-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-slate-800 dark:text-gray-200"
                     />
                     <span className="text-slate-500 dark:text-gray-400">×</span>
@@ -100,14 +108,11 @@ const ResolutionSelector: React.FC<ResolutionSelectorProps> = ({
                         type="number"
                         min="100"
                         value={customHeight}
-                        onChange={e => setCustomHeight(e.target.value)}
+                        onChange={e =>
+                            handleDimensionChange(customWidth, e.target.value)
+                        }
                         className="w-20 px-2 py-1 text-sm border border-slate-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-slate-800 dark:text-gray-200"
                     />
-                    <button
-                        onClick={handleCustomResolutionSubmit}
-                        className="ml-2 px-2 py-1 text-xs bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded hover:bg-indigo-200 dark:hover:bg-indigo-800/30">
-                        Apply
-                    </button>
                 </div>
                 <p className="text-xs text-slate-500 dark:text-gray-400">
                     You can also resize by dragging the canvas edges

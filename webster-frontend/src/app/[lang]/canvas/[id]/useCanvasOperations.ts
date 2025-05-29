@@ -274,45 +274,54 @@ export const useCanvasOperations = (callbacks = {}) => {
 
         if (tool === 'select') {
             const shapes = stage.getAllIntersections(pos);
-            const targetShapes = shapes.filter(
-                shape =>
-                    shape !== stage &&
-                    shape.getClassName() !== 'Stage' &&
-                    // Exclude resize handles from selection
-                    !(
-                        shape.getClassName() === 'Circle' &&
+            const targetShapes = shapes.filter(shape => {
+                // Skip stage and helpers
+                if (
+                    shape === stage ||
+                    shape.getClassName() === 'Stage' ||
+                    (shape.getClassName() === 'Circle' &&
                         shape.attrs.fill === 'white' &&
                         shape.attrs.stroke === '#0066FF' &&
-                        shape.parent?.attrs?.name === 'image-resize-handles'
-                    ) &&
-                    (shape.getClassName() === 'Rect' ||
-                        shape.getClassName() === 'Circle' ||
-                        shape.getClassName() === 'Line' ||
-                        shape.getClassName() === 'Arrow' ||
-                        shape.getClassName() === 'RegularPolygon' ||
-                        shape.getClassName() === 'Text' ||
-                        shape.getClassName() === 'Image'),
-            );
+                        shape.parent?.attrs?.name === 'image-resize-handles')
+                ) {
+                    return false;
+                }
+
+                // Include allowed shape types
+                return [
+                    'Rect',
+                    'Circle',
+                    'Line',
+                    'Group',
+                    'Arrow',
+                    'RegularPolygon',
+                    'Text',
+                    'Image',
+                ].includes(shape.getClassName());
+            }); // Topmost shape last → now first
 
             if (targetShapes.length > 0) {
                 let foundElement = null;
                 let foundElementId = null;
 
                 // First try to find element by shape ID
-                for (const shape of targetShapes) {
+                for (let i = targetShapes.length - 1; i >= 0; i--) {
+                    const shape = targetShapes[i];
                     const shapeId = shape.attrs.id;
-                    if (shapeId) {
-                        elementsByLayer.forEach((elements, layerId) => {
-                            const element = elements.find(
-                                el => el.id === shapeId,
-                            );
-                            if (element) {
-                                foundElement = element;
-                                foundElementId = shapeId;
-                            }
-                        });
-                        if (foundElement) break;
+                    if (!shapeId) continue;
+
+                    for (const [layerId, elements] of Array.from(
+                        elementsByLayer.entries(),
+                    )) {
+                        const element = elements.find(el => el.id === shapeId);
+                        if (element) {
+                            foundElement = element;
+                            foundElementId = shapeId;
+                            break;
+                        }
                     }
+
+                    if (foundElement) break;
                 }
 
                 // Fallback to position-based matching if needed (rest of the logic remains the same)
