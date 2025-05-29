@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useDictionary } from '@/contexts/DictionaryContext';
 import { useAuth } from '@/contexts/AuthContext';
 import CanvasHeader from './CanvasHeader';
@@ -121,6 +121,86 @@ const DrawingEditorContent: React.FC = () => {
         handleSave,
         handleDownload,
     } = useCanvasOperations();
+
+    const {
+        getActiveLayerElements,
+        selectedElementIds,
+        updateActiveLayerElements,
+        elementsByLayer,
+    } = useDrawing();
+
+    const selectedIdsRef = useRef<string[]>([]);
+
+    useEffect(() => {
+        selectedIdsRef.current = selectedElementIds;
+    }, [selectedElementIds]);
+
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            const selectedIds = selectedIdsRef.current;
+            const ARROW_KEYS = [
+                'ArrowUp',
+                'ArrowDown',
+                'ArrowLeft',
+                'ArrowRight',
+            ];
+            const key = ARROW_KEYS.includes(e.key)
+                ? e.key
+                : e.key.toLowerCase();
+
+            const movementStep = e.shiftKey ? 10 : 5;
+            const directionMap: Record<string, { x: number; y: number }> = {
+                ArrowUp: { x: 0, y: -movementStep },
+                ArrowDown: { x: 0, y: movementStep },
+                ArrowLeft: { x: -movementStep, y: 0 },
+                ArrowRight: { x: movementStep, y: 0 },
+                w: { x: 0, y: -movementStep },
+                s: { x: 0, y: movementStep },
+                a: { x: -movementStep, y: 0 },
+                d: { x: movementStep, y: 0 },
+            };
+
+            const direction = directionMap[key];
+            if (!direction) return;
+
+            const activeElements = getActiveLayerElements();
+            const updatedElements = activeElements.map(el => {
+                if (!selectedIds.includes(el.id)) return el;
+
+                switch (el.type) {
+                    case 'rectangle':
+                    case 'circle':
+                    case 'triangle':
+                    case 'text':
+                        return {
+                            ...el,
+                            x: el.x + direction.x,
+                            y: el.y + direction.y,
+                        };
+                    case 'arrow':
+                    case 'line-shape':
+                    case 'line':
+                        return {
+                            ...el,
+                            points: el.points.map((val, idx) =>
+                                idx % 2 === 0
+                                    ? val + direction.x
+                                    : val + direction.y,
+                            ),
+                        };
+                    default:
+                        return el;
+                }
+            });
+
+            updateActiveLayerElements(updatedElements);
+        };
+
+        window.addEventListener('keydown', handleKeyDown);
+        return () => {
+            window.removeEventListener('keydown', handleKeyDown);
+        };
+    }, [selectedElementIds, elementsByLayer]);
 
     return (
         <div className="h-screen w-full flex flex-col bg-slate-50 dark:bg-gray-900 overflow-hidden">
