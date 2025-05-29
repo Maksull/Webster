@@ -14,14 +14,14 @@ import {
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useDictionary } from '@/contexts/DictionaryContext';
-import { useAuth } from '@/contexts/AuthContext'; // Import useAuth
+import { useAuth } from '@/contexts/AuthContext';
 import { Template } from '@/types/template';
 import { API_URL } from '@/config';
 import Image from 'next/image';
 
 export default function Home() {
     const { dict, lang } = useDictionary();
-    const { isAuthenticated } = useAuth(); // Get authentication status
+    const { isAuthenticated } = useAuth();
     const router = useRouter();
     const [templates, setTemplates] = useState<Template[]>([]);
     const [templatesLoading, setTemplatesLoading] = useState(true);

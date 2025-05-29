@@ -7,7 +7,6 @@ import { Template } from '@/types/template';
 
 type TemplateGridProps = {
     templates: Template[];
-    lang: string;
     dict: Dictionary;
     deleteTemplate: (id: string, name: string) => void;
     createCanvasFromTemplate: (
@@ -19,7 +18,6 @@ type TemplateGridProps = {
 
 export default function TemplateGrid({
     templates,
-    lang,
     dict,
     deleteTemplate,
     createCanvasFromTemplate,

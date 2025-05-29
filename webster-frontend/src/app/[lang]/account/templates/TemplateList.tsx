@@ -7,7 +7,6 @@ import { useState } from 'react';
 
 type TemplateListProps = {
     templates: Template[];
-    lang: string;
     dict: Dictionary;
     deleteTemplate: (id: string, name: string) => void;
     createCanvasFromTemplate: (
@@ -19,7 +18,6 @@ type TemplateListProps = {
 
 export default function TemplateList({
     templates,
-    lang,
     dict,
     deleteTemplate,
     createCanvasFromTemplate,

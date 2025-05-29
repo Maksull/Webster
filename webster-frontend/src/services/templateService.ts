@@ -1,4 +1,5 @@
 import { API_URL } from '@/config';
+import { Canvas } from '@/types/canvas';
 import { Template } from '@/types/template';
 
 class TemplateService {
@@ -64,7 +65,7 @@ class TemplateService {
         templateId: string,
         canvasData: { name: string; description?: string },
         token: string,
-    ): Promise<any> {
+    ): Promise<Canvas> {
         const response = await fetch(
             `${API_URL}/templates/${templateId}/create-canvas`,
             {

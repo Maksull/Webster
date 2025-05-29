@@ -5,7 +5,7 @@ import { StatusMessage } from '@/components';
 
 export const metadata: Metadata = {
     title: 'My Templates',
-    description: 'Manage and organize your templates'
+    description: 'Manage and organize your templates',
 };
 
 export default function TemplatesPage() {

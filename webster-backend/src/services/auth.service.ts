@@ -6,7 +6,7 @@ import { AppDataSource, environmentConfig } from '../config/index.js';
 import { EmailService } from './index.js';
 import { TokenBlacklist } from '../middlewares/index.js';
 import { ChangeEmailDto, ChangePasswordDto, LoginDto, RegisterUserDto } from '../types/index.js';
-import { defaultTemplates } from '@/types/defaultTemplates.js';
+import { defaultTemplates } from '../types/defaultTemplates.js';
 
 const PBKDF2_ITERATIONS = 10000;
 const PBKDF2_KEY_LENGTH = 64;

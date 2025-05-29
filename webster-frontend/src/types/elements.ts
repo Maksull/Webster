@@ -9,8 +9,6 @@ export interface LineElement {
     lineJoin: 'round' | 'bevel' | 'miter';
     globalCompositeOperation: 'source-over' | 'destination-out';
     layerId: string;
-
-    // Optional style enhancements
     opacity?: number;
     dash?: number[];
     shadowColor?: string;
@@ -176,5 +174,4 @@ export const POPULAR_RESOLUTIONS: Resolution[] = [
     { name: 'Instagram Story', width: 1080, height: 1920 },
     { name: 'Twitter Post', width: 1200, height: 675 },
     { name: 'Facebook Post', width: 1200, height: 630 },
-    { name: 'A4 Document', width: 2480, height: 3508 },
 ];
