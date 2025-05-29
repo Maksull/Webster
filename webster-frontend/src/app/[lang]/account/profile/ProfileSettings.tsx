@@ -72,7 +72,7 @@ export default function ProfileSettings() {
                 {!isEditing ? (
                     <button
                         onClick={() => setIsEditing(true)}
-                        className="bg-purple-50 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 px-4 py-2 rounded-lg font-medium flex items-center transition-colors duration-200 hover:bg-purple-100 dark:hover:bg-purple-900/50">
+                        className="cursor-pointer bg-purple-50 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 px-4 py-2 rounded-lg font-medium flex items-center transition-colors duration-200 hover:bg-purple-100 dark:hover:bg-purple-900/50">
                         <Edit2 className="mr-2 h-4 w-4" />
                         {dict.account?.editProfile || 'Edit Profile'}
                     </button>
@@ -195,7 +195,7 @@ export default function ProfileSettings() {
 
                     <button
                         onClick={() => setShowDeleteModal(true)}
-                        className="bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 px-4 py-2 rounded-lg font-medium hover:bg-red-100 dark:hover:bg-red-900/40 transition-colors duration-200 flex items-center">
+                        className="cursor-pointer bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 px-4 py-2 rounded-lg font-medium hover:bg-red-100 dark:hover:bg-red-900/40 transition-colors duration-200 flex items-center">
                         <Trash2 className="mr-2 h-4 w-4" />
                         {dict.account?.deleteAccount || 'Delete Account'}
                     </button>

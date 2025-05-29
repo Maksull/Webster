@@ -9,7 +9,7 @@ type CanvasListProps = {
     canvases: Canvas[];
     lang: string;
     dict: Dictionary;
-    deleteCanvas: (id: string) => void;
+    deleteCanvas: (id: string, name: string) => void;
     isDeleting: string | null;
 };
 
@@ -74,9 +74,11 @@ export default function CanvasList({
                                 </Link>
 
                                 <button
-                                    onClick={() => deleteCanvas(canvas.id)}
+                                    onClick={() =>
+                                        deleteCanvas(canvas.id, canvas.name)
+                                    }
                                     disabled={isDeleting === canvas.id}
-                                    className="p-1.5 text-gray-500 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded disabled:opacity-50 transition-all duration-200"
+                                    className="cursor-pointer p-1.5 text-gray-500 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded disabled:opacity-50 transition-all duration-200"
                                     title={
                                         dict.account?.deleteCanvas ||
                                         'Delete canvas'
