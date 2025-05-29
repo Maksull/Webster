@@ -208,7 +208,7 @@ export default function CanvasManager() {
                             className={`p-2 ${
                                 viewMode === 'grid'
                                     ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400'
-                                    : 'bg-white dark:bg-gray-700 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-600'
+                                    : 'cursor-pointer bg-white dark:bg-gray-700 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-600'
                             }`}
                             onClick={() => setViewMode('grid')}
                             title={dict.account?.gridView || 'Grid view'}>
@@ -218,7 +218,7 @@ export default function CanvasManager() {
                             className={`p-2 ${
                                 viewMode === 'list'
                                     ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400'
-                                    : 'bg-white dark:bg-gray-700 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-600'
+                                    : 'cursor-pointer bg-white dark:bg-gray-700 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-600'
                             }`}
                             onClick={() => setViewMode('list')}
                             title={dict.account?.listView || 'List view'}>
@@ -226,7 +226,7 @@ export default function CanvasManager() {
                         </button>
                     </div>
                     <select
-                        className="border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white p-2 text-sm"
+                        className="cursor-pointer border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white p-2 text-sm"
                         value={sortBy}
                         onChange={e => setSortBy(e.target.value)}>
                         <option value="updatedAt">
@@ -243,7 +243,7 @@ export default function CanvasManager() {
                     <button
                         onClick={handleCreateCanvas}
                         disabled={isCreatingCanvas}
-                        className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white px-4 py-2 rounded-lg font-medium transition-colors duration-200 flex items-center shadow-sm hover:shadow disabled:opacity-70">
+                        className="cursor-pointer bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white px-4 py-2 rounded-lg font-medium transition-colors duration-200 flex items-center shadow-sm hover:shadow disabled:opacity-70">
                         {isCreatingCanvas ? (
                             <>
                                 <Loader className="mr-2 h-4 w-4 animate-spin" />
@@ -322,7 +322,7 @@ function EmptyCanvasState({
                     <button
                         onClick={handleCreateCanvas}
                         disabled={isCreatingCanvas}
-                        className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white px-6 py-3 rounded-lg font-medium transition-colors duration-200 inline-flex items-center shadow-sm hover:shadow disabled:opacity-70">
+                        className="cursor-pointer bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white px-6 py-3 rounded-lg font-medium transition-colors duration-200 inline-flex items-center shadow-sm hover:shadow disabled:opacity-70">
                         {isCreatingCanvas ? (
                             <>
                                 <Loader className="mr-2 h-5 w-5 animate-spin" />

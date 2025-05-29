@@ -76,7 +76,7 @@ export default function CanvasList({
                                 <button
                                     onClick={() => deleteCanvas(canvas.id)}
                                     disabled={isDeleting === canvas.id}
-                                    className="p-1.5 text-gray-500 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded disabled:opacity-50 transition-all duration-200"
+                                    className="cursor-pointer p-1.5 text-gray-500 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded disabled:opacity-50 transition-all duration-200"
                                     title={
                                         dict.account?.deleteCanvas ||
                                         'Delete canvas'
