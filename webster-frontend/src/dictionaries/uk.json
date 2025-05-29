@@ -119,6 +119,7 @@
         "backToAccount": "Повернутися до облікового запису"
     },
     "account": {
+        "templatesTab": "Мої шаблони",
         "tryAgain": "Спробувати ще раз",
         "deleteTemplate": "Видалити шаблон",
         "delete": "Видалити",

@@ -137,7 +137,7 @@ export default function AccountHeader() {
                         <div className="absolute bottom-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex space-x-1">
                             <button
                                 onClick={handleAvatarClick}
-                                className="bg-white bg-opacity-90 rounded-full p-1.5 text-purple-600 hover:text-purple-700 shadow-md hover:shadow-lg transition-all duration-200"
+                                className="cursor-pointer bg-white bg-opacity-90 rounded-full p-1.5 text-purple-600 hover:text-purple-700 shadow-md hover:shadow-lg transition-all duration-200"
                                 title={
                                     dict.account?.uploadAvatar ||
                                     'Upload avatar'
@@ -148,7 +148,7 @@ export default function AccountHeader() {
                             {user.avatar && (
                                 <button
                                     onClick={handleDeleteAvatar}
-                                    className="bg-white bg-opacity-90 rounded-full p-1.5 text-red-500 hover:text-red-600 shadow-md hover:shadow-lg transition-all duration-200"
+                                    className="cursor-pointer bg-white bg-opacity-90 rounded-full p-1.5 text-red-500 hover:text-red-600 shadow-md hover:shadow-lg transition-all duration-200"
                                     title={
                                         dict.account?.deleteAvatar ||
                                         'Remove avatar'

@@ -121,6 +121,7 @@ export type Dictionary = {
         backToAccount: string;
     };
     account: {
+        templatesTab: string;
         tryAgain: string;
         deleteTemplate: string;
         delete: string;

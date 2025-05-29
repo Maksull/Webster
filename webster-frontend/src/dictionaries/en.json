@@ -119,6 +119,7 @@
         "backToAccount": "Back to account"
     },
     "account": {
+        "templatesTab": "My Templates",
         "tryAgain": "Try Again",
         "deleteTemplate": "Delete Template",
         "delete": "Delete",
