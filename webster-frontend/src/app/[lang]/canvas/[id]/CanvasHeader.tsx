@@ -2,9 +2,18 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, Menu, Save, Download, Bookmark, Edit3 } from 'lucide-react';
+import {
+    ArrowLeft,
+    Menu,
+    Save,
+    Download,
+    Bookmark,
+    Edit3,
+    Share2,
+} from 'lucide-react';
 import { Dictionary } from '@/get-dictionary';
 import { useDrawing } from '@/contexts/DrawingContext';
+import SocialShare from './SocialShare';
 
 interface CanvasHeaderProps {
     dict: Dictionary;
@@ -14,7 +23,7 @@ interface CanvasHeaderProps {
         format: 'png' | 'jpeg' | 'pdf';
         quality?: number;
         pixelRatio?: number;
-    }) => void;
+    }) => Promise<string | void>;
     onSaveAsTemplate: () => void;
 }
 
@@ -128,6 +137,14 @@ const CanvasHeader: React.FC<CanvasHeaderProps> = ({
         }
     }, [isEditingDescription]);
 
+    const handleDownload = async (options: {
+        format: 'png' | 'jpeg' | 'pdf';
+        quality?: number;
+        pixelRatio?: number;
+    }) => {
+        return await onDownload(options);
+    };
+
     return (
         <header className="flex-shrink-0 bg-white dark:bg-gray-800 border-b border-slate-200 dark:border-gray-700 px-4 py-3 z-10">
             <div className="flex items-center justify-between mb-2">
@@ -138,7 +155,6 @@ const CanvasHeader: React.FC<CanvasHeaderProps> = ({
                         title={dict.drawing?.back || 'Back'}>
                         <ArrowLeft className="h-5 w-5 text-slate-600 dark:text-gray-300" />
                     </Link>
-
                     <div className="flex-1 max-w-md">
                         {isEditingName ? (
                             <input
@@ -166,11 +182,22 @@ const CanvasHeader: React.FC<CanvasHeaderProps> = ({
                     </div>
                 </div>
 
-                <button
-                    className="md:hidden p-2 rounded-full hover:bg-slate-100 dark:hover:bg-gray-700"
-                    onClick={toggleMobileMenu}>
-                    <Menu className="h-5 w-5 text-slate-600 dark:text-gray-300" />
-                </button>
+                {/* Mobile Actions - Only essential buttons */}
+                <div className="flex md:hidden items-center space-x-2">
+                    <button
+                        onClick={onSave}
+                        className="flex items-center h-8 px-3 py-0 border border-slate-200 dark:border-gray-700 rounded-lg text-sm font-medium text-slate-700 dark:text-gray-200 bg-white dark:bg-gray-800 hover:bg-slate-50 dark:hover:bg-gray-700 transition-colors">
+                        <Save className="h-4 w-4 mr-1" />
+                        {dict.drawing?.save || 'Save'}
+                    </button>
+
+                    <button
+                        className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-gray-700 transition-colors"
+                        onClick={toggleMobileMenu}
+                        title="Menu">
+                        <Menu className="h-5 w-5 text-slate-600 dark:text-gray-300" />
+                    </button>
+                </div>
 
                 {/* Desktop Actions */}
                 <div className="hidden md:flex items-center space-x-3">
@@ -189,7 +216,17 @@ const CanvasHeader: React.FC<CanvasHeaderProps> = ({
                         Save as Template
                     </button>
 
-                    {/* Download Button with Integrated Format Selection */}
+                    {/* Desktop Social Share */}
+                    <SocialShare
+                        onDownload={handleDownload}
+                        canvasName={
+                            canvasName ||
+                            dict.drawing?.untitledDesign ||
+                            'Untitled Design'
+                        }
+                        canvasDescription={canvasDescription}
+                    />
+
                     <div className="relative flex items-center">
                         <button
                             onClick={() =>

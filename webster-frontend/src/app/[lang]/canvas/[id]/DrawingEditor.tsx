@@ -29,6 +29,7 @@ const DrawingEditorContent: React.FC = () => {
     const { showLayersPanel, isMobileMenuOpen, canvasId, canvasName } =
         useDrawing();
     const { handleClear } = useHistory();
+
     const [modal, setModal] = useState({
         open: false,
         type: 'success' as 'success' | 'error',
@@ -94,7 +95,6 @@ const DrawingEditorContent: React.FC = () => {
     };
 
     const openTemplateModal = () => {
-        // Check if user is authenticated first
         if (!isAuthenticated) {
             notify(
                 'error',
@@ -102,7 +102,6 @@ const DrawingEditorContent: React.FC = () => {
             );
             return;
         }
-
         if (!canvasId) {
             notify(
                 'error',
@@ -110,7 +109,6 @@ const DrawingEditorContent: React.FC = () => {
             );
             return;
         }
-
         setTemplateModal(true);
     };
 
