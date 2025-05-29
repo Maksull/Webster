@@ -10,7 +10,7 @@ type CanvasGridProps = {
     canvases: Canvas[];
     lang: string;
     dict: Dictionary;
-    deleteCanvas: (id: string) => void;
+    deleteCanvas: (id: string, name: string) => void;
     isDeleting: string | null;
 };
 
@@ -79,7 +79,7 @@ export default function CanvasGrid({
                                     onClick={e => {
                                         e.preventDefault();
                                         e.stopPropagation();
-                                        deleteCanvas(canvas.id);
+                                        deleteCanvas(canvas.id, canvas.name);
                                     }}
                                     disabled={isDeleting === canvas.id}
                                     className="cursor-pointer p-1 text-gray-500 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-white/20 dark:hover:bg-gray-800/50 rounded disabled:opacity-50 transition-all duration-200"

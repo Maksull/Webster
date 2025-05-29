@@ -11,6 +11,7 @@ import { Search, LayoutGrid, List, PlusCircle, Loader } from 'lucide-react';
 import CanvasGrid from './CanvasGrid';
 import CanvasList from './CanvasList';
 import { Dictionary } from '@/get-dictionary';
+import ConfirmationModal from '@/components/ConfirmationModal';
 
 interface EmptyCanvasStateProps {
     searchQuery: string;
@@ -33,6 +34,15 @@ export default function CanvasManager() {
     const [isLoaded, setIsLoaded] = useState(false);
     const [isDeleting, setIsDeleting] = useState<string | null>(null);
     const [isFetchingCanvases, setIsFetchingCanvases] = useState(false);
+    const [deleteModal, setDeleteModal] = useState<{
+        isOpen: boolean;
+        canvasId: string | null;
+        canvasName: string;
+    }>({
+        isOpen: false,
+        canvasId: null,
+        canvasName: '',
+    });
 
     useEffect(() => {
         const fetchCanvases = async () => {
@@ -131,24 +141,42 @@ export default function CanvasManager() {
         }
     };
 
-    const deleteCanvas = async (id: string) => {
-        setIsDeleting(id);
+    const handleDeleteCanvas = (id: string, name: string) => {
+        setDeleteModal({
+            isOpen: true,
+            canvasId: id,
+            canvasName: name,
+        });
+    };
+
+    const confirmDeleteCanvas = async () => {
+        if (!user || !deleteModal.canvasId || !token) return;
+
         try {
-            const response = await fetch(`${API_URL}/canvases/${id}`, {
-                method: 'DELETE',
-                headers: {
-                    Authorization: `Bearer ${token}`,
+            setIsDeleting(deleteModal.canvasId);
+            const response = await fetch(
+                `${API_URL}/canvases/${deleteModal.canvasId}`,
+                {
+                    method: 'DELETE',
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
                 },
-            });
+            );
 
             if (!response.ok) {
                 const errorData = await response.json();
                 throw new Error(errorData.message || 'Failed to delete canvas');
             }
 
-            setCanvases(prevCanvases =>
-                prevCanvases.filter(canvas => canvas.id !== id),
+            setCanvases(prev =>
+                prev.filter(canvas => canvas.id !== deleteModal.canvasId),
             );
+            setDeleteModal({
+                isOpen: false,
+                canvasId: null,
+                canvasName: '',
+            });
             showStatus(
                 'success',
                 dict.account?.canvasDeleteSuccess ||
@@ -279,7 +307,7 @@ export default function CanvasManager() {
                             canvases={sortedCanvases}
                             lang={lang}
                             dict={dict}
-                            deleteCanvas={deleteCanvas}
+                            deleteCanvas={handleDeleteCanvas}
                             isDeleting={isDeleting}
                         />
                     ) : (
@@ -287,11 +315,28 @@ export default function CanvasManager() {
                             canvases={sortedCanvases}
                             lang={lang}
                             dict={dict}
-                            deleteCanvas={deleteCanvas}
+                            deleteCanvas={handleDeleteCanvas}
                             isDeleting={isDeleting}
                         />
                     ))}
             </div>
+            <ConfirmationModal
+                isOpen={deleteModal.isOpen}
+                onClose={() =>
+                    setDeleteModal({
+                        isOpen: false,
+                        canvasId: null,
+                        canvasName: '',
+                    })
+                }
+                onConfirm={confirmDeleteCanvas}
+                title={dict.account?.deleteCanvas || 'Delete Canvas'}
+                message={`Are you sure you want to delete "${deleteModal.canvasName}"? This action cannot be undone.`}
+                confirmText={dict.account?.delete || 'Delete'}
+                cancelText={dict.account?.cancel || 'Cancel'}
+                type="danger"
+                isLoading={isDeleting === deleteModal.canvasId}
+            />
         </div>
     );
 }

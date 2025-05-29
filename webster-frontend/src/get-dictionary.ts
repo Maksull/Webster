@@ -121,6 +121,19 @@ export type Dictionary = {
         backToAccount: string;
     };
     account: {
+        tryAgain: string;
+        deleteTemplate: string;
+        delete: string;
+        createCanvasFromTemplate: string;
+        loadingTemplates: string;
+        templatesTitle: string;
+        searchTemplates: string;
+        noTemplatesFound: string;
+        noTemplates: string;
+        noTemplatesFoundDescription: string;
+        noTemplatesDescription: string;
+        enterCanvasName: string;
+        createCanvas: string;
         deleteAccountPlaceholder: string;
         changeEmail: string;
         currentPassword: string;
