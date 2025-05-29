@@ -158,7 +158,13 @@ const DrawingEditorContent: React.FC = () => {
                 s: { x: 0, y: movementStep },
                 a: { x: -movementStep, y: 0 },
                 d: { x: movementStep, y: 0 },
+                ц: { x: 0, y: -movementStep },
+                ы: { x: 0, y: movementStep },
+                і: { x: 0, y: movementStep },
+                ф: { x: -movementStep, y: 0 },
+                в: { x: movementStep, y: 0 },
             };
+
 
             const direction = directionMap[key];
             if (!direction) return;
