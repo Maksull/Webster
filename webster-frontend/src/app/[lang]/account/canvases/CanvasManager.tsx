@@ -11,6 +11,7 @@ import { Search, LayoutGrid, List, PlusCircle, Loader } from 'lucide-react';
 import CanvasGrid from './CanvasGrid';
 import CanvasList from './CanvasList';
 import { Dictionary } from '@/get-dictionary';
+import ConfirmationModal from '@/components/ConfirmationModal';
 
 interface EmptyCanvasStateProps {
     searchQuery: string;
@@ -33,6 +34,15 @@ export default function CanvasManager() {
     const [isLoaded, setIsLoaded] = useState(false);
     const [isDeleting, setIsDeleting] = useState<string | null>(null);
     const [isFetchingCanvases, setIsFetchingCanvases] = useState(false);
+    const [deleteModal, setDeleteModal] = useState<{
+        isOpen: boolean;
+        canvasId: string | null;
+        canvasName: string;
+    }>({
+        isOpen: false,
+        canvasId: null,
+        canvasName: '',
+    });
 
     useEffect(() => {
         const fetchCanvases = async () => {
@@ -131,24 +141,42 @@ export default function CanvasManager() {
         }
     };
 
-    const deleteCanvas = async (id: string) => {
-        setIsDeleting(id);
+    const handleDeleteCanvas = (id: string, name: string) => {
+        setDeleteModal({
+            isOpen: true,
+            canvasId: id,
+            canvasName: name,
+        });
+    };
+
+    const confirmDeleteCanvas = async () => {
+        if (!user || !deleteModal.canvasId || !token) return;
+
         try {
-            const response = await fetch(`${API_URL}/canvases/${id}`, {
-                method: 'DELETE',
-                headers: {
-                    Authorization: `Bearer ${token}`,
+            setIsDeleting(deleteModal.canvasId);
+            const response = await fetch(
+                `${API_URL}/canvases/${deleteModal.canvasId}`,
+                {
+                    method: 'DELETE',
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
                 },
-            });
+            );
 
             if (!response.ok) {
                 const errorData = await response.json();
                 throw new Error(errorData.message || 'Failed to delete canvas');
             }
 
-            setCanvases(prevCanvases =>
-                prevCanvases.filter(canvas => canvas.id !== id),
+            setCanvases(prev =>
+                prev.filter(canvas => canvas.id !== deleteModal.canvasId),
             );
+            setDeleteModal({
+                isOpen: false,
+                canvasId: null,
+                canvasName: '',
+            });
             showStatus(
                 'success',
                 dict.account?.canvasDeleteSuccess ||
@@ -208,7 +236,7 @@ export default function CanvasManager() {
                             className={`p-2 ${
                                 viewMode === 'grid'
                                     ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400'
-                                    : 'bg-white dark:bg-gray-700 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-600'
+                                    : 'cursor-pointer bg-white dark:bg-gray-700 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-600'
                             }`}
                             onClick={() => setViewMode('grid')}
                             title={dict.account?.gridView || 'Grid view'}>
@@ -218,7 +246,7 @@ export default function CanvasManager() {
                             className={`p-2 ${
                                 viewMode === 'list'
                                     ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400'
-                                    : 'bg-white dark:bg-gray-700 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-600'
+                                    : 'cursor-pointer bg-white dark:bg-gray-700 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-600'
                             }`}
                             onClick={() => setViewMode('list')}
                             title={dict.account?.listView || 'List view'}>
@@ -226,7 +254,7 @@ export default function CanvasManager() {
                         </button>
                     </div>
                     <select
-                        className="border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white p-2 text-sm"
+                        className="cursor-pointer border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white p-2 text-sm"
                         value={sortBy}
                         onChange={e => setSortBy(e.target.value)}>
                         <option value="updatedAt">
@@ -243,7 +271,7 @@ export default function CanvasManager() {
                     <button
                         onClick={handleCreateCanvas}
                         disabled={isCreatingCanvas}
-                        className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white px-4 py-2 rounded-lg font-medium transition-colors duration-200 flex items-center shadow-sm hover:shadow disabled:opacity-70">
+                        className="cursor-pointer bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white px-4 py-2 rounded-lg font-medium transition-colors duration-200 flex items-center shadow-sm hover:shadow disabled:opacity-70">
                         {isCreatingCanvas ? (
                             <>
                                 <Loader className="mr-2 h-4 w-4 animate-spin" />
@@ -279,7 +307,7 @@ export default function CanvasManager() {
                             canvases={sortedCanvases}
                             lang={lang}
                             dict={dict}
-                            deleteCanvas={deleteCanvas}
+                            deleteCanvas={handleDeleteCanvas}
                             isDeleting={isDeleting}
                         />
                     ) : (
@@ -287,11 +315,28 @@ export default function CanvasManager() {
                             canvases={sortedCanvases}
                             lang={lang}
                             dict={dict}
-                            deleteCanvas={deleteCanvas}
+                            deleteCanvas={handleDeleteCanvas}
                             isDeleting={isDeleting}
                         />
                     ))}
             </div>
+            <ConfirmationModal
+                isOpen={deleteModal.isOpen}
+                onClose={() =>
+                    setDeleteModal({
+                        isOpen: false,
+                        canvasId: null,
+                        canvasName: '',
+                    })
+                }
+                onConfirm={confirmDeleteCanvas}
+                title={dict.account?.deleteCanvas || 'Delete Canvas'}
+                message={`Are you sure you want to delete "${deleteModal.canvasName}"? This action cannot be undone.`}
+                confirmText={dict.account?.delete || 'Delete'}
+                cancelText={dict.account?.cancel || 'Cancel'}
+                type="danger"
+                isLoading={isDeleting === deleteModal.canvasId}
+            />
         </div>
     );
 }
@@ -322,7 +367,7 @@ function EmptyCanvasState({
                     <button
                         onClick={handleCreateCanvas}
                         disabled={isCreatingCanvas}
-                        className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white px-6 py-3 rounded-lg font-medium transition-colors duration-200 inline-flex items-center shadow-sm hover:shadow disabled:opacity-70">
+                        className="cursor-pointer bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white px-6 py-3 rounded-lg font-medium transition-colors duration-200 inline-flex items-center shadow-sm hover:shadow disabled:opacity-70">
                         {isCreatingCanvas ? (
                             <>
                                 <Loader className="mr-2 h-5 w-5 animate-spin" />

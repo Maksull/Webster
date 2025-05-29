@@ -143,7 +143,7 @@ export default function AccountNavigation() {
                 <div className="pt-6 border-t border-gray-200 dark:border-gray-700 mt-6">
                     <button
                         onClick={handleLogout}
-                        className="flex items-center px-3 py-2 w-full text-left rounded-lg text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors duration-200">
+                        className="cursor-pointer flex items-center px-3 py-2 w-full text-left rounded-lg text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors duration-200">
                         <LogOut className="mr-3 h-5 w-5" />
                         <span className="font-medium">
                             {dict.account?.logout || 'Logout'}

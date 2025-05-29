@@ -91,7 +91,7 @@ export default function TemplateList({
                                         )
                                     }
                                     disabled={creatingCanvas === template.id}
-                                    className="p-1.5 text-gray-500 dark:text-gray-400 hover:text-green-600 dark:hover:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/30 rounded transition-all duration-200"
+                                    className="cursor-pointer p-1.5 text-gray-500 dark:text-gray-400 hover:text-green-600 dark:hover:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/30 rounded transition-all duration-200"
                                     title={
                                         dict.account
                                             ?.createCanvasFromTemplate ||
@@ -112,7 +112,7 @@ export default function TemplateList({
                                         )
                                     }
                                     disabled={isDeleting === template.id}
-                                    className="p-1.5 text-gray-500 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded disabled:opacity-50 transition-all duration-200"
+                                    className="cursor-pointer p-1.5 text-gray-500 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded disabled:opacity-50 transition-all duration-200"
                                     title={
                                         dict.account?.deleteTemplate ||
                                         'Delete template'
