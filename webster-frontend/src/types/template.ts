@@ -1,3 +1,6 @@
+import { DrawingElement } from './elements';
+import { DrawingLayer } from './layers';
+
 export interface Template {
     id: string;
     name: string;
@@ -5,8 +8,8 @@ export interface Template {
     width: number;
     height: number;
     backgroundColor: string;
-    layers: any[];
-    elementsByLayer: Record<string, any[]>;
+    layers: DrawingLayer[];
+    elementsByLayer: Record<string, DrawingElement[]>;
     thumbnail: string | null;
     createdBy: string;
     createdAt: Date;

@@ -8,8 +8,8 @@ import { Header } from './Header';
 
 export const metadata: Metadata = {
     title: {
-        default: 'Uevent',
-        template: '%s - Uevent',
+        default: 'Webster',
+        template: '%s - Webster',
     },
     description:
         'Find and attend events to expand your network and grow professionally',

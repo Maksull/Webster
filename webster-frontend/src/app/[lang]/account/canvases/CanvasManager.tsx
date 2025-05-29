@@ -1,4 +1,5 @@
 'use client';
+
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
@@ -9,12 +10,21 @@ import { Canvas } from '@/types/canvas';
 import { Search, LayoutGrid, List, PlusCircle, Loader } from 'lucide-react';
 import CanvasGrid from './CanvasGrid';
 import CanvasList from './CanvasList';
+import { Dictionary } from '@/get-dictionary';
+
+interface EmptyCanvasStateProps {
+    searchQuery: string;
+    dict: Dictionary;
+    handleCreateCanvas: () => void;
+    isCreatingCanvas: boolean;
+}
 
 export default function CanvasManager() {
     const { dict, lang } = useDictionary();
     const router = useRouter();
     const { user, token } = useAuth();
     const { showStatus } = useStatus();
+
     const [searchQuery, setSearchQuery] = useState('');
     const [viewMode, setViewMode] = useState('grid');
     const [sortBy, setSortBy] = useState('updatedAt');
@@ -44,7 +54,7 @@ export default function CanvasManager() {
                 const data = await response.json();
                 if (data.status === 'success' && data.data.canvases) {
                     const processedCanvases = data.data.canvases.map(
-                        (canvas: any) => ({
+                        (canvas: Canvas) => ({
                             ...canvas,
                             createdAt: new Date(canvas.createdAt),
                             updatedAt: new Date(canvas.updatedAt),
@@ -70,7 +80,6 @@ export default function CanvasManager() {
 
     const handleCreateCanvas = async () => {
         setIsCreatingCanvas(true);
-
         try {
             const layerId = Date.now().toString();
             const defaultCanvas = {
@@ -87,7 +96,9 @@ export default function CanvasManager() {
                         opacity: 1,
                     },
                 ],
-                elementsByLayer: { [layerId]: [] },
+                elementsByLayer: {
+                    [layerId]: [],
+                },
                 isPublic: false,
             };
 
@@ -290,7 +301,7 @@ function EmptyCanvasState({
     dict,
     handleCreateCanvas,
     isCreatingCanvas,
-}: any) {
+}: EmptyCanvasStateProps) {
     return (
         <div className="text-center py-12">
             <LayoutGrid className="h-16 w-16 mx-auto text-gray-400 dark:text-gray-600" />

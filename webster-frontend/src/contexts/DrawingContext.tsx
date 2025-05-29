@@ -480,8 +480,6 @@ export const DrawingProvider: React.FC<DrawingProviderProps> = ({
                 return;
             }
 
-            console.log('Found image element for resize:', imageElement.id);
-
             resizeStateRef.current = {
                 corner,
                 startPos: pos,

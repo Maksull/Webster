@@ -13,9 +13,8 @@ import ConfirmationModal from '@/components/ConfirmationModal';
 import TextInputModal from '@/components/TextInputModal';
 
 export default function TemplateManager() {
-    const { dict, lang } = useDictionary();
+    const { dict } = useDictionary();
     const { user, token } = useAuth();
-
     const [templates, setTemplates] = useState<Template[]>([]);
     const [filteredTemplates, setFilteredTemplates] = useState<Template[]>([]);
     const [loading, setLoading] = useState(true);
@@ -23,8 +22,6 @@ export default function TemplateManager() {
     const [searchTerm, setSearchTerm] = useState('');
     const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
     const [isDeleting, setIsDeleting] = useState<string | null>(null);
-
-    // Modal states
     const [deleteModal, setDeleteModal] = useState<{
         isOpen: boolean;
         templateId: string | null;
@@ -34,7 +31,6 @@ export default function TemplateManager() {
         templateId: null,
         templateName: '',
     });
-
     const [canvasModal, setCanvasModal] = useState<{
         isOpen: boolean;
         templateId: string | null;
@@ -58,13 +54,13 @@ export default function TemplateManager() {
 
     const loadTemplates = async () => {
         console.log('user:', user);
-        if (!user) return;
+        if (!user || !token) return;
 
         try {
             setLoading(true);
             setError(null);
             console.log(1);
-            const data = await templateService.getUserTemplates(token!);
+            const data = await templateService.getUserTemplates(token);
             const templatesWithDates = data.map(template => ({
                 ...template,
                 createdAt: new Date(template.createdAt),
@@ -88,7 +84,7 @@ export default function TemplateManager() {
     };
 
     const confirmDeleteTemplate = async () => {
-        if (!user || !deleteModal.templateId) return;
+        if (!user || !deleteModal.templateId || !token) return;
 
         try {
             setIsDeleting(deleteModal.templateId);
@@ -121,12 +117,14 @@ export default function TemplateManager() {
     };
 
     const confirmCreateCanvas = async (canvasName: string) => {
-        if (!user || !canvasModal.templateId) return;
+        if (!user || !canvasModal.templateId || !token) return;
 
         try {
             await templateService.createCanvasFromTemplate(
                 canvasModal.templateId,
-                { name: canvasName },
+                {
+                    name: canvasName,
+                },
                 token,
             );
             setCanvasModal({
@@ -155,12 +153,16 @@ export default function TemplateManager() {
 
     if (error) {
         return (
-            <StatusMessage
-                type="error"
-                message={error}
-                actionText={dict.common?.tryAgain || 'Try Again'}
-                onAction={loadTemplates}
-            />
+            <div className="space-y-4">
+                <StatusMessage type="error" message={error} />
+                <div className="text-center">
+                    <button
+                        onClick={loadTemplates}
+                        className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors">
+                        {dict.common?.tryAgain || 'Try Again'}
+                    </button>
+                </div>
+            </div>
         );
     }
 
@@ -194,7 +196,6 @@ export default function TemplateManager() {
                         className="pl-10 pr-4 py-2 w-full border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                     />
                 </div>
-
                 <div className="flex items-center space-x-2">
                     <div className="flex rounded-lg border border-gray-300 dark:border-gray-600 overflow-hidden">
                         <button
@@ -219,7 +220,7 @@ export default function TemplateManager() {
                 </div>
             </div>
 
-            {/* Templates Content */}
+            {/* Templates Display */}
             {filteredTemplates.length === 0 ? (
                 <div className="text-center py-12">
                     <div className="mx-auto h-24 w-24 text-gray-400 mb-4">
@@ -256,7 +257,6 @@ export default function TemplateManager() {
                         {viewMode === 'grid' ? (
                             <TemplateGrid
                                 templates={filteredTemplates}
-                                lang={lang}
                                 dict={dict}
                                 deleteTemplate={handleDeleteTemplate}
                                 createCanvasFromTemplate={
@@ -267,7 +267,6 @@ export default function TemplateManager() {
                         ) : (
                             <TemplateList
                                 templates={filteredTemplates}
-                                lang={lang}
                                 dict={dict}
                                 deleteTemplate={handleDeleteTemplate}
                                 createCanvasFromTemplate={
