@@ -582,9 +582,12 @@ export const DrawingProvider: React.FC<DrawingProviderProps> = ({
     };
 
     const updateActiveLayerElements = (newElements: DrawingElement[]) => {
-        const updatedMap = new Map(elementsByLayer);
-        updatedMap.set(activeLayerId, newElements);
-        setElementsByLayer(updatedMap);
+        setElementsByLayer(prev => {
+            const updatedMap = new Map(prev);
+            // Make sure we clone the array too
+            updatedMap.set(activeLayerId, [...newElements]);
+            return new Map(updatedMap); // new reference
+        });
     };
 
     const contextValue: DrawingContextProps = {
