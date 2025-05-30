@@ -1234,73 +1234,8 @@ export const useCanvasOperations = (callbacks: CallbacksProps = {}) => {
     };
 
     const handleResolutionChange = (resolution: Resolution) => {
-        const oldDimensions = { ...dimensions };
-        const scaleX = resolution.width / oldDimensions.width;
-        const scaleY = resolution.height / oldDimensions.height;
-
-        const scaledElementsByLayer = new Map<string, DrawingElement[]>();
-
-        for (const [layerId, layerElements] of elementsByLayer.entries()) {
-            const scaledElements = layerElements.map(element => {
-                if (element.type === 'line') {
-                    const lineElement = element as LineElement;
-                    const newPoints = [...lineElement.points];
-                    for (let i = 0; i < newPoints.length; i += 2) {
-                        newPoints[i] = newPoints[i] * scaleX;
-                        newPoints[i + 1] = newPoints[i + 1] * scaleY;
-                    }
-                    return { ...lineElement, points: newPoints };
-                } else if (
-                    element.type === 'rect' ||
-                    element.type === 'rectangle'
-                ) {
-                    const rectElement = element as
-                        | RectangleElement
-                        | RectElement;
-                    return {
-                        ...rectElement,
-                        x: rectElement.x * scaleX,
-                        y: rectElement.y * scaleY,
-                        width: rectElement.width * scaleX,
-                        height: rectElement.height * scaleY,
-                    };
-                } else if (element.type === 'circle') {
-                    const circleElement = element as CircleElement;
-                    return {
-                        ...circleElement,
-                        x: circleElement.x * scaleX,
-                        y: circleElement.y * scaleY,
-                        radius: circleElement.radius * Math.min(scaleX, scaleY),
-                    };
-                } else if (element.type === 'line-shape') {
-                    const lineElement = element as LineShapeElement;
-                    const newPoints = [...lineElement.points];
-                    for (let i = 0; i < newPoints.length; i += 2) {
-                        newPoints[i] = newPoints[i] * scaleX;
-                        newPoints[i + 1] = newPoints[i + 1] * scaleY;
-                    }
-                    return { ...lineElement, points: newPoints };
-                } else if (element.type === 'triangle') {
-                    const triangleElement = element as TriangleElement;
-                    return {
-                        ...triangleElement,
-                        x: triangleElement.x * scaleX,
-                        y: triangleElement.y * scaleY,
-                        radius:
-                            triangleElement.radius * Math.min(scaleX, scaleY),
-                    };
-                }
-                return element;
-            });
-            scaledElementsByLayer.set(layerId, scaledElements);
-        }
-
         setSelectedResolution(resolution);
-        setElementsByLayer(scaledElementsByLayer);
-        setDimensions({
-            width: resolution.width,
-            height: resolution.height,
-        });
+        setDimensions({ width: resolution.width, height: resolution.height });
         recordHistory();
     };
 
