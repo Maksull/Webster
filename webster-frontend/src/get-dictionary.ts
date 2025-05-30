@@ -210,6 +210,9 @@ export type Dictionary = {
         custom: string;
         select: string;
         pencil: string;
+        marker: string;
+        brush: string;
+        pen: string;
         eraser: string;
         bucket: string;
         rectangle: string;
