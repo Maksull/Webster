@@ -4,15 +4,7 @@ import React, { useState } from 'react';
 import { Pencil, Highlighter, Brush, PenLine, LucideIcon } from 'lucide-react';
 import ToolButton from './ToolButton';
 import { ToolType } from '@/types/elements';
-
-interface Dictionary {
-    drawing?: {
-        pencil?: string;
-        marker?: string;
-        brush?: string;
-        pen?: string;
-    };
-}
+import { Dictionary } from '@/get-dictionary';
 
 interface ToolSelectorProps {
     dict: Dictionary;
@@ -38,7 +30,6 @@ const ToolSelector: React.FC<ToolSelectorProps> = ({
 }) => {
     const [open, setOpen] = useState(false);
 
-    // Only consider valid tools
     const validTool = tools.find(t => t.tool === activeTool) ?? tools[0];
     const ActiveIcon = validTool.icon;
 
