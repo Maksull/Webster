@@ -1,4 +1,4 @@
-import { ImageElement } from '@/types/elements';
+import { ImageElement, DrawingElement } from '@/types/elements';
 
 export interface ImageTransformUtils {
     flipImageHorizontal: (imageId: string) => void;
@@ -8,15 +8,14 @@ export interface ImageTransformUtils {
 }
 
 export const createImageTransformUtils = (
-    elementsByLayer: Map<string, any[]>,
-    setElementsByLayer: (map: Map<string, any[]>) => void,
+    elementsByLayer: Map<string, DrawingElement[]>,
+    setElementsByLayer: (map: Map<string, DrawingElement[]>) => void,
 ): ImageTransformUtils => {
     const updateImageElement = (
         elementId: string,
         updates: Partial<ImageElement>,
     ) => {
         const updatedElementsByLayer = new Map(elementsByLayer);
-
         updatedElementsByLayer.forEach((elements, layerId) => {
             const updatedElements = elements.map(element => {
                 if (element.id === elementId && element.type === 'image') {
@@ -26,7 +25,6 @@ export const createImageTransformUtils = (
             });
             updatedElementsByLayer.set(layerId, updatedElements);
         });
-
         setElementsByLayer(updatedElementsByLayer);
     };
 
@@ -42,6 +40,7 @@ export const createImageTransformUtils = (
         });
         return imageElement;
     };
+
     const flipImageHorizontal = (imageId: string) => {
         const imageElement = getImageElement(imageId);
         if (!imageElement) return;
@@ -75,10 +74,7 @@ export const createImageTransformUtils = (
     };
 
     const scaleImage = (imageId: string, scaleX: number, scaleY: number) => {
-        updateImageElement(imageId, {
-            scaleX,
-            scaleY,
-        });
+        updateImageElement(imageId, { scaleX, scaleY });
     };
 
     return {

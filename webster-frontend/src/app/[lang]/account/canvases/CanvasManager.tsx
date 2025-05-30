@@ -109,7 +109,6 @@ export default function CanvasManager() {
                 elementsByLayer: {
                     [layerId]: [],
                 },
-                isPublic: false,
             };
 
             const response = await fetch(`${API_URL}/canvases`, {

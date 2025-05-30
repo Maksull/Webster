@@ -39,7 +39,7 @@ const ImageToolbar: React.FC<ImageToolbarProps> = ({
         [elementsByLayer, setElementsByLayer],
     );
 
-    const selectedImage = React.useMemo(() => {
+    const selectedImage = React.useMemo((): ImageElement | null => {
         if (!selectedImageId && selectedElementIds.length === 0) return null;
 
         const imageId =
@@ -93,12 +93,11 @@ const ImageToolbar: React.FC<ImageToolbarProps> = ({
                                 Image Tools
                             </h3>
                             <p className="text-xs text-gray-500 dark:text-gray-400">
-                                {Math.round(selectedImage.width)} ×{' '}
+                                {Math.round(selectedImage.width)}×{' '}
                                 {Math.round(selectedImage.height)}px
                             </p>
                         </div>
                     </div>
-
                     <button
                         onClick={handleClose}
                         className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
@@ -107,9 +106,9 @@ const ImageToolbar: React.FC<ImageToolbarProps> = ({
                     </button>
                 </div>
 
-                {/* Controls - Horizontal Layout */}
+                {/* Controls */}
                 <div className="flex items-center gap-6 flex-wrap">
-                    {/* Fit Controls */}
+                    {/* Fit to Canvas */}
                     <div className="flex flex-col gap-2">
                         <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
                             Fit to Canvas
@@ -142,7 +141,7 @@ const ImageToolbar: React.FC<ImageToolbarProps> = ({
                     {/* Divider */}
                     <div className="h-12 w-px bg-gray-200 dark:bg-gray-600"></div>
 
-                    {/* Transform Controls */}
+                    {/* Transform */}
                     <div className="flex flex-col gap-2">
                         <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
                             Transform
@@ -186,7 +185,7 @@ const ImageToolbar: React.FC<ImageToolbarProps> = ({
                     {/* Divider */}
                     <div className="h-12 w-px bg-gray-200 dark:bg-gray-600"></div>
 
-                    {/* Aspect Ratio & Quick Actions */}
+                    {/* Constraints */}
                     <div className="flex flex-col gap-2">
                         <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
                             Constraints
@@ -218,7 +217,7 @@ const ImageToolbar: React.FC<ImageToolbarProps> = ({
                     </div>
                 </div>
 
-                {/* Status Bar */}
+                {/* Footer */}
                 <div className="mt-4 pt-3 border-t border-gray-200 dark:border-gray-700">
                     <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
                         <span>

@@ -38,7 +38,6 @@ const ResolutionSelector: React.FC<ResolutionSelectorProps> = ({
         return () => clearTimeout(timeout); // cleanup on unmount or before next effect run
     }, [dimensions.width, dimensions.height]);
 
-
     const [modal, setModal] = useState({
         open: false,
         type: 'success' as 'success' | 'error',
@@ -77,11 +76,12 @@ const ResolutionSelector: React.FC<ResolutionSelectorProps> = ({
                 {POPULAR_RESOLUTIONS.map(resolution => (
                     <button
                         key={`${resolution.width}x${resolution.height}`}
-                        className={`text-left px-3 py-2 rounded-lg text-sm ${selectedResolution.width === resolution.width &&
-                                selectedResolution.height === resolution.height
+                        className={`text-left px-3 py-2 rounded-lg text-sm ${
+                            selectedResolution.width === resolution.width &&
+                            selectedResolution.height === resolution.height
                                 ? 'bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400'
                                 : 'text-gray-600 dark:text-gray-400 hover:bg-slate-100 dark:hover:bg-gray-700'
-                            }`}
+                        }`}
                         onClick={() => onResolutionChange(resolution)}>
                         {resolution.name} ({resolution.width} ×{' '}
                         {resolution.height})

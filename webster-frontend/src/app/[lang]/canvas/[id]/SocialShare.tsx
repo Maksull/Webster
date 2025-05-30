@@ -18,7 +18,7 @@ interface SocialShareProps {
         pixelRatio?: number;
     }) => Promise<string | void>;
     canvasName: string;
-    canvasDescription?: string;
+    canvasDescription: string | null;
 }
 
 const SocialShare: React.FC<SocialShareProps> = ({
@@ -30,6 +30,12 @@ const SocialShare: React.FC<SocialShareProps> = ({
     const [copySuccess, setCopySuccess] = useState(false);
     const dropdownRef = useRef<HTMLDivElement>(null);
     const { stageRef } = useDrawing();
+
+    // Check if Web Share API is supported
+    const isWebShareSupported =
+        typeof navigator !== 'undefined' &&
+        'share' in navigator &&
+        typeof navigator.share === 'function';
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
@@ -46,34 +52,27 @@ const SocialShare: React.FC<SocialShareProps> = ({
             document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
-    // Generate image blob and copy to clipboard
     const generateAndCopyImage = async (): Promise<Blob | null> => {
         try {
             setIsSharing(true);
-
             if (!stageRef.current) {
                 console.error('Stage reference not available');
                 return null;
             }
 
-            // Generate image data URL from canvas
             const dataURL = stageRef.current.toDataURL({
-                format: 'png',
+                mimeType: 'image/png',
                 quality: 0.9,
                 pixelRatio: 2,
             });
 
-            // Convert data URL to blob
             const response = await fetch(dataURL);
             const blob = await response.blob();
 
-            // Copy image to clipboard
             if (navigator.clipboard && window.ClipboardItem) {
                 try {
                     await navigator.clipboard.write([
-                        new ClipboardItem({
-                            'image/png': blob,
-                        }),
+                        new ClipboardItem({ 'image/png': blob }),
                     ]);
                     console.log('Image copied to clipboard successfully');
                 } catch (clipboardError) {
@@ -81,7 +80,6 @@ const SocialShare: React.FC<SocialShareProps> = ({
                         'Failed to copy image to clipboard:',
                         clipboardError,
                     );
-                    // Fallback: copy text instead
                     await copyTextToClipboard();
                 }
             } else {
@@ -94,7 +92,6 @@ const SocialShare: React.FC<SocialShareProps> = ({
             return blob;
         } catch (error) {
             console.error('Error generating and copying image:', error);
-            // Fallback to text copy
             await copyTextToClipboard();
             return null;
         } finally {
@@ -107,7 +104,6 @@ const SocialShare: React.FC<SocialShareProps> = ({
             const shareText = `Check out my design: ${canvasName}${
                 canvasDescription ? ` - ${canvasDescription}` : ''
             }\n${window.location.href}`;
-
             await navigator.clipboard.writeText(shareText);
             setCopySuccess(true);
             setTimeout(() => setCopySuccess(false), 2000);
@@ -117,7 +113,6 @@ const SocialShare: React.FC<SocialShareProps> = ({
     };
 
     const handleShare = async (platform: string) => {
-        // Always copy image to clipboard when sharing
         await generateAndCopyImage();
 
         const shareText = `Check out my design: ${canvasName}${
@@ -140,25 +135,22 @@ const SocialShare: React.FC<SocialShareProps> = ({
             )}&description=${encodeURIComponent(shareText)}`,
         };
 
-        // Handle native sharing
-        if (platform === 'native' && navigator.share) {
+        if (platform === 'native' && isWebShareSupported) {
             try {
                 const shareData: ShareData = {
                     title: canvasName,
                     text: shareText,
                     url: shareUrl,
                 };
-
                 await navigator.share(shareData);
                 setIsOpen(false);
                 return;
             } catch (error) {
                 console.warn('Native sharing failed:', error);
-                platform = 'twitter'; // Fallback to Twitter
+                platform = 'twitter';
             }
         }
 
-        // Open social media sharing URL
         if (shareUrls[platform as keyof typeof shareUrls]) {
             window.open(
                 shareUrls[platform as keyof typeof shareUrls],
@@ -204,8 +196,8 @@ const SocialShare: React.FC<SocialShareProps> = ({
                     </div>
 
                     <div className="p-2">
-                        {/* Native sharing */}
-                        {navigator.share && (
+                        {/* Native Share */}
+                        {isWebShareSupported && (
                             <button
                                 onClick={() => handleShare('native')}
                                 className="w-full flex items-center px-3 py-2 text-sm text-slate-700 dark:text-gray-300 hover:bg-slate-100 dark:hover:bg-gray-700 rounded-md transition-colors"
@@ -215,7 +207,7 @@ const SocialShare: React.FC<SocialShareProps> = ({
                             </button>
                         )}
 
-                        {/* Social media platforms */}
+                        {/* Social Media Buttons */}
                         <button
                             onClick={() => handleShare('facebook')}
                             className="w-full flex items-center px-3 py-2 text-sm text-slate-700 dark:text-gray-300 hover:bg-slate-100 dark:hover:bg-gray-700 rounded-md transition-colors"
@@ -254,7 +246,7 @@ const SocialShare: React.FC<SocialShareProps> = ({
 
                         <div className="border-t border-slate-200 dark:border-gray-700 my-2"></div>
 
-                        {/* Copy options */}
+                        {/* Copy Options */}
                         <button
                             onClick={copyImageOnly}
                             className="w-full flex items-center px-3 py-2 text-sm text-slate-700 dark:text-gray-300 hover:bg-slate-100 dark:hover:bg-gray-700 rounded-md transition-colors"

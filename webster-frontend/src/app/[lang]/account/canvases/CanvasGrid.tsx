@@ -1,4 +1,3 @@
-/* eslint-disable prettier/prettier */
 'use client';
 
 import Link from 'next/link';
@@ -70,7 +69,8 @@ export default function CanvasGrid({
                                     href={`/${lang}/canvas/${canvas.id}`}
                                     className="p-1 text-gray-500 dark:text-gray-400 hover:text-purple-600 dark:hover:text-purple-400 hover:bg-white/20 dark:hover:bg-gray-800/50 rounded transition-all duration-200"
                                     title={
-                                        dict.account?.editCanvas || 'Edit canvas'
+                                        dict.account?.editCanvas ||
+                                        'Edit canvas'
                                     }>
                                     <Edit2 className="h-4 w-4" />
                                 </Link>

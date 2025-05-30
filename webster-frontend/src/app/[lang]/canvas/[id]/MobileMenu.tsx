@@ -1,4 +1,3 @@
-// app/[lang]/editor/components/toolbar/MobileMenu.tsx
 'use client';
 
 import React from 'react';
@@ -22,7 +21,6 @@ import {
     Type,
     ArrowUpRight,
     Bookmark,
-    Share2,
     Facebook,
     Twitter,
     Linkedin,
@@ -66,39 +64,33 @@ const MobileMenu: React.FC<MobileMenuProps> = ({
         canvasDescription,
         stageRef,
     } = useDrawing();
+
+    // Check if Web Share API is supported
+    const isWebShareSupported =
+        typeof navigator !== 'undefined' &&
+        'share' in navigator &&
+        typeof navigator.share === 'function';
     const { handleUndo, handleRedo, canUndo, canRedo } = useHistory();
 
     const toggleMobileMenu = () => {
         setIsMobileMenuOpen(!isMobileMenuOpen);
     };
 
-    const handleDownloadPNG = () => {
-        onDownload({
-            format: 'png',
-            quality: 1,
-            pixelRatio: 2,
-        });
+    const handleDownloadPNG = async () => {
+        await onDownload({ format: 'png', quality: 1, pixelRatio: 2 });
         toggleMobileMenu();
     };
 
-    const handleDownloadJPEG = () => {
-        onDownload({
-            format: 'jpeg',
-            quality: 0.8,
-            pixelRatio: 2,
-        });
+    const handleDownloadJPEG = async () => {
+        await onDownload({ format: 'jpeg', quality: 0.8, pixelRatio: 2 });
         toggleMobileMenu();
     };
 
-    const handleDownloadPDF = () => {
-        onDownload({
-            format: 'pdf',
-            pixelRatio: 2,
-        });
+    const handleDownloadPDF = async () => {
+        await onDownload({ format: 'pdf', pixelRatio: 2 });
         toggleMobileMenu();
     };
 
-    // Share functionality
     const handleShare = async (platform: string) => {
         const shareText = `Check out my design: ${canvasName || 'My Design'}${
             canvasDescription ? ` - ${canvasDescription}` : ''
@@ -120,7 +112,7 @@ const MobileMenu: React.FC<MobileMenuProps> = ({
             )}&description=${encodeURIComponent(shareText)}`,
         };
 
-        if (platform === 'native' && navigator.share) {
+        if (platform === 'native' && isWebShareSupported) {
             try {
                 const shareData: ShareData = {
                     title: canvasName || 'My Design',
@@ -152,7 +144,6 @@ const MobileMenu: React.FC<MobileMenuProps> = ({
                 canvasDescription ? ` - ${canvasDescription}` : ''
             }\n${window.location.href}`;
             await navigator.clipboard.writeText(shareText);
-            // You might want to show a toast notification here
         } catch (error) {
             console.error('Failed to copy to clipboard:', error);
         }
@@ -164,11 +155,13 @@ const MobileMenu: React.FC<MobileMenuProps> = ({
                 console.error('Stage reference not available');
                 return;
             }
+
             const dataURL = stageRef.current.toDataURL({
-                format: 'png',
+                mimeType: 'image/png',
                 quality: 0.9,
                 pixelRatio: 2,
             });
+
             const response = await fetch(dataURL);
             const blob = await response.blob();
 
@@ -227,6 +220,7 @@ const MobileMenu: React.FC<MobileMenuProps> = ({
                             </svg>
                             Select
                         </button>
+
                         <button
                             className={`flex items-center px-3 py-2 rounded-lg w-full ${
                                 tool === 'brush'
@@ -251,6 +245,7 @@ const MobileMenu: React.FC<MobileMenuProps> = ({
                             </svg>
                             Brush
                         </button>
+
                         <button
                             className={`flex items-center px-3 py-2 rounded-lg w-full ${
                                 tool === 'pen'
@@ -275,6 +270,7 @@ const MobileMenu: React.FC<MobileMenuProps> = ({
                             </svg>
                             Pen
                         </button>
+
                         <button
                             className={`flex items-center px-3 py-2 rounded-lg w-full ${
                                 tool === 'pencil'
@@ -299,6 +295,7 @@ const MobileMenu: React.FC<MobileMenuProps> = ({
                             </svg>
                             Pencil
                         </button>
+
                         <button
                             className={`flex items-center px-3 py-2 rounded-lg w-full ${
                                 tool === 'eraser'
@@ -312,6 +309,7 @@ const MobileMenu: React.FC<MobileMenuProps> = ({
                             <Eraser className="h-5 w-5 mr-2" />
                             Eraser
                         </button>
+
                         <button
                             className={`flex items-center px-3 py-2 rounded-lg w-full ${
                                 tool === 'bucket'
@@ -345,6 +343,7 @@ const MobileMenu: React.FC<MobileMenuProps> = ({
                             <Square className="h-5 w-5 mr-2" />
                             Rectangle
                         </button>
+
                         <button
                             className={`flex items-center px-3 py-2 rounded-lg w-full ${
                                 tool === 'circle'
@@ -358,6 +357,7 @@ const MobileMenu: React.FC<MobileMenuProps> = ({
                             <CircleIcon className="h-5 w-5 mr-2" />
                             Circle
                         </button>
+
                         <button
                             className={`flex items-center px-3 py-2 rounded-lg w-full ${
                                 tool === 'triangle'
@@ -371,6 +371,7 @@ const MobileMenu: React.FC<MobileMenuProps> = ({
                             <TriangleIcon className="h-5 w-5 mr-2" />
                             Triangle
                         </button>
+
                         <button
                             className={`flex items-center px-3 py-2 rounded-lg w-full ${
                                 tool === 'line'
@@ -384,6 +385,7 @@ const MobileMenu: React.FC<MobileMenuProps> = ({
                             <Minus className="h-5 w-5 mr-2" />
                             Line
                         </button>
+
                         <button
                             className={`flex items-center px-3 py-2 rounded-lg w-full ${
                                 tool === 'arrow'
@@ -397,6 +399,7 @@ const MobileMenu: React.FC<MobileMenuProps> = ({
                             <ArrowUpRight className="h-5 w-5 mr-2" />
                             Arrow
                         </button>
+
                         <button
                             className={`flex items-center px-3 py-2 rounded-lg w-full ${
                                 tool === 'text'
@@ -514,7 +517,7 @@ const MobileMenu: React.FC<MobileMenuProps> = ({
                         </h4>
 
                         {/* Native Share (if available) */}
-                        {navigator.share && (
+                        {isWebShareSupported && (
                             <button
                                 onClick={() => handleShare('native')}
                                 className="flex items-center px-3 py-2 rounded-lg text-gray-600 dark:text-gray-400 w-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">

@@ -15,6 +15,7 @@ export const useLayers = () => {
         setHistory,
         historyStep,
         setHistoryStep,
+        backgroundColor,
     } = useDrawing();
 
     // Add a new layer
@@ -40,6 +41,7 @@ export const useLayers = () => {
         newHistory.push({
             layers: updatedLayers,
             elementsByLayer: updatedElementsByLayer,
+            backgroundColor,
         });
         setHistory(newHistory);
         setHistoryStep(newHistory.length - 1);
@@ -69,6 +71,7 @@ export const useLayers = () => {
         newHistory.push({
             layers: updatedLayers,
             elementsByLayer: updatedElementsByLayer,
+            backgroundColor,
         });
         setHistory(newHistory);
         setHistoryStep(newHistory.length - 1);
@@ -91,6 +94,7 @@ export const useLayers = () => {
         newHistory.push({
             layers: updatedLayers,
             elementsByLayer,
+            backgroundColor,
         });
         setHistory(newHistory);
         setHistoryStep(newHistory.length - 1);
@@ -107,6 +111,7 @@ export const useLayers = () => {
         newHistory.push({
             layers: updatedLayers,
             elementsByLayer,
+            backgroundColor,
         });
         setHistory(newHistory);
         setHistoryStep(newHistory.length - 1);
@@ -123,6 +128,7 @@ export const useLayers = () => {
         newHistory.push({
             layers: updatedLayers,
             elementsByLayer,
+            backgroundColor,
         });
         setHistory(newHistory);
         setHistoryStep(newHistory.length - 1);
@@ -152,6 +158,7 @@ export const useLayers = () => {
         newHistory.push({
             layers: updatedLayers,
             elementsByLayer: updatedElementsByLayer, // Use the new map here
+            backgroundColor,
         });
         setHistory(newHistory);
         setHistoryStep(newHistory.length - 1);
@@ -175,6 +182,7 @@ export const useLayers = () => {
         newHistory.push({
             layers: updatedLayers,
             elementsByLayer: updatedElementsByLayer, // Use the new map here
+            backgroundColor,
         });
         setHistory(newHistory);
         setHistoryStep(newHistory.length - 1);
@@ -213,6 +221,7 @@ export const useLayers = () => {
         newHistory.push({
             layers: updatedLayers,
             elementsByLayer: updatedElementsByLayer,
+            backgroundColor,
         });
         setHistory(newHistory);
         setHistoryStep(newHistory.length - 1);
@@ -229,6 +238,7 @@ export const useLayers = () => {
         newHistory.push({
             layers: updatedLayers,
             elementsByLayer,
+            backgroundColor,
         });
         setHistory(newHistory);
         setHistoryStep(newHistory.length - 1);
@@ -264,6 +274,7 @@ export const useLayers = () => {
         newHistory.push({
             layers: updatedLayers,
             elementsByLayer: updatedElementsByLayer,
+            backgroundColor,
         });
         setHistory(newHistory);
         setHistoryStep(newHistory.length - 1);

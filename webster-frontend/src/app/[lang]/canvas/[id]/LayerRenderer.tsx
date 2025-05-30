@@ -1,6 +1,8 @@
 'use client';
+
 import React from 'react';
 import { Layer } from 'react-konva';
+import { Layer as KonvaLayer } from 'konva/lib/Layer';
 import ElementRenderer from './ElementRenderer';
 import { DrawingLayer } from '@/types/layers';
 import { DrawingElement } from '@/types/elements';
@@ -8,11 +10,10 @@ import { DrawingElement } from '@/types/elements';
 interface LayerRendererProps {
     layer: DrawingLayer;
     elements: DrawingElement[];
-    onRef: (id: string, node: any) => void;
+    onRef: (id: string, node: KonvaLayer) => void;
     selectedElementIds: string[];
     onSelectElement: (id: string) => void;
     onTextEdit?: (id: string) => void;
-    onImageResizeStart?: () => void;
     onImageResizeEnd?: () => void;
 }
 
@@ -23,7 +24,6 @@ const LayerRenderer: React.FC<LayerRendererProps> = ({
     selectedElementIds,
     onSelectElement,
     onTextEdit,
-    onImageResizeStart,
     onImageResizeEnd,
 }) => {
     if (!layer.visible) return null;
@@ -46,7 +46,6 @@ const LayerRenderer: React.FC<LayerRendererProps> = ({
                     isSelected={selectedElementIds.includes(element.id)}
                     onSelect={onSelectElement}
                     onTextEdit={onTextEdit}
-                    onImageResizeStart={onImageResizeStart}
                     onImageResizeEnd={onImageResizeEnd}
                 />
             ))}

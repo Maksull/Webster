@@ -1,5 +1,8 @@
 'use client';
-import { useEffect, useRef, useState } from 'react';
+
+import { useEffect, useRef } from 'react';
+import { KonvaEventObject } from 'konva/lib/Node';
+import { Node } from 'konva/lib/Node';
 import { useHistory } from './useHistory';
 import { hexToRgb, colorsMatch, colorMatchesWithTolerance } from './colorUtils';
 import {
@@ -13,6 +16,7 @@ import {
     TextElement,
     ArrowElement,
     ImageElement,
+    DrawingElement,
 } from '@/types/elements';
 import { API_URL } from '@/config';
 import { useAuth, useDrawing } from '@/contexts';
@@ -20,11 +24,15 @@ import { jsPDF } from 'jspdf';
 
 interface DownloadOptions {
     format: 'png' | 'jpeg' | 'pdf';
-    quality?: number; // For JPEG quality (0 to 1)
-    pixelRatio?: number; // For canvas scaling
+    quality?: number;
+    pixelRatio?: number;
 }
 
-export const useCanvasOperations = (callbacks = {}) => {
+interface CallbacksProps {
+    clearSelectionRect?: () => void;
+}
+
+export const useCanvasOperations = (callbacks: CallbacksProps = {}) => {
     const { clearSelectionRect } = callbacks;
     const {
         stageRef,
@@ -76,8 +84,8 @@ export const useCanvasOperations = (callbacks = {}) => {
     } = useDrawing();
 
     const { isAuthenticated } = useAuth();
-
     const { recordHistory } = useHistory();
+
     const dragStartPos = useRef({ x: 0, y: 0 });
     const lastMousePos = useRef({ x: 0, y: 0 });
     const dragOffset = useRef({ x: 0, y: 0 });
@@ -91,14 +99,18 @@ export const useCanvasOperations = (callbacks = {}) => {
         };
     }, []);
 
-    const handleEraserClick = (e: any) => {
+    const handleEraserClick = (
+        e: KonvaEventObject<MouseEvent | TouchEvent>,
+    ): boolean => {
         const stage = e.target.getStage();
-        const pos = stage.getPointerPosition();
+        if (!stage) return false;
 
-        // Get all shapes at the clicked position
+        const pos = stage.getPointerPosition();
+        if (!pos) return false;
+
         const shapes = stage.getAllIntersections(pos);
         const targetShapes = shapes.filter(
-            shape =>
+            (shape: Node) =>
                 shape !== stage &&
                 shape.getClassName() !== 'Stage' &&
                 (shape.getClassName() === 'Rect' ||
@@ -110,10 +122,10 @@ export const useCanvasOperations = (callbacks = {}) => {
                     shape.getClassName() === 'Image'),
         );
 
-        let elementToRemove = null;
-        let elementLayerId = null;
+        let elementToRemove: DrawingElement | null = null;
+        let elementLayerId: string | null = null;
 
-        // First, try to find element by shape ID
+        // First try to find element by shape intersection
         if (targetShapes.length > 0) {
             for (const shape of targetShapes) {
                 const shapeId = shape.attrs.id;
@@ -130,7 +142,7 @@ export const useCanvasOperations = (callbacks = {}) => {
             }
         }
 
-        // If not found by ID, try position-based detection
+        // If no element found by shape intersection, try point-in-element check
         if (!elementToRemove) {
             elementsByLayer.forEach((elements, layerId) => {
                 elements.forEach(element => {
@@ -142,30 +154,33 @@ export const useCanvasOperations = (callbacks = {}) => {
             });
         }
 
-        // Remove the element if found
+        // Now handle the removal with proper type checking
         if (elementToRemove && elementLayerId) {
             const updatedElementsByLayer = new Map(elementsByLayer);
             const layerElements =
                 updatedElementsByLayer.get(elementLayerId) || [];
-            const updatedElements = layerElements.filter(
-                el => el.id !== elementToRemove.id,
-            );
-            updatedElementsByLayer.set(elementLayerId, updatedElements);
 
+            // Use type assertion to help TypeScript understand the type
+            const elementToRemoveId = (elementToRemove as DrawingElement).id;
+
+            const updatedElements = layerElements.filter(
+                el => el.id !== elementToRemoveId,
+            );
+
+            updatedElementsByLayer.set(elementLayerId, updatedElements);
             setElementsByLayer(updatedElementsByLayer);
 
-            // Clear selection if the removed element was selected
-            if (selectedElementIds.includes(elementToRemove.id)) {
+            if (selectedElementIds.includes(elementToRemoveId)) {
                 setSelectedElementIds(
-                    selectedElementIds.filter(id => id !== elementToRemove.id),
+                    selectedElementIds.filter(id => id !== elementToRemoveId),
                 );
             }
 
             recordHistory();
-            return true; // Indicate that an element was removed
+            return true;
         }
 
-        return false; // No element was removed
+        return false;
     };
 
     const handleTextEdit = (id: string) => {
@@ -173,11 +188,9 @@ export const useCanvasOperations = (callbacks = {}) => {
         const textElement = activeElements.find(
             el => el.id === id,
         ) as TextElement;
-
         if (textElement) {
             setTextEditingId(id);
             setTextValue(textElement.text);
-            // Set the current text properties for editing
             setTextFontSize(textElement.fontSize || 20);
             setTextFontFamily(textElement.fontFamily || 'Arial');
             setColor(textElement.fill || '#000000');
@@ -192,7 +205,6 @@ export const useCanvasOperations = (callbacks = {}) => {
         color: string,
     ) => {
         const updatedElementsByLayer = new Map(elementsByLayer);
-
         updatedElementsByLayer.forEach((elements, layerId) => {
             const updatedElements = elements.map(element => {
                 if (element.id === id && element.type === 'text') {
@@ -215,7 +227,7 @@ export const useCanvasOperations = (callbacks = {}) => {
         recordHistory();
     };
 
-    const handleMouseDown = (e: any) => {
+    const handleMouseDown = (e: KonvaEventObject<MouseEvent | TouchEvent>) => {
         console.log('--------');
         console.log(
             'useCanvasOperations handleMouseDown',
@@ -223,12 +235,14 @@ export const useCanvasOperations = (callbacks = {}) => {
         );
 
         const stage = e.target.getStage();
+        if (!stage) return;
+
         const pos = stage.getPointerPosition();
+        if (!pos) return;
 
         const activeLayer = layers.find(layer => layer.id === activeLayerId);
         if (!activeLayer || !activeLayer.visible || activeLayer.locked) return;
 
-        // Check if clicking on a resize handle - if so, don't interfere
         if (
             e.target.getClassName() === 'Circle' &&
             e.target.attrs.fill === 'white' &&
@@ -262,7 +276,6 @@ export const useCanvasOperations = (callbacks = {}) => {
             const activeElements = getActiveLayerElements();
             const updatedElements = [...activeElements, newText];
             updateActiveLayerElements(updatedElements);
-
             setTextEditingId(newText.id);
             setTextValue('Click to edit');
             return;
@@ -274,8 +287,7 @@ export const useCanvasOperations = (callbacks = {}) => {
 
         if (tool === 'select') {
             const shapes = stage.getAllIntersections(pos);
-            const targetShapes = shapes.filter(shape => {
-                // Skip stage and helpers
+            const targetShapes = shapes.filter((shape: Node) => {
                 if (
                     shape === stage ||
                     shape.getClassName() === 'Stage' ||
@@ -286,8 +298,6 @@ export const useCanvasOperations = (callbacks = {}) => {
                 ) {
                     return false;
                 }
-
-                // Include allowed shape types
                 return [
                     'Rect',
                     'Circle',
@@ -298,19 +308,18 @@ export const useCanvasOperations = (callbacks = {}) => {
                     'Text',
                     'Image',
                 ].includes(shape.getClassName());
-            }); // Topmost shape last → now first
+            });
 
             if (targetShapes.length > 0) {
-                let foundElement = null;
-                let foundElementId = null;
+                let foundElement: DrawingElement | null = null;
+                let foundElementId: string | null = null;
 
-                // First try to find element by shape ID
                 for (let i = targetShapes.length - 1; i >= 0; i--) {
                     const shape = targetShapes[i];
                     const shapeId = shape.attrs.id;
                     if (!shapeId) continue;
 
-                    for (const [layerId, elements] of Array.from(
+                    for (const [, elements] of Array.from(
                         elementsByLayer.entries(),
                     )) {
                         const element = elements.find(el => el.id === shapeId);
@@ -320,12 +329,8 @@ export const useCanvasOperations = (callbacks = {}) => {
                             break;
                         }
                     }
-
                     if (foundElement) break;
                 }
-
-                // Fallback to position-based matching if needed (rest of the logic remains the same)
-                // ... (keep the existing fallback logic)
 
                 if (foundElement && foundElementId) {
                     const isShiftPressed =
@@ -334,11 +339,13 @@ export const useCanvasOperations = (callbacks = {}) => {
                     if (isShiftPressed) {
                         const newSelectedIds = [...selectedElementIds];
                         const index = newSelectedIds.indexOf(foundElementId);
+
                         if (index !== -1) {
                             newSelectedIds.splice(index, 1);
                         } else {
                             newSelectedIds.push(foundElementId);
                         }
+
                         setSelectedElementIds(newSelectedIds);
                     } else {
                         if (!selectedElementIds.includes(foundElementId)) {
@@ -346,12 +353,10 @@ export const useCanvasOperations = (callbacks = {}) => {
                         }
                     }
 
-                    // Clear any selection rectangle from Canvas component
                     if (clearSelectionRect) {
                         clearSelectionRect();
                     }
 
-                    // Set up for dragging with improved tracking
                     setIsMoving(true);
                     dragStartPos.current = pos;
                     lastMousePos.current = pos;
@@ -449,9 +454,8 @@ export const useCanvasOperations = (callbacks = {}) => {
                 const updatedElements = [...activeElements, newTriangle];
                 updateActiveLayerElements(updatedElements);
             } else if (tool === 'arrow') {
-                // Create initial arrow with start and end points at same position
                 const newArrow: ArrowElement = {
-                    points: [pos.x, pos.y, pos.x, pos.y], // start and end the same initially
+                    points: [pos.x, pos.y, pos.x, pos.y],
                     stroke: color,
                     strokeWidth,
                     id: Date.now().toString(),
@@ -460,7 +464,6 @@ export const useCanvasOperations = (callbacks = {}) => {
                     opacity: opacity,
                 };
 
-                // Add element to active layer
                 const activeElements = getActiveLayerElements();
                 const updatedElements = [...activeElements, newArrow];
                 updateActiveLayerElements(updatedElements);
@@ -470,7 +473,6 @@ export const useCanvasOperations = (callbacks = {}) => {
             return;
         }
 
-        // Handle drawing tools (pencil, brush, pen, marker) - eraser is now handled above
         setIsDrawing(true);
 
         function getOpacity(tool: string): number {
@@ -544,17 +546,21 @@ export const useCanvasOperations = (callbacks = {}) => {
         updateActiveLayerElements(updatedElements);
     };
 
-    const handleMouseMove = (e: any) => {
+    const handleMouseMove = (e: KonvaEventObject<MouseEvent | TouchEvent>) => {
         if (!isDrawing && !isMoving) return;
 
         const activeLayer = layers.find(layer => layer.id === activeLayerId);
         if (!activeLayer || !activeLayer.visible || activeLayer.locked) return;
 
         const stage = e.target.getStage();
-        const point = stage.getPointerPosition();
-        const pos = stage.getPointerPosition();
+        if (!stage) return;
 
-        // Handle element movement first (highest priority)
+        const point = stage.getPointerPosition();
+        if (!point) return;
+
+        const pos = stage.getPointerPosition();
+        if (!pos) return;
+
         if (isMoving && selectedElementIds.length > 0) {
             const dx = pos.x - lastMousePos.current.x;
             const dy = pos.y - lastMousePos.current.y;
@@ -648,7 +654,6 @@ export const useCanvasOperations = (callbacks = {}) => {
             return;
         }
 
-        // Handle shape drawing
         const activeElements = getActiveLayerElements();
         if (activeElements.length === 0) return;
 
@@ -656,11 +661,13 @@ export const useCanvasOperations = (callbacks = {}) => {
 
         if (tool === 'rectangle' && lastElement.type === 'rectangle') {
             if (!startPoint) return;
+
             const updatedRect: RectangleElement = {
                 ...(lastElement as RectangleElement),
                 width: point.x - startPoint.x,
                 height: point.y - startPoint.y,
             };
+
             const updatedElements = [
                 ...activeElements.slice(0, -1),
                 updatedRect,
@@ -671,13 +678,16 @@ export const useCanvasOperations = (callbacks = {}) => {
 
         if (tool === 'circle' && lastElement.type === 'circle') {
             if (!startPoint) return;
+
             const dx = point.x - startPoint.x;
             const dy = point.y - startPoint.y;
             const radius = Math.sqrt(dx * dx + dy * dy);
+
             const updatedCircle: CircleElement = {
                 ...(lastElement as CircleElement),
                 radius,
             };
+
             const updatedElements = [
                 ...activeElements.slice(0, -1),
                 updatedCircle,
@@ -688,10 +698,12 @@ export const useCanvasOperations = (callbacks = {}) => {
 
         if (tool === 'line' && lastElement.type === 'line-shape') {
             if (!startPoint) return;
+
             const updatedLine: LineShapeElement = {
                 ...(lastElement as LineShapeElement),
                 points: [startPoint.x, startPoint.y, point.x, point.y],
             };
+
             const updatedElements = [
                 ...activeElements.slice(0, -1),
                 updatedLine,
@@ -712,20 +724,22 @@ export const useCanvasOperations = (callbacks = {}) => {
                 ...activeElements.slice(0, -1),
                 updatedArrow,
             ];
-
             updateActiveLayerElements(updatedElements);
             return;
         }
 
         if (tool === 'triangle' && lastElement.type === 'triangle') {
             if (!startPoint) return;
+
             const dx = point.x - startPoint.x;
             const dy = point.y - startPoint.y;
             const radius = Math.sqrt(dx * dx + dy * dy);
+
             const updatedTriangle: TriangleElement = {
                 ...(lastElement as TriangleElement),
                 radius,
             };
+
             const updatedElements = [
                 ...activeElements.slice(0, -1),
                 updatedTriangle,
@@ -737,6 +751,7 @@ export const useCanvasOperations = (callbacks = {}) => {
         if (lastElement.type === 'line') {
             const lineElement = lastElement as LineElement;
             lineElement.points = lineElement.points.concat([point.x, point.y]);
+
             const updatedElements = [
                 ...activeElements.slice(0, -1),
                 lineElement,
@@ -760,8 +775,6 @@ export const useCanvasOperations = (callbacks = {}) => {
         }
     };
 
-    // ... (rest of the functions remain the same - handleBucketClick, isPointInElement, etc.)
-
     const handleBucketClick = (x: number, y: number) => {
         if (!stageRef.current) return;
 
@@ -773,7 +786,8 @@ export const useCanvasOperations = (callbacks = {}) => {
 
         const shapes = stage.getAllIntersections(pos);
         const targetShapes = shapes.filter(
-            shape => shape !== stage && shape.getClassName() !== 'Stage',
+            (shape: Node) =>
+                shape !== stage && shape.getClassName() !== 'Stage',
         );
 
         if (
@@ -789,7 +803,7 @@ export const useCanvasOperations = (callbacks = {}) => {
             return;
         }
 
-        let targetElement = null;
+        let targetElement: DrawingElement | null = null;
         let targetElementIdx = -1;
         const elements = getActiveLayerElements();
 
@@ -812,7 +826,7 @@ export const useCanvasOperations = (callbacks = {}) => {
                 updatedElements[targetElementIdx] = {
                     ...targetElement,
                     fill: color,
-                };
+                } as DrawingElement;
                 updateActiveLayerElements(updatedElements);
                 recordHistory();
                 return;
@@ -870,8 +884,6 @@ export const useCanvasOperations = (callbacks = {}) => {
             const dx = [0, 1, 0, -1];
             const dy = [-1, 0, 1, 0];
 
-            let visitedCount = 0;
-
             while (queue.length > 0) {
                 const pos = queue.shift()!;
                 const y = Math.floor(pos / width);
@@ -904,8 +916,6 @@ export const useCanvasOperations = (callbacks = {}) => {
                 }
 
                 mask[pos] = 1;
-                visitedCount++;
-
                 data[pixelPos] = fillColorObj.r;
                 data[pixelPos + 1] = fillColorObj.g;
                 data[pixelPos + 2] = fillColorObj.b;
@@ -934,7 +944,7 @@ export const useCanvasOperations = (callbacks = {}) => {
             fillImage.src = canvas.toDataURL();
 
             fillImage.onload = () => {
-                const newRect = {
+                const newRect: RectElement = {
                     x: 0,
                     y: 0,
                     width: dimensions.width,
@@ -944,6 +954,7 @@ export const useCanvasOperations = (callbacks = {}) => {
                     type: 'rect',
                     image: fillImage,
                     layerId: activeLayerId,
+                    opacity: 1,
                 };
 
                 const activeElements = getActiveLayerElements();
@@ -954,7 +965,11 @@ export const useCanvasOperations = (callbacks = {}) => {
         };
     };
 
-    const isPointInElement = (x, y, element) => {
+    const isPointInElement = (
+        x: number,
+        y: number,
+        element: DrawingElement,
+    ): boolean => {
         switch (element.type) {
             case 'rectangle':
             case 'rect': {
@@ -1009,7 +1024,14 @@ export const useCanvasOperations = (callbacks = {}) => {
         }
     };
 
-    const distanceToLineSegment = (x1, y1, x2, y2, x, y) => {
+    const distanceToLineSegment = (
+        x1: number,
+        y1: number,
+        x2: number,
+        y2: number,
+        x: number,
+        y: number,
+    ): number => {
         const A = x - x1;
         const B = y - y1;
         const C = x2 - x1;
@@ -1022,7 +1044,7 @@ export const useCanvasOperations = (callbacks = {}) => {
             param = dot / len_sq;
         }
 
-        let xx, yy;
+        let xx: number, yy: number;
 
         if (param < 0) {
             xx = x1;
@@ -1039,8 +1061,6 @@ export const useCanvasOperations = (callbacks = {}) => {
         const dy = y - yy;
         return Math.sqrt(dx * dx + dy * dy);
     };
-
-    // ... (rest of the resize and save/download functions remain the same)
 
     const handleResizeStart = (
         direction: string,
@@ -1131,7 +1151,7 @@ export const useCanvasOperations = (callbacks = {}) => {
         const scaleX = dimensions.width / originalDimensions.width;
         const scaleY = dimensions.height / originalDimensions.height;
 
-        const scaledElementsByLayer = new Map();
+        const scaledElementsByLayer = new Map<string, DrawingElement[]>();
 
         for (const [layerId, layerElements] of elementsByLayer.entries()) {
             const scaledElements = layerElements.map(element => {
@@ -1147,7 +1167,9 @@ export const useCanvasOperations = (callbacks = {}) => {
                     element.type === 'rect' ||
                     element.type === 'rectangle'
                 ) {
-                    const rectElement = element as any;
+                    const rectElement = element as
+                        | RectangleElement
+                        | RectElement;
                     return {
                         ...rectElement,
                         x: rectElement.x * scaleX,
@@ -1196,9 +1218,7 @@ export const useCanvasOperations = (callbacks = {}) => {
         }
 
         const customResolution: Resolution = {
-            name: `Custom (${Math.round(dimensions.width)}×${Math.round(
-                dimensions.height,
-            )})`,
+            name: `Custom (${Math.round(dimensions.width)}×${Math.round(dimensions.height)})`,
             width: Math.round(dimensions.width),
             height: Math.round(dimensions.height),
         };
@@ -1218,7 +1238,7 @@ export const useCanvasOperations = (callbacks = {}) => {
         const scaleX = resolution.width / oldDimensions.width;
         const scaleY = resolution.height / oldDimensions.height;
 
-        const scaledElementsByLayer = new Map();
+        const scaledElementsByLayer = new Map<string, DrawingElement[]>();
 
         for (const [layerId, layerElements] of elementsByLayer.entries()) {
             const scaledElements = layerElements.map(element => {
@@ -1234,7 +1254,9 @@ export const useCanvasOperations = (callbacks = {}) => {
                     element.type === 'rect' ||
                     element.type === 'rectangle'
                 ) {
-                    const rectElement = element as any;
+                    const rectElement = element as
+                        | RectangleElement
+                        | RectElement;
                     return {
                         ...rectElement,
                         x: rectElement.x * scaleX,
@@ -1275,7 +1297,10 @@ export const useCanvasOperations = (callbacks = {}) => {
 
         setSelectedResolution(resolution);
         setElementsByLayer(scaledElementsByLayer);
-        setDimensions({ width: resolution.width, height: resolution.height });
+        setDimensions({
+            width: resolution.width,
+            height: resolution.height,
+        });
         recordHistory();
     };
 
@@ -1292,7 +1317,7 @@ export const useCanvasOperations = (callbacks = {}) => {
                 quality: 0.8,
             });
 
-            const elementsObject: Record<string, any> = {};
+            const elementsObject: Record<string, DrawingElement[]> = {};
             elementsByLayer.forEach((elements, layerId) => {
                 elementsObject[layerId] = elements;
             });
@@ -1309,14 +1334,11 @@ export const useCanvasOperations = (callbacks = {}) => {
                 lastModified: new Date().toISOString(),
             };
 
-            // Check if user is authenticated
             if (!isAuthenticated) {
-                // Save to localStorage if not authenticated (single canvas)
                 localStorage.setItem(
                     'local_canvas_data',
                     JSON.stringify(canvasData),
                 );
-
                 return {
                     success: true,
                     message: 'Drawing saved locally! Sign in to save to cloud.',
@@ -1324,7 +1346,6 @@ export const useCanvasOperations = (callbacks = {}) => {
                 };
             }
 
-            // If authenticated, save to server as usual
             const url = canvasId
                 ? `${API_URL}/canvases/${canvasId}`
                 : `${API_URL}/canvases`;
@@ -1354,7 +1375,6 @@ export const useCanvasOperations = (callbacks = {}) => {
         } catch (error) {
             console.error('Error saving canvas:', error);
 
-            // If API call fails but user is authenticated, offer to save locally as backup
             if (isAuthenticated) {
                 try {
                     const thumbnailDataURL = stageRef.current.toDataURL({
@@ -1363,7 +1383,7 @@ export const useCanvasOperations = (callbacks = {}) => {
                         quality: 0.8,
                     });
 
-                    const elementsObject: Record<string, any> = {};
+                    const elementsObject: Record<string, DrawingElement[]> = {};
                     elementsByLayer.forEach((elements, layerId) => {
                         elementsObject[layerId] = elements;
                     });
@@ -1384,55 +1404,33 @@ export const useCanvasOperations = (callbacks = {}) => {
                         'backup_canvas_data',
                         JSON.stringify(canvasData),
                     );
-
                     return {
                         success: false,
-                        message: `Failed to save to cloud: ${error instanceof Error ? error.message : 'Unknown error'}. A local backup was created.`,
+                        message: `Failed to save to cloud: ${
+                            error instanceof Error
+                                ? error.message
+                                : 'Unknown error'
+                        }. A local backup was created.`,
                         isLocal: true,
                     };
-                } catch (backupError) {
+                } catch {
                     return {
                         success: false,
-                        message: `Failed to save canvas: ${error instanceof Error ? error.message : 'Unknown error'}`,
+                        message: `Failed to save canvas: ${
+                            error instanceof Error
+                                ? error.message
+                                : 'Unknown error'
+                        }`,
                     };
                 }
             }
 
             return {
                 success: false,
-                message: `Failed to save canvas: ${error instanceof Error ? error.message : 'Unknown error'}`,
+                message: `Failed to save canvas: ${
+                    error instanceof Error ? error.message : 'Unknown error'
+                }`,
             };
-        }
-    };
-
-    // Helper function to load local canvas
-    const loadLocalCanvas = () => {
-        try {
-            const canvasData = localStorage.getItem('local_canvas_data');
-            if (canvasData) {
-                return JSON.parse(canvasData);
-            }
-            return null;
-        } catch (error) {
-            console.error('Error loading local canvas:', error);
-            return null;
-        }
-    };
-
-    // Helper function to check if local canvas exists
-    const hasLocalCanvas = () => {
-        return localStorage.getItem('local_canvas_data') !== null;
-    };
-
-    // Helper function to clear local canvas
-    const clearLocalCanvas = () => {
-        try {
-            localStorage.removeItem('local_canvas_data');
-            localStorage.removeItem('backup_canvas_data');
-            return true;
-        } catch (error) {
-            console.error('Error clearing local canvas:', error);
-            return false;
         }
     };
 
@@ -1444,15 +1442,15 @@ export const useCanvasOperations = (callbacks = {}) => {
         if (!stageRef.current) return;
 
         const stage = stageRef.current;
-        const timestamp = new Date().toISOString().replace(/[:.]/g, '-'); // Clean timestamp for filename
+        const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
         const filename = `PixelPerfect_Drawing_${timestamp}.${format}`;
 
         try {
             if (format === 'pdf') {
-                // Generate PDF using jsPDF
                 const dataURL = stage.toDataURL({ pixelRatio });
                 const img = new Image();
                 img.src = dataURL;
+
                 img.onload = () => {
                     const { width, height } = stage.size();
                     const pdf = new jsPDF({
@@ -1464,12 +1462,12 @@ export const useCanvasOperations = (callbacks = {}) => {
                     pdf.save(filename);
                 };
             } else {
-                // Generate PNG or JPEG
                 const dataURL = stage.toDataURL({
                     mimeType: `image/${format}`,
                     quality: format === 'jpeg' ? quality : undefined,
                     pixelRatio,
                 });
+
                 const link = document.createElement('a');
                 link.download = filename;
                 link.href = dataURL;
@@ -1501,7 +1499,6 @@ export const useCanvasOperations = (callbacks = {}) => {
         }
 
         try {
-            // First, ensure the canvas is saved with latest changes
             const saveResult = await handleSave();
             if (!saveResult.success) {
                 return {
@@ -1511,7 +1508,6 @@ export const useCanvasOperations = (callbacks = {}) => {
                 };
             }
 
-            // Show a simple prompt for template name and description
             const templateName = prompt(
                 'Enter template name:',
                 `${canvasName || 'Untitled'} Template`,
@@ -1526,14 +1522,10 @@ export const useCanvasOperations = (callbacks = {}) => {
             const templateDescription = prompt(
                 'Enter template description (optional):',
             );
-            const isPublic = confirm(
-                'Make this template public for other users?',
-            );
 
             const templateData = {
                 name: templateName.trim(),
                 description: templateDescription?.trim() || null,
-                isPublic: isPublic,
             };
 
             const response = await fetch(
@@ -1557,7 +1549,6 @@ export const useCanvasOperations = (callbacks = {}) => {
 
             const result = await response.json();
             console.log('Template created successfully:', result);
-
             return {
                 success: true,
                 message: `Template "${templateName}" created successfully!`,
@@ -1566,7 +1557,9 @@ export const useCanvasOperations = (callbacks = {}) => {
             console.error('Error creating template:', error);
             return {
                 success: false,
-                message: `Failed to create template: ${error instanceof Error ? error.message : 'Unknown error'}`,
+                message: `Failed to create template: ${
+                    error instanceof Error ? error.message : 'Unknown error'
+                }`,
             };
         }
     };

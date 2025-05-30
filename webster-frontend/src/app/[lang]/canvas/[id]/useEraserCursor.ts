@@ -1,11 +1,19 @@
-import { useEffect } from 'react';
+import { useEffect, RefObject } from 'react';
+import { Stage } from 'konva/lib/Stage';
+import { Node } from 'konva/lib/Node';
+import { DrawingElement } from '@/types/elements';
+import { ToolType } from '@/types/elements';
 
-export const useEraserCursor = (stageRef, tool, elementsByLayer) => {
+export const useEraserCursor = (
+    stageRef: RefObject<Stage | null>,
+    tool: ToolType,
+    elementsByLayer: Map<string, DrawingElement[]>,
+) => {
     useEffect(() => {
         const stage = stageRef.current;
         if (!stage || tool !== 'eraser') return;
 
-        const handleMouseMove = e => {
+        const handleMouseMove = () => {
             const pos = stage.getPointerPosition();
             if (!pos) return;
 
@@ -15,7 +23,7 @@ export const useEraserCursor = (stageRef, tool, elementsByLayer) => {
             // Get shapes at current position
             const shapes = stage.getAllIntersections(pos);
             const targetShapes = shapes.filter(
-                shape =>
+                (shape: Node) =>
                     shape !== stage &&
                     shape.getClassName() !== 'Stage' &&
                     (shape.getClassName() === 'Rect' ||
@@ -32,14 +40,16 @@ export const useEraserCursor = (stageRef, tool, elementsByLayer) => {
                 for (const shape of targetShapes) {
                     const shapeId = shape.attrs.id;
                     if (shapeId) {
-                        elementsByLayer.forEach(elements => {
-                            const element = elements.find(
-                                el => el.id === shapeId,
-                            );
-                            if (element) {
-                                canErase = true;
-                            }
-                        });
+                        elementsByLayer.forEach(
+                            (elements: DrawingElement[]) => {
+                                const element = elements.find(
+                                    (el: DrawingElement) => el.id === shapeId,
+                                );
+                                if (element) {
+                                    canErase = true;
+                                }
+                            },
+                        );
                         if (canErase) break;
                     }
                 }
@@ -47,8 +57,8 @@ export const useEraserCursor = (stageRef, tool, elementsByLayer) => {
 
             // Also check position-based detection for elements without proper IDs
             if (!canErase) {
-                elementsByLayer.forEach(elements => {
-                    elements.forEach(element => {
+                elementsByLayer.forEach((elements: DrawingElement[]) => {
+                    elements.forEach((element: DrawingElement) => {
                         if (isPointInElement(pos.x, pos.y, element)) {
                             canErase = true;
                         }
@@ -83,10 +93,14 @@ export const useEraserCursor = (stageRef, tool, elementsByLayer) => {
                 container.classList.remove('eraser-mode', 'can-erase');
             }
         };
-    }, [tool, elementsByLayer]);
+    }, [tool, elementsByLayer, stageRef]);
 
     // Helper function - you'll need to import this from your existing code
-    const isPointInElement = (x, y, element) => {
+    const isPointInElement = (
+        x: number,
+        y: number,
+        element: DrawingElement,
+    ): boolean => {
         switch (element.type) {
             case 'rectangle':
             case 'rect': {
@@ -153,7 +167,14 @@ export const useEraserCursor = (stageRef, tool, elementsByLayer) => {
         }
     };
 
-    const distanceToLineSegment = (x1, y1, x2, y2, x, y) => {
+    const distanceToLineSegment = (
+        x1: number,
+        y1: number,
+        x2: number,
+        y2: number,
+        x: number,
+        y: number,
+    ): number => {
         const A = x - x1;
         const B = y - y1;
         const C = x2 - x1;
@@ -166,7 +187,7 @@ export const useEraserCursor = (stageRef, tool, elementsByLayer) => {
             param = dot / len_sq;
         }
 
-        let xx, yy;
+        let xx: number, yy: number;
 
         if (param < 0) {
             xx = x1;
