@@ -2,15 +2,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
-import {
-    ArrowLeft,
-    Menu,
-    Save,
-    Download,
-    Bookmark,
-    Edit3,
-    Share2,
-} from 'lucide-react';
+import { ArrowLeft, Menu, Save, Download, Bookmark, Edit3 } from 'lucide-react';
 import { Dictionary } from '@/get-dictionary';
 import { useDrawing } from '@/contexts/DrawingContext';
 import SocialShare from './SocialShare';

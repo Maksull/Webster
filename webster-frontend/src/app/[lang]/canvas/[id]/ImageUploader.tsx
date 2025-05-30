@@ -11,7 +11,7 @@ interface ImageUploaderProps {
 
 const ImageUploader: React.FC<ImageUploaderProps> = ({ onImageInsert }) => {
     const fileInputRef = useRef<HTMLInputElement>(null);
-    const { activeLayerId, color, opacity } = useDrawing();
+    const { activeLayerId, opacity } = useDrawing();
     const [modal, setModal] = useState({
         open: false,
         type: 'success' as 'success' | 'error',

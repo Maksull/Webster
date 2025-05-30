@@ -7,25 +7,35 @@ import {
     ChevronDown,
     ChevronUp,
 } from 'lucide-react';
+import { ToolType } from '@/types/elements';
 
-const ToolDropdown = ({ tool, setTool, toggleMobileMenu }: any) => {
+interface ToolDropdownProps {
+    tool: ToolType;
+    setTool: (tool: ToolType) => void;
+    toggleMobileMenu?: () => void;
+}
+
+const ToolDropdown: React.FC<ToolDropdownProps> = ({
+    tool,
+    setTool,
+    toggleMobileMenu,
+}) => {
     const [isOpen, setIsOpen] = useState(false);
 
     const tools = [
-        { key: 'pencil', label: 'Pencil', icon: Pencil },
-        { key: 'marker', label: 'Marker', icon: Highlighter },
-        { key: 'brush', label: 'Brush', icon: Brush },
-        { key: 'pen', label: 'Pen', icon: Pen },
+        { key: 'pencil' as ToolType, label: 'Pencil', icon: Pencil },
+        { key: 'marker' as ToolType, label: 'Marker', icon: Highlighter },
+        { key: 'brush' as ToolType, label: 'Brush', icon: Brush },
+        { key: 'pen' as ToolType, label: 'Pen', icon: Pen },
     ];
 
-    // Validate tool
     const isValidTool = tools.some(t => t.key === tool);
     const safeTool = isValidTool ? tool : tools[0].key;
-
     const selectedTool = tools.find(t => t.key === safeTool)!;
     const SelectedIcon = selectedTool.icon;
 
-    const triggerButtonClasses = `w-full flex items-center justify-between px-3 py-2 rounded-lg transition ${tool === safeTool
+    const triggerButtonClasses = `w-full flex items-center justify-between px-3 py-2 rounded-lg transition ${
+        tool === safeTool
             ? 'bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400'
             : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
     }`;
@@ -51,13 +61,16 @@ const ToolDropdown = ({ tool, setTool, toggleMobileMenu }: any) => {
                     {tools.map(({ key, label, icon: Icon }) => (
                         <button
                             key={key}
-                            className={`flex w-full items-center px-4 py-2 text-sm rounded-lg transition hover:bg-gray-100 dark:hover:bg-gray-700 ${safeTool === key
+                            className={`flex w-full items-center px-4 py-2 text-sm rounded-lg transition hover:bg-gray-100 dark:hover:bg-gray-700 ${
+                                safeTool === key
                                     ? 'bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400'
                                     : 'text-gray-600 dark:text-gray-400'
                             }`}
                             onClick={() => {
                                 setTool(key);
-                                toggleMobileMenu?.();
+                                if (toggleMobileMenu) {
+                                    toggleMobileMenu();
+                                }
                                 setIsOpen(false);
                             }}>
                             <Icon className="h-4 w-4 mr-2" />
@@ -66,7 +79,6 @@ const ToolDropdown = ({ tool, setTool, toggleMobileMenu }: any) => {
                     ))}
                 </div>
             )}
-
         </div>
     );
 };

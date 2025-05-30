@@ -17,6 +17,9 @@ import {
     ImageElement,
 } from '@/types/elements';
 import { Canvas } from '@/types/canvas';
+import { Stage } from 'konva/lib/Stage';
+import { Layer } from 'konva/lib/Layer';
+import { KonvaEventObject } from 'konva/lib/Node';
 
 interface DrawingContextProps {
     dimensions: { width: number; height: number };
@@ -61,8 +64,8 @@ interface DrawingContextProps {
     setShowSettings: React.Dispatch<React.SetStateAction<boolean>>;
     isMobileMenuOpen: boolean;
     setIsMobileMenuOpen: React.Dispatch<React.SetStateAction<boolean>>;
-    stageRef: React.RefObject<any>;
-    layerRefs: React.MutableRefObject<Map<string, any>>;
+    stageRef: React.RefObject<Stage | null>;
+    layerRefs: React.MutableRefObject<Map<string, Layer>>;
     canvasWrapperRef: React.RefObject<HTMLDivElement | null>;
     isResizing: boolean;
     setIsResizing: React.Dispatch<React.SetStateAction<boolean>>;
@@ -108,7 +111,10 @@ interface DrawingContextProps {
     setMaintainAspectRatio: React.Dispatch<React.SetStateAction<boolean>>;
     isImageResizing: boolean;
     setIsImageResizing: React.Dispatch<React.SetStateAction<boolean>>;
-    handleImageResizeStart: (corner: string, e: any) => boolean | void;
+    handleImageResizeStart: (
+        corner: string,
+        e: KonvaEventObject<MouseEvent | TouchEvent>,
+    ) => boolean | void;
     updateImageElement: (
         elementId: string,
         updates: Partial<ImageElement>,
@@ -128,6 +134,13 @@ export const DrawingContext = createContext<DrawingContextProps | undefined>(
 interface DrawingProviderProps {
     children: React.ReactNode;
     initialCanvas?: Canvas | null;
+}
+
+interface ResizeState {
+    corner: string;
+    startPos: { x: number; y: number };
+    originalElement: ImageElement | null;
+    stage: Stage | null;
 }
 
 export const DrawingProvider: React.FC<DrawingProviderProps> = ({
@@ -196,7 +209,6 @@ export const DrawingProvider: React.FC<DrawingProviderProps> = ({
     });
 
     const [showLayersPanel, setShowLayersPanel] = useState<boolean>(false);
-
     const [opacity, setOpacity] = useState(1);
 
     const [history, setHistory] = useState<HistoryRecord[]>(() => {
@@ -217,8 +229,8 @@ export const DrawingProvider: React.FC<DrawingProviderProps> = ({
     const [showSettings, setShowSettings] = useState(false);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-    const stageRef = useRef<any>(null);
-    const layerRefs = useRef<Map<string, any>>(new Map());
+    const stageRef = useRef<Stage>(null);
+    const layerRefs = useRef<Map<string, Layer>>(new Map());
     const canvasWrapperRef = useRef<HTMLDivElement>(null);
 
     const [isResizing, setIsResizing] = useState(false);
@@ -237,7 +249,6 @@ export const DrawingProvider: React.FC<DrawingProviderProps> = ({
 
     const [selectedElementIds, setSelectedElementIds] = useState<string[]>([]);
     const [isMoving, setIsMoving] = useState(false);
-
     const [canvasName, setCanvasName] = useState<string>(
         initialCanvas?.name || '',
     );
@@ -252,11 +263,11 @@ export const DrawingProvider: React.FC<DrawingProviderProps> = ({
     const [maintainAspectRatio, setMaintainAspectRatio] = useState(true);
     const [isImageResizing, setIsImageResizing] = useState(false);
 
-    const resizeStateRef = useRef({
+    const resizeStateRef = useRef<ResizeState>({
         corner: '',
         startPos: { x: 0, y: 0 },
-        originalElement: null as ImageElement | null,
-        stage: null as any,
+        originalElement: null,
+        stage: null,
     });
 
     const updateImageElement = useCallback(
@@ -305,6 +316,7 @@ export const DrawingProvider: React.FC<DrawingProviderProps> = ({
 
             let clientX = 0;
             let clientY = 0;
+
             if ('touches' in e) {
                 clientX = e.touches[0].clientX;
                 clientY = e.touches[0].clientY;
@@ -447,7 +459,7 @@ export const DrawingProvider: React.FC<DrawingProviderProps> = ({
     }, [handleMouseMove]);
 
     const handleImageResizeStart = useCallback(
-        (corner: string, e: any) => {
+        (corner: string, e: KonvaEventObject<MouseEvent | TouchEvent>) => {
             console.log('Image resize started for corner:', corner);
 
             if (e.evt) {
@@ -483,12 +495,11 @@ export const DrawingProvider: React.FC<DrawingProviderProps> = ({
             resizeStateRef.current = {
                 corner,
                 startPos: pos,
-                originalElement: { ...imageElement },
+                originalElement: JSON.parse(JSON.stringify(imageElement)),
                 stage,
             };
 
             setIsImageResizing(true);
-
             document.addEventListener('mousemove', handleMouseMove, {
                 passive: false,
             });
@@ -564,6 +575,7 @@ export const DrawingProvider: React.FC<DrawingProviderProps> = ({
                 locked: false,
                 opacity: 1,
             };
+
             setLayers([defaultLayer]);
             setActiveLayerId(defaultLayerId);
             setElementsByLayer(new Map([[defaultLayerId, []]]));

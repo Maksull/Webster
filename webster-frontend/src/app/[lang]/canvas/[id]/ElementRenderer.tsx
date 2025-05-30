@@ -1,4 +1,5 @@
 'use client';
+
 import React, { useState, useEffect } from 'react';
 import {
     Line,
@@ -10,6 +11,7 @@ import {
     Arrow,
     Group,
 } from 'react-konva';
+import { KonvaEventObject } from 'konva/lib/Node';
 import {
     LineElement,
     RectElement,
@@ -20,10 +22,11 @@ import {
     TextElement,
     ArrowElement,
     ImageElement,
+    DrawingElement,
 } from '@/types/elements';
 
 interface ElementRendererProps {
-    element: any;
+    element: DrawingElement;
     isSelected: boolean;
     onSelect: (id: string) => void;
     onTextEdit?: (id: string) => void;
@@ -51,7 +54,7 @@ const ElementRenderer: React.FC<ElementRendererProps> = ({
             };
             img.src = element.src;
         }
-    }, [element.type, element.src]);
+    }, [element.type, element.type === 'image' ? element.src : '']);
 
     const selectionProps = isSelected
         ? {
@@ -60,7 +63,9 @@ const ElementRenderer: React.FC<ElementRendererProps> = ({
               shadowOpacity: 0.6,
               shadowOffset: { x: 0, y: 0 },
               strokeWidth:
-                  element.strokeWidth !== 0 && (element.strokeWidth || 1) + 1,
+                  'strokeWidth' in element && element.strokeWidth !== 0
+                      ? (element.strokeWidth || 1) + 1
+                      : 2,
               stroke: '#0066FF',
           }
         : {};
@@ -95,6 +100,31 @@ const ElementRenderer: React.FC<ElementRendererProps> = ({
             };
         }
     }, [element.type, isSelected, onImageResizeEnd]);
+
+    const handleClick = (e: KonvaEventObject<MouseEvent>) => {
+        e.cancelBubble = true;
+        onSelect(element.id);
+    };
+
+    const handleMouseDown = () => {
+        onSelect(element.id);
+    };
+
+    const handleDoubleClick = (e: KonvaEventObject<MouseEvent>) => {
+        e.cancelBubble = true;
+        console.log('Element double clicked');
+        if (onTextEdit) {
+            onTextEdit(element.id);
+        }
+    };
+
+    const handleDoubleTab = (e: KonvaEventObject<TouchEvent>) => {
+        e.cancelBubble = true;
+        console.log('Element double tapped');
+        if (onTextEdit) {
+            onTextEdit(element.id);
+        }
+    };
 
     switch (element.type) {
         case 'line':
@@ -234,72 +264,52 @@ const ElementRenderer: React.FC<ElementRendererProps> = ({
                         strokeWidth={1}
                         opacity={0.8}
                         {...commonProps}
-                        onClick={e => {
-                            e.cancelBubble = true;
-                            onSelect(element.id);
-                        }}
-                        onMouseDown={e => {
-                            onSelect(element.id);
-                        }}
+                        onClick={handleClick}
+                        onMouseDown={handleMouseDown}
                     />
                 );
             }
 
             return (
-                <>
-                    <KonvaImage
-                        x={imageElement.x}
-                        y={imageElement.y}
-                        width={imageElement.width}
-                        height={imageElement.height}
-                        image={imageObj}
-                        rotation={imageElement.rotation || 0}
-                        opacity={imageElement.opacity || 1}
-                        scaleX={imageElement.scaleX || 1}
-                        scaleY={imageElement.scaleY || 1}
-                        offsetX={imageElement.offsetX || 0}
-                        offsetY={imageElement.offsetY || 0}
-                        skewX={imageElement.skewX || 0}
-                        skewY={imageElement.skewY || 0}
-                        {...commonProps}
-                        onClick={e => {
-                            e.cancelBubble = true;
-                            onSelect(element.id);
-                        }}
-                        onMouseDown={e => {
-                            onSelect(element.id);
-                        }}
-                        draggable={false}
-                    />
-                </>
+                <KonvaImage
+                    x={imageElement.x}
+                    y={imageElement.y}
+                    width={imageElement.width}
+                    height={imageElement.height}
+                    image={imageObj}
+                    rotation={imageElement.rotation || 0}
+                    opacity={imageElement.opacity || 1}
+                    scaleX={imageElement.scaleX || 1}
+                    scaleY={imageElement.scaleY || 1}
+                    offsetX={imageElement.offsetX || 0}
+                    offsetY={imageElement.offsetY || 0}
+                    skewX={imageElement.skewX || 0}
+                    skewY={imageElement.skewY || 0}
+                    {...commonProps}
+                    onClick={handleClick}
+                    onMouseDown={handleMouseDown}
+                    draggable={false}
+                />
             );
 
         case 'text':
             const textElement = element as TextElement;
-
             const fontSize = textElement.fontSize || 16;
             const fontFamily = textElement.fontFamily || 'Arial';
             const text = textElement.text || '';
-            const lineHeight = 1; // Adjust as needed
+            const lineHeight = 1;
 
-            // Create a temporary canvas context
             const canvas = document.createElement('canvas');
             const ctx = canvas.getContext('2d');
-
             let textWidth = 20;
             let textHeight = fontSize;
 
             if (ctx) {
                 ctx.font = `${fontSize}px ${fontFamily}`;
-
                 const lines = text.split('\n');
-
-                // Measure width of each line
                 textWidth = Math.max(
                     ...lines.map(line => ctx.measureText(line).width),
                 );
-
-                // Calculate height
                 textHeight = lines.length * fontSize * lineHeight;
             }
 
@@ -321,25 +331,10 @@ const ElementRenderer: React.FC<ElementRendererProps> = ({
                         strokeWidth={0}
                         opacity={0.3}
                         fill="transparent"
-                        id={element.id}
-                        name={`element-${element.id}`}
-                        onClick={e => {
-                            e.cancelBubble = true;
-                            onSelect(element.id);
-                        }}
-                        onMouseDown={e => {
-                            onSelect(element.id);
-                        }}
-                        onDblClick={e => {
-                            e.cancelBubble = true;
-                            console.log('Text hit area double clicked');
-                            onTextEdit && onTextEdit(element.id);
-                        }}
-                        onDblTap={e => {
-                            e.cancelBubble = true;
-                            console.log('Text hit area double tapped');
-                            onTextEdit && onTextEdit(element.id);
-                        }}
+                        onClick={handleClick}
+                        onMouseDown={handleMouseDown}
+                        onDblClick={handleDoubleClick}
+                        onDblTap={handleDoubleTab}
                         perfectDrawEnabled={false}
                         listening={true}
                         hitStrokeWidth={20}
@@ -355,25 +350,10 @@ const ElementRenderer: React.FC<ElementRendererProps> = ({
                         width={textElement.width}
                         height={textElement.height}
                         rotation={textElement.rotation || 0}
-                        id={element.id}
-                        name={`element-${element.id}`}
-                        onClick={e => {
-                            e.cancelBubble = true;
-                            onSelect(element.id);
-                        }}
-                        onMouseDown={e => {
-                            onSelect(element.id);
-                        }}
-                        onDblClick={e => {
-                            e.cancelBubble = true;
-                            console.log('Text element double clicked');
-                            onTextEdit && onTextEdit(element.id);
-                        }}
-                        onDblTap={e => {
-                            e.cancelBubble = true;
-                            console.log('Text element double tapped');
-                            onTextEdit && onTextEdit(element.id);
-                        }}
+                        onClick={handleClick}
+                        onMouseDown={handleMouseDown}
+                        onDblClick={handleDoubleClick}
+                        onDblTap={handleDoubleTab}
                         {...commonProps}
                     />
                 </Group>

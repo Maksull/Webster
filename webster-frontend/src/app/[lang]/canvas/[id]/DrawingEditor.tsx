@@ -29,7 +29,6 @@ const DrawingEditorContent: React.FC = () => {
     const { showLayersPanel, isMobileMenuOpen, canvasId, canvasName } =
         useDrawing();
     const { handleClear } = useHistory();
-
     const [modal, setModal] = useState({
         open: false,
         type: 'success' as 'success' | 'error',
@@ -49,7 +48,6 @@ const DrawingEditorContent: React.FC = () => {
     const handleSaveAsTemplate = async (templateData: {
         name: string;
         description?: string;
-        isPublic: boolean;
     }) => {
         if (!canvasId) {
             throw new Error('Canvas must be saved before creating a template');
@@ -71,7 +69,9 @@ const DrawingEditorContent: React.FC = () => {
                         'Content-Type': 'application/json',
                         Authorization: `Bearer ${localStorage.getItem('token') || ''}`,
                     },
-                    body: JSON.stringify(templateData),
+                    body: JSON.stringify({
+                        ...templateData,
+                    }),
                 },
             );
 
@@ -102,6 +102,7 @@ const DrawingEditorContent: React.FC = () => {
             );
             return;
         }
+
         if (!canvasId) {
             notify(
                 'error',
@@ -109,6 +110,7 @@ const DrawingEditorContent: React.FC = () => {
             );
             return;
         }
+
         setTemplateModal(true);
     };
 
@@ -147,8 +149,8 @@ const DrawingEditorContent: React.FC = () => {
             const key = ARROW_KEYS.includes(e.key)
                 ? e.key
                 : e.key.toLowerCase();
-
             const movementStep = e.shiftKey ? 10 : 5;
+
             const directionMap: Record<string, { x: number; y: number }> = {
                 ArrowUp: { x: 0, y: -movementStep },
                 ArrowDown: { x: 0, y: movementStep },
@@ -164,7 +166,6 @@ const DrawingEditorContent: React.FC = () => {
                 ф: { x: -movementStep, y: 0 },
                 в: { x: movementStep, y: 0 },
             };
-
 
             const direction = directionMap[key];
             if (!direction) return;
@@ -208,6 +209,18 @@ const DrawingEditorContent: React.FC = () => {
         };
     }, [selectedElementIds, elementsByLayer]);
 
+    // Create a wrapper for handleDownload that returns a Promise<string | void>
+    const handleDownloadWrapper = async (options: {
+        format: 'png' | 'jpeg' | 'pdf';
+        quality?: number;
+        pixelRatio?: number;
+    }): Promise<string | void> => {
+        return new Promise(resolve => {
+            handleDownload(options);
+            resolve(undefined); // or return a string if your download function generates a URL
+        });
+    };
+
     return (
         <div className="h-screen w-full flex flex-col bg-slate-50 dark:bg-gray-900 overflow-hidden">
             <AlertModal
@@ -230,7 +243,7 @@ const DrawingEditorContent: React.FC = () => {
                 dict={dict}
                 lang={lang}
                 onSave={handleSaveWithNotify}
-                onDownload={handleDownload}
+                onDownload={handleDownloadWrapper}
                 onSaveAsTemplate={openTemplateModal}
             />
 
@@ -238,7 +251,7 @@ const DrawingEditorContent: React.FC = () => {
                 <MobileMenu
                     dict={dict}
                     onSave={handleSaveWithNotify}
-                    onDownload={handleDownload}
+                    onDownload={handleDownloadWrapper}
                     onClear={handleClear}
                     onSaveAsTemplate={openTemplateModal}
                 />

@@ -1,6 +1,8 @@
 'use client';
-import React, { useEffect, useState } from 'react';
+
+import React, { useState, useRef } from 'react';
 import { Stage, Layer, Rect, Circle } from 'react-konva';
+import { KonvaEventObject } from 'konva/lib/Node';
 import LayerRenderer from './LayerRenderer';
 import { useDrawing } from '@/contexts';
 import CanvasResizeHandles from './CanvasResizeHandles';
@@ -10,16 +12,39 @@ import { createPortal } from 'react-dom';
 import { useEraserCursor } from './useEraserCursor';
 import ImageToolbar from './ImageToolbar';
 import ImageResizeHandles from './ImageResizeHandles';
-import { TextElement } from '@/types/elements';
+import {
+    TextElement,
+    DrawingElement,
+    ArrowElement,
+    CircleElement,
+    ImageElement,
+    LineElement,
+    LineShapeElement,
+    RectangleElement,
+    RectElement,
+    TriangleElement,
+} from '@/types/elements';
 
 interface CanvasProps {
-    onMouseDown: (e: any) => void;
-    onMouseMove: (e: any) => void;
+    onMouseDown: (e: KonvaEventObject<MouseEvent | TouchEvent>) => void;
+    onMouseMove: (e: KonvaEventObject<MouseEvent | TouchEvent>) => void;
     onMouseUp: () => void;
     onResizeStart: (
         direction: string,
         e: React.MouseEvent | React.TouchEvent,
     ) => void;
+}
+
+interface SelectionRect {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+}
+
+interface Point {
+    x: number;
+    y: number;
 }
 
 const Canvas: React.FC<CanvasProps> = ({
@@ -43,7 +68,6 @@ const Canvas: React.FC<CanvasProps> = ({
         textEditingId,
         textValue,
         setTextValue,
-        activeLayerId,
         isMoving,
         strokeWidth,
         isImageResizing,
@@ -59,11 +83,17 @@ const Canvas: React.FC<CanvasProps> = ({
 
     useEraserCursor(stageRef, tool, elementsByLayer);
 
-    const [selectionRect, setSelectionRect] = useState(null);
-    const [selectionStartPoint, setSelectionStartPoint] = useState(null);
-    const [cursorPosition, setCursorPosition] = useState({ x: 0, y: 0 });
+    const [selectionRect, setSelectionRect] = useState<SelectionRect | null>(
+        null,
+    );
+    const [selectionStartPoint, setSelectionStartPoint] =
+        useState<Point | null>(null);
+    const [cursorPosition, setCursorPosition] = useState<Point>({ x: 0, y: 0 });
     const [isSelecting, setIsSelecting] = useState(false);
     const [imageEditingId, setImageEditingId] = useState<string | null>(null);
+
+    // Use a ref to store last click times for each element
+    const lastClickTimes = useRef<Map<string, number>>(new Map());
 
     const { handleTextEdit, handleTextEditDone } = useCanvasOperations({
         clearSelectionRect: () => {
@@ -73,26 +103,19 @@ const Canvas: React.FC<CanvasProps> = ({
         },
     });
 
-    const [lastClickInfo, setLastClickInfo] = useState({
-        time: 0,
-        target: null,
-    });
-
-    const handleImageResizeStart = () => {
-        setIsImageResizing(true);
-    };
-
     const handleImageResizeEnd = () => {
         setIsImageResizing(false);
     };
 
-    const handleStageClick = e => {
+    const handleStageClick = (e: KonvaEventObject<MouseEvent | TouchEvent>) => {
         console.log('Canvas.handleStageClick', e.target.getClassName());
         if (isImageResizing) return;
 
         const stage = e.target.getStage();
         if (!stage) return;
+
         const pos = stage.getPointerPosition();
+        if (!pos) return;
 
         let hitText = false;
         let hitImage = false;
@@ -109,17 +132,17 @@ const Canvas: React.FC<CanvasProps> = ({
                         hitImage = true;
 
                         const now = Date.now();
-                        if (
-                            element._lastClickTime &&
-                            now - element._lastClickTime < 300
-                        ) {
+                        const lastClickTime =
+                            lastClickTimes.current.get(element.id) || 0;
+
+                        if (now - lastClickTime < 300) {
                             console.log('Double click detected on image');
                             setImageEditingId(element.id);
                             if (!selectedElementIds.includes(element.id)) {
                                 setSelectedElementIds([element.id]);
                             }
                         }
-                        element._lastClickTime = now;
+                        lastClickTimes.current.set(element.id, now);
                     }
                 } else if (element.type === 'text') {
                     const textWidth =
@@ -138,16 +161,16 @@ const Canvas: React.FC<CanvasProps> = ({
                         hitText = true;
 
                         const now = Date.now();
-                        if (
-                            element._lastClickTime &&
-                            now - element._lastClickTime < 300
-                        ) {
+                        const lastClickTime =
+                            lastClickTimes.current.get(element.id) || 0;
+
+                        if (now - lastClickTime < 300) {
                             console.log('Double click detected on text');
                             if (typeof handleTextEdit === 'function') {
                                 handleTextEdit(element.id);
                             }
                         }
-                        element._lastClickTime = now;
+                        lastClickTimes.current.set(element.id, now);
                     }
                 }
             });
@@ -165,55 +188,49 @@ const Canvas: React.FC<CanvasProps> = ({
         }
     };
 
-    const handleCanvasMouseDown = e => {
+    const handleCanvasMouseDown = (
+        e: KonvaEventObject<MouseEvent | TouchEvent>,
+    ) => {
         console.log('Canvas.handleCanvasMouseDown', e.target.getClassName());
-
-        // Don't handle mouse down during image resizing
         if (isImageResizing) {
             console.log('Image is being resized, ignoring canvas mouse down');
             return;
         }
 
         const stage = e.target.getStage();
-        const pos = stage.getPointerPosition();
-        const now = Date.now();
+        if (!stage) return;
 
-        // Store current click info for future double click detection
-        setLastClickInfo({ time: now, target: e.target });
+        const pos = stage.getPointerPosition();
+        if (!pos) return;
 
         if (tool === 'select') {
-            // Clear selection rectangle state
             setSelectionRect(null);
             setIsSelecting(false);
             setSelectionStartPoint(null);
 
-            // Check if we clicked on the stage itself (empty space)
             const clickedOnStage = e.target === e.target.getStage();
-
             if (clickedOnStage) {
                 console.log('Starting rectangle selection on empty space');
                 setSelectionStartPoint({ x: pos.x, y: pos.y });
-                setSelectionRect({
-                    x: pos.x,
-                    y: pos.y,
-                    width: 0,
-                    height: 0,
-                });
+                setSelectionRect({ x: pos.x, y: pos.y, width: 0, height: 0 });
                 setIsSelecting(true);
                 setImageEditingId(null);
             }
         }
 
-        // Call the original mouse down handler
         onMouseDown(e);
     };
 
-    const handleCanvasMouseMove = e => {
-        // Don't handle mouse move during image resizing
+    const handleCanvasMouseMove = (
+        e: KonvaEventObject<MouseEvent | TouchEvent>,
+    ) => {
         if (isImageResizing) return;
 
         const stage = e.target.getStage();
+        if (!stage) return;
+
         const pos = stage.getPointerPosition();
+        if (!pos) return;
 
         if (
             pos &&
@@ -243,12 +260,14 @@ const Canvas: React.FC<CanvasProps> = ({
         onMouseMove(e);
     };
 
-    const handleCanvasMouseUp = e => {
+    const handleCanvasMouseUp = (
+        e: KonvaEventObject<MouseEvent | TouchEvent>,
+    ) => {
         if (isImageResizing) return;
 
         if (isSelecting && !isMoving && selectionRect && tool === 'select') {
-            const selectedIds = [];
-            elementsByLayer.forEach((elements, layerId) => {
+            const selectedIds: string[] = [];
+            elementsByLayer.forEach(elements => {
                 elements.forEach(element => {
                     if (isElementInSelectionRect(element, selectionRect)) {
                         selectedIds.push(element.id);
@@ -256,7 +275,11 @@ const Canvas: React.FC<CanvasProps> = ({
                 });
             });
 
-            if (e.evt && (e.evt.shiftKey || e.evt.ctrlKey)) {
+            if (
+                e.evt &&
+                ((e.evt as MouseEvent).shiftKey ||
+                    (e.evt as MouseEvent).ctrlKey)
+            ) {
                 setSelectedElementIds([
                     ...new Set([...selectedElementIds, ...selectedIds]),
                 ]);
@@ -271,7 +294,10 @@ const Canvas: React.FC<CanvasProps> = ({
         onMouseUp();
     };
 
-    const isElementInSelectionRect = (element, rect) => {
+    const isElementInSelectionRect = (
+        element: DrawingElement,
+        rect: SelectionRect,
+    ): boolean => {
         if (!rect) return false;
 
         const rectLeft = rect.x;
@@ -282,7 +308,8 @@ const Canvas: React.FC<CanvasProps> = ({
         switch (element.type) {
             case 'rectangle':
             case 'rect': {
-                const { x, y, width, height } = element;
+                const rectElement = element as RectElement | RectangleElement;
+                const { x, y, width, height } = rectElement;
                 const elementRight = x + width;
                 const elementBottom = y + height;
                 return !(
@@ -293,7 +320,8 @@ const Canvas: React.FC<CanvasProps> = ({
                 );
             }
             case 'circle': {
-                const { x, y, radius } = element;
+                const circleElement = element as CircleElement;
+                const { x, y, radius } = circleElement;
                 const elementLeft = x - radius;
                 const elementRight = x + radius;
                 const elementTop = y - radius;
@@ -306,7 +334,8 @@ const Canvas: React.FC<CanvasProps> = ({
                 );
             }
             case 'triangle': {
-                const { x, y, radius } = element;
+                const triangleElement = element as TriangleElement;
+                const { x, y, radius } = triangleElement;
                 const elementLeft = x - radius;
                 const elementRight = x + radius;
                 const elementTop = y - radius;
@@ -319,7 +348,8 @@ const Canvas: React.FC<CanvasProps> = ({
                 );
             }
             case 'image': {
-                const { x, y, width, height } = element;
+                const imageElement = element as ImageElement;
+                const { x, y, width, height } = imageElement;
                 const elementRight = x + width;
                 const elementBottom = y + height;
                 return !(
@@ -332,7 +362,11 @@ const Canvas: React.FC<CanvasProps> = ({
             case 'line':
             case 'line-shape':
             case 'arrow': {
-                const { points } = element;
+                const lineElement = element as
+                    | LineElement
+                    | LineShapeElement
+                    | ArrowElement;
+                const { points } = lineElement;
                 for (let i = 0; i < points.length; i += 2) {
                     const pointX = points[i];
                     const pointY = points[i + 1];
@@ -348,7 +382,8 @@ const Canvas: React.FC<CanvasProps> = ({
                 return false;
             }
             case 'text': {
-                const { x, y, width, height, fontSize, text } = element;
+                const textElement = element as TextElement;
+                const { x, y, width, height, fontSize, text } = textElement;
                 const textWidth = width || (text?.length * fontSize) / 2 || 0;
                 const textHeight = height || fontSize || 0;
                 const elementRight = x + textWidth;
@@ -365,7 +400,7 @@ const Canvas: React.FC<CanvasProps> = ({
         }
     };
 
-    const getSelectedImageId = () => {
+    const getSelectedImageId = (): string | undefined => {
         if (selectedElementIds.length !== 1) return undefined;
 
         const selectedId = selectedElementIds[0];
@@ -380,14 +415,14 @@ const Canvas: React.FC<CanvasProps> = ({
         return isImage ? selectedId : undefined;
     };
 
-    const getTextEditorPosition = () => {
+    const getTextEditorPosition = (): Point => {
         if (!textEditingId || !stageRef.current) return { x: 0, y: 0 };
 
-        let textElement = null;
+        let textElement: TextElement | null = null;
         elementsByLayer.forEach(elements => {
             const found = elements.find(el => el.id === textEditingId);
             if (found && found.type === 'text') {
-                textElement = found;
+                textElement = found as TextElement;
             }
         });
 
@@ -395,10 +430,11 @@ const Canvas: React.FC<CanvasProps> = ({
 
         const stage = stageRef.current;
         const containerRect = stage.container().getBoundingClientRect();
+        const typedTextElement = textElement as TextElement;
 
         return {
-            x: textElement.x * scale + containerRect.left,
-            y: textElement.y * scale + containerRect.top,
+            x: typedTextElement.x * scale + containerRect.left,
+            y: typedTextElement.y * scale + containerRect.top,
         };
     };
 
@@ -406,9 +442,8 @@ const Canvas: React.FC<CanvasProps> = ({
         if (!textEditingId) return null;
 
         const position = getTextEditorPosition();
-
-        // Get the current text element being edited
         let currentTextElement: TextElement | null = null;
+
         elementsByLayer.forEach(elements => {
             const found = elements.find(
                 el => el.id === textEditingId && el.type === 'text',
@@ -449,12 +484,10 @@ const Canvas: React.FC<CanvasProps> = ({
         <div
             id="canvas-container"
             className="flex-1 bg-slate-100 dark:bg-gray-900 overflow-auto relative">
-            {/* Image Toolbar - positioned above canvas */}
             <ImageToolbar
                 selectedImageId={imageEditingId || getSelectedImageId()}
                 onClose={() => setImageEditingId(null)}
             />
-
             <div className="absolute top-0 left-0 min-w-full min-h-full flex items-center justify-center p-4">
                 <div
                     style={{
@@ -521,8 +554,10 @@ const Canvas: React.FC<CanvasProps> = ({
 
                                         if (
                                             window.event &&
-                                            (window.event.shiftKey ||
-                                                window.event.ctrlKey)
+                                            ((window.event as KeyboardEvent)
+                                                .shiftKey ||
+                                                (window.event as KeyboardEvent)
+                                                    .ctrlKey)
                                         ) {
                                             const newSelectedIds = [
                                                 ...selectedElementIds,
@@ -544,7 +579,6 @@ const Canvas: React.FC<CanvasProps> = ({
                                         }
                                     }}
                                     onTextEdit={handleTextEdit}
-                                    onImageResizeStart={handleImageResizeStart}
                                     onImageResizeEnd={handleImageResizeEnd}
                                 />
                             );
@@ -593,27 +627,29 @@ const Canvas: React.FC<CanvasProps> = ({
 
                     {/* Render HTML-based image resize handles for all selected images */}
                     {selectedElementIds.map(elementId => {
-                        let imageElement = null;
+                        let imageElement: ImageElement | null = null;
                         elementsByLayer.forEach(elements => {
                             const found = elements.find(
                                 el =>
                                     el.id === elementId && el.type === 'image',
                             );
-                            if (found) {
-                                imageElement = found;
+                            if (found && found.type === 'image') {
+                                imageElement = found as ImageElement;
                             }
                         });
 
                         if (imageElement) {
+                            const typedImageElement =
+                                imageElement as ImageElement;
                             return (
                                 <ImageResizeHandles
                                     key={elementId}
                                     imageElement={{
-                                        id: imageElement.id,
-                                        x: imageElement.x,
-                                        y: imageElement.y,
-                                        width: imageElement.width,
-                                        height: imageElement.height,
+                                        id: typedImageElement.id,
+                                        x: typedImageElement.x,
+                                        y: typedImageElement.y,
+                                        width: typedImageElement.width,
+                                        height: typedImageElement.height,
                                     }}
                                     isSelected={true}
                                     onResizeStart={
@@ -630,8 +666,6 @@ const Canvas: React.FC<CanvasProps> = ({
                         onResizeStart={onResizeStart}
                     />
                     {renderTextEditor()}
-
-                    {/* Remove ImageToolbar from here - it's now above the canvas */}
                 </div>
             </div>
         </div>

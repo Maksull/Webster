@@ -8,7 +8,6 @@ export interface CreateCanvasDto {
     backgroundColor: string;
     layers: DrawingLayer[];
     elementsByLayer: Record<string, DrawingElement[]>;
-    isPublic?: boolean;
 }
 
 export interface UpdateCanvasDto {
@@ -19,7 +18,6 @@ export interface UpdateCanvasDto {
     backgroundColor?: string;
     layers?: DrawingLayer[];
     elementsByLayer?: Record<string, DrawingElement[]>;
-    isPublic?: boolean;
 }
 
 export interface CanvasResponseDto {

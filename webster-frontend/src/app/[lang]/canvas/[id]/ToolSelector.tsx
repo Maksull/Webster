@@ -5,8 +5,17 @@ import { Pencil, Highlighter, Brush, PenLine, LucideIcon } from 'lucide-react';
 import ToolButton from './ToolButton';
 import { ToolType } from '@/types/elements';
 
+interface Dictionary {
+    drawing?: {
+        pencil?: string;
+        marker?: string;
+        brush?: string;
+        pen?: string;
+    };
+}
+
 interface ToolSelectorProps {
-    dict: Record<string, any>;
+    dict: Dictionary;
     activeTool: ToolType;
     onSelect: (tool: ToolType) => void;
 }
@@ -14,7 +23,7 @@ interface ToolSelectorProps {
 const tools: {
     tool: ToolType;
     icon: LucideIcon;
-    titleKey: keyof NonNullable<ToolSelectorProps['dict']['drawing']>;
+    titleKey: keyof NonNullable<Dictionary['drawing']>;
 }[] = [
     { tool: 'pencil', icon: Pencil, titleKey: 'pencil' },
     { tool: 'marker', icon: Highlighter, titleKey: 'marker' },

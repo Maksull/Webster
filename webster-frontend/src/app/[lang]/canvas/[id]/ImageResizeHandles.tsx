@@ -1,5 +1,7 @@
 import React from 'react';
 import { createPortal } from 'react-dom';
+import { KonvaEventObject } from 'konva/lib/Node';
+import { Stage } from 'konva/lib/Stage';
 import { useDrawing } from '@/contexts';
 
 interface ImageResizeHandlesProps {
@@ -11,7 +13,14 @@ interface ImageResizeHandlesProps {
         height: number;
     };
     isSelected: boolean;
-    onResizeStart: (corner: string, e: any) => void;
+    onResizeStart: (
+        corner: string,
+        e: KonvaEventObject<MouseEvent | TouchEvent>,
+    ) => void;
+}
+
+interface SyntheticTarget {
+    getStage: () => Stage;
 }
 
 const ImageResizeHandles: React.FC<ImageResizeHandlesProps> = ({
@@ -25,24 +34,16 @@ const ImageResizeHandles: React.FC<ImageResizeHandlesProps> = ({
 
     const stage = stageRef.current;
     const canvasContainer = document.getElementById('canvas-container');
-
     if (!canvasContainer) return null;
 
-    // Get the canvas container rect (where we portal to)
     const canvasRect = canvasContainer.getBoundingClientRect();
-
-    // Get the stage container rect (the scaled div)
     const stageContainer = stage.container();
     const stageRect = stageContainer.getBoundingClientRect();
 
-    // Calculate the image position in stage coordinates, then convert to screen coordinates
     const { x, y, width, height } = imageElement;
-
-    // The stage position relative to canvas container
     const stageOffsetX = stageRect.left - canvasRect.left;
     const stageOffsetY = stageRect.top - canvasRect.top;
 
-    // Image position within the scaled stage
     const imageLeft = stageOffsetX + x * scale;
     const imageTop = stageOffsetY + y * scale;
     const imageWidth = width * scale;
@@ -135,20 +136,20 @@ const ImageResizeHandles: React.FC<ImageResizeHandlesProps> = ({
         e.preventDefault();
         e.stopPropagation();
 
-        const syntheticEvent = {
+        const syntheticEvent: KonvaEventObject<MouseEvent | TouchEvent> = {
             target: {
                 getStage: () => stage,
-            },
+            } as SyntheticTarget,
             evt: e.nativeEvent,
             cancelBubble: true,
-        };
+        } as KonvaEventObject<MouseEvent | TouchEvent>;
 
         onResizeStart(handleName, syntheticEvent);
     };
 
     const renderHandles = () => (
         <>
-            {/* Selection border */}
+            {/* Selection outline */}
             <div
                 style={{
                     position: 'absolute',
