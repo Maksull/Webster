@@ -134,54 +134,46 @@ export const useLayers = () => {
         setHistoryStep(newHistory.length - 1);
     };
 
-    // Move layer up in the stack
     const moveLayerUp = (layerId: string) => {
         const layerIndex = layers.findIndex(layer => layer.id === layerId);
-        if (layerIndex <= 0) return;
+        // Check if layer exists and is not already at the top
+        if (layerIndex < 0 || layerIndex >= layers.length - 1) return;
 
-        // Create a copy of the layers array
         const updatedLayers = [...layers];
-
-        // Swap the layers - this is correct
+        // Swap with the layer above (higher index = forward/on top)
         const temp = updatedLayers[layerIndex];
-        updatedLayers[layerIndex] = updatedLayers[layerIndex - 1];
-        updatedLayers[layerIndex - 1] = temp;
+        updatedLayers[layerIndex] = updatedLayers[layerIndex + 1];
+        updatedLayers[layerIndex + 1] = temp;
 
-        // Set the updated layers
         setLayers(updatedLayers);
-
-        // Create a new copy of elementsByLayer for immutability
         const updatedElementsByLayer = new Map(elementsByLayer);
-
-        // Push to history with the NEW elementsByLayer map
         const newHistory = history.slice(0, historyStep + 1);
         newHistory.push({
             layers: updatedLayers,
-            elementsByLayer: updatedElementsByLayer, // Use the new map here
+            elementsByLayer: updatedElementsByLayer,
             backgroundColor,
         });
         setHistory(newHistory);
         setHistoryStep(newHistory.length - 1);
     };
 
-    // Move layer down in the stack
     const moveLayerDown = (layerId: string) => {
         const layerIndex = layers.findIndex(layer => layer.id === layerId);
-        if (layerIndex >= layers.length - 1) return;
+        // Check if layer exists and is not already at the bottom
+        if (layerIndex <= 0) return;
 
         const updatedLayers = [...layers];
+        // Swap with the layer below (lower index = backward/behind)
         const temp = updatedLayers[layerIndex];
-        updatedLayers[layerIndex] = updatedLayers[layerIndex + 1];
-        updatedLayers[layerIndex + 1] = temp;
+        updatedLayers[layerIndex] = updatedLayers[layerIndex - 1];
+        updatedLayers[layerIndex - 1] = temp;
+
         setLayers(updatedLayers);
-
-        // Create a new copy of elementsByLayer for immutability
         const updatedElementsByLayer = new Map(elementsByLayer);
-
         const newHistory = history.slice(0, historyStep + 1);
         newHistory.push({
             layers: updatedLayers,
-            elementsByLayer: updatedElementsByLayer, // Use the new map here
+            elementsByLayer: updatedElementsByLayer,
             backgroundColor,
         });
         setHistory(newHistory);
