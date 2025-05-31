@@ -1,6 +1,8 @@
 'use client';
 
 import { useDrawing } from '@/contexts';
+import { DrawingElement } from '@/types/elements';
+import { DrawingLayer } from '@/types/layers';
 
 export const useHistory = () => {
     const {
@@ -16,34 +18,60 @@ export const useHistory = () => {
         layers,
         backgroundColor,
         setBackgroundColor,
+        setTextEditingId,
+        setTextValue,
     } = useDrawing();
 
-    // Record current state to history
     const recordHistory = (
         newBackgroundColor: string | undefined = undefined,
+        customElementsByLayer?: Map<string, DrawingElement[]>,
+        customLayers?: DrawingLayer[],
     ) => {
         const newHistory = history.slice(0, historyStep + 1);
+        const elementsToRecord = customElementsByLayer || elementsByLayer;
+        const layersToRecord = customLayers || layers;
+
+        const clonedElementsByLayer = new Map();
+        elementsToRecord.forEach((elements, layerId) => {
+            clonedElementsByLayer.set(layerId, [...elements]);
+        });
+
+        const textElements: string[] = [];
+        clonedElementsByLayer.forEach(elements => {
+            elements.forEach((element: DrawingElement) => {
+                if (element.type === 'text') {
+                    textElements.push(element.text);
+                }
+            });
+        });
+
         newHistory.push({
-            layers,
-            elementsByLayer: new Map(elementsByLayer),
-            backgroundColor: newBackgroundColor || backgroundColor, // Use passed color if provided
+            layers: [...layersToRecord],
+            elementsByLayer: clonedElementsByLayer,
+            backgroundColor: newBackgroundColor || backgroundColor,
         });
 
         setHistory(newHistory);
         setHistoryStep(newHistory.length - 1);
     };
 
-    // Handle undo
+    const clearTextEditingState = () => {
+        setTextEditingId(null);
+        setTextValue('');
+    };
+
     const handleUndo = () => {
         if (historyStep > 0) {
+            clearTextEditingState();
             setHistoryStep(historyStep - 1);
             const {
                 layers: prevLayers,
                 elementsByLayer: prevElements,
                 backgroundColor: prevBackgroundColor,
             } = history[historyStep - 1];
-            setLayers(prevLayers);
-            setElementsByLayer(prevElements);
+
+            setLayers([...prevLayers]);
+            setElementsByLayer(new Map(prevElements));
             setBackgroundColor(prevBackgroundColor);
 
             if (!prevLayers.find(layer => layer.id === activeLayerId)) {
@@ -52,17 +80,18 @@ export const useHistory = () => {
         }
     };
 
-    // Handle redo
     const handleRedo = () => {
         if (historyStep < history.length - 1) {
+            clearTextEditingState();
             setHistoryStep(historyStep + 1);
             const {
                 layers: nextLayers,
                 elementsByLayer: nextElements,
                 backgroundColor: nextBackgroundColor,
             } = history[historyStep + 1];
-            setLayers(nextLayers);
-            setElementsByLayer(nextElements);
+
+            setLayers([...nextLayers]);
+            setElementsByLayer(new Map(nextElements));
             setBackgroundColor(nextBackgroundColor);
 
             if (!nextLayers.find(layer => layer.id === activeLayerId)) {
@@ -71,9 +100,8 @@ export const useHistory = () => {
         }
     };
 
-    // Clear canvas
     const handleClear = () => {
-        // Clear all elements from all layers
+        clearTextEditingState();
         const clearedElementsByLayer = new Map();
         layers.forEach(layer => {
             clearedElementsByLayer.set(layer.id, []);
@@ -81,7 +109,6 @@ export const useHistory = () => {
 
         setElementsByLayer(clearedElementsByLayer);
 
-        // Save to history
         const newHistory = [
             ...history.slice(0, historyStep + 1),
             {
@@ -90,6 +117,7 @@ export const useHistory = () => {
                 backgroundColor,
             },
         ];
+
         setHistory(newHistory);
         setHistoryStep(newHistory.length - 1);
     };

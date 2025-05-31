@@ -125,7 +125,6 @@ export const useCanvasOperations = (callbacks: CallbacksProps = {}) => {
         let elementToRemove: DrawingElement | null = null;
         let elementLayerId: string | null = null;
 
-        // First try to find element by shape intersection
         if (targetShapes.length > 0) {
             for (const shape of targetShapes) {
                 const shapeId = shape.attrs.id;
@@ -142,7 +141,6 @@ export const useCanvasOperations = (callbacks: CallbacksProps = {}) => {
             }
         }
 
-        // If no element found by shape intersection, try point-in-element check
         if (!elementToRemove) {
             elementsByLayer.forEach((elements, layerId) => {
                 elements.forEach(element => {
@@ -154,19 +152,21 @@ export const useCanvasOperations = (callbacks: CallbacksProps = {}) => {
             });
         }
 
-        // Now handle the removal with proper type checking
         if (elementToRemove && elementLayerId) {
+            // Check if the element's layer is locked
+            const elementLayer = layers.find(l => l.id === elementLayerId);
+            if (elementLayer?.locked) {
+                console.log('Cannot erase element: layer is locked');
+                return false;
+            }
+
             const updatedElementsByLayer = new Map(elementsByLayer);
             const layerElements =
                 updatedElementsByLayer.get(elementLayerId) || [];
-
-            // Use type assertion to help TypeScript understand the type
             const elementToRemoveId = (elementToRemove as DrawingElement).id;
-
             const updatedElements = layerElements.filter(
                 el => el.id !== elementToRemoveId,
             );
-
             updatedElementsByLayer.set(elementLayerId, updatedElements);
             setElementsByLayer(updatedElementsByLayer);
 
@@ -175,19 +175,46 @@ export const useCanvasOperations = (callbacks: CallbacksProps = {}) => {
                     selectedElementIds.filter(id => id !== elementToRemoveId),
                 );
             }
-
             recordHistory();
             return true;
         }
-
         return false;
     };
 
+    const isElementLayerLocked = (elementId: string): boolean => {
+        for (const [layerId, elements] of elementsByLayer.entries()) {
+            const element = elements.find(el => el.id === elementId);
+            if (element) {
+                const layer = layers.find(l => l.id === layerId);
+                return layer?.locked || false;
+            }
+        }
+        return false;
+    };
+
+    // Type guard function to ensure we have a TextElement
+    const isTextElement = (element: DrawingElement): element is TextElement => {
+        return element.type === 'text';
+    };
+
+    // Fixed handleTextEdit function with proper type narrowing
     const handleTextEdit = (id: string) => {
-        const activeElements = getActiveLayerElements();
-        const textElement = activeElements.find(
-            el => el.id === id,
-        ) as TextElement;
+        if (isElementLayerLocked(id)) {
+            console.log('Cannot edit text: layer is locked');
+            return;
+        }
+
+        let textElement: TextElement | null = null;
+
+        // Find the text element with proper type narrowing
+        for (const [, elements] of elementsByLayer.entries()) {
+            const found = elements.find(el => el.id === id);
+            if (found && isTextElement(found)) {
+                textElement = found;
+                break;
+            }
+        }
+
         if (textElement) {
             setTextEditingId(id);
             setTextValue(textElement.text);
@@ -204,10 +231,37 @@ export const useCanvasOperations = (callbacks: CallbacksProps = {}) => {
         fontFamily: string,
         color: string,
     ) => {
+        let originalElement: TextElement | null = null;
+
+        // Find the original element with proper type narrowing
+        for (const [, elements] of elementsByLayer.entries()) {
+            const found = elements.find(el => el.id === id);
+            if (found && isTextElement(found)) {
+                originalElement = found;
+                break;
+            }
+        }
+
+        const hasChanges =
+            originalElement &&
+            (originalElement.text !== value ||
+                originalElement.fontSize !== fontSize ||
+                originalElement.fontFamily !== fontFamily ||
+                originalElement.fill !== color);
+
+        console.log(
+            'hasChanges:',
+            hasChanges,
+            'originalText:',
+            originalElement?.text,
+            'newText:',
+            value,
+        );
+
         const updatedElementsByLayer = new Map(elementsByLayer);
         updatedElementsByLayer.forEach((elements, layerId) => {
             const updatedElements = elements.map(element => {
-                if (element.id === id && element.type === 'text') {
+                if (element.id === id && isTextElement(element)) {
                     return {
                         ...element,
                         text: value,
@@ -224,7 +278,10 @@ export const useCanvasOperations = (callbacks: CallbacksProps = {}) => {
         setElementsByLayer(updatedElementsByLayer);
         setTextEditingId(null);
         setTextValue('');
-        recordHistory();
+
+        if (hasChanges) {
+            recordHistory(undefined, updatedElementsByLayer);
+        }
     };
 
     const handleMouseDown = (e: KonvaEventObject<MouseEvent | TouchEvent>) => {
@@ -276,8 +333,18 @@ export const useCanvasOperations = (callbacks: CallbacksProps = {}) => {
             const activeElements = getActiveLayerElements();
             const updatedElements = [...activeElements, newText];
             updateActiveLayerElements(updatedElements);
+
+            // Create updated elementsByLayer for history
+            const updatedElementsByLayer = new Map(elementsByLayer);
+            updatedElementsByLayer.set(activeLayerId, updatedElements);
+
+            // Record history immediately when text element is created with the new state
+            recordHistory(undefined, updatedElementsByLayer);
+
+            // Then start editing
             setTextEditingId(newText.id);
             setTextValue('Click to edit');
+
             return;
         }
 
@@ -333,19 +400,22 @@ export const useCanvasOperations = (callbacks: CallbacksProps = {}) => {
                 }
 
                 if (foundElement && foundElementId) {
+                    // Check if the element's layer is locked
+                    if (isElementLayerLocked(foundElementId)) {
+                        console.log('Cannot select element: layer is locked');
+                        return;
+                    }
+
                     const isShiftPressed =
                         e.evt && (e.evt.shiftKey || e.evt.ctrlKey);
-
                     if (isShiftPressed) {
                         const newSelectedIds = [...selectedElementIds];
                         const index = newSelectedIds.indexOf(foundElementId);
-
                         if (index !== -1) {
                             newSelectedIds.splice(index, 1);
                         } else {
                             newSelectedIds.push(foundElementId);
                         }
-
                         setSelectedElementIds(newSelectedIds);
                     } else {
                         if (!selectedElementIds.includes(foundElementId)) {
@@ -356,7 +426,6 @@ export const useCanvasOperations = (callbacks: CallbacksProps = {}) => {
                     if (clearSelectionRect) {
                         clearSelectionRect();
                     }
-
                     setIsMoving(true);
                     dragStartPos.current = pos;
                     lastMousePos.current = pos;
@@ -562,6 +631,16 @@ export const useCanvasOperations = (callbacks: CallbacksProps = {}) => {
         if (!pos) return;
 
         if (isMoving && selectedElementIds.length > 0) {
+            const hasLockedElement = selectedElementIds.some(id =>
+                isElementLayerLocked(id),
+            );
+            if (hasLockedElement) {
+                console.log(
+                    'Cannot move elements: one or more layers are locked',
+                );
+                return;
+            }
+
             const dx = pos.x - lastMousePos.current.x;
             const dy = pos.y - lastMousePos.current.y;
 
