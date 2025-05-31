@@ -1,4 +1,5 @@
 'use client';
+
 import React, { useState } from 'react';
 import {
     Eye,
@@ -9,14 +10,26 @@ import {
     Copy,
     Trash,
     ArrowUp,
-    ArrowDown,
     Layers,
     CheckCircle,
+    ChevronUp,
+    ChevronDown,
+    Square,
+    Circle,
+    Type,
+    Image as ImageIcon,
+    Minus,
+    Triangle,
+    ChevronRight,
+    List,
+    X,
 } from 'lucide-react';
 import { DrawingLayer } from '@/types/layers';
 import { useLayers } from './useLayers';
 import { useDrawing } from '@/contexts';
+import { useHistory } from './useHistory';
 import AlertModal from '@/components/AlertModal';
+import { DrawingElement } from '@/types/elements';
 
 interface LayerItemProps {
     layer: DrawingLayer;
@@ -24,7 +37,15 @@ interface LayerItemProps {
 }
 
 const LayerItem: React.FC<LayerItemProps> = ({ layer, index }) => {
-    const { activeLayerId, setActiveLayerId, layers } = useDrawing();
+    const {
+        activeLayerId,
+        setActiveLayerId,
+        layers,
+        elementsByLayer,
+        setElementsByLayer,
+        hoveredElementId,
+        setHoveredElementId,
+    } = useDrawing();
     const {
         toggleLayerVisibility,
         toggleLayerLock,
@@ -36,9 +57,10 @@ const LayerItem: React.FC<LayerItemProps> = ({ layer, index }) => {
         mergeLayerDown,
         deleteLayer,
     } = useLayers();
-
+    const { recordHistory } = useHistory();
     const [editingName, setEditingName] = useState('');
     const [isEditing, setIsEditing] = useState(false);
+    const [showElementsList, setShowElementsList] = useState(false);
 
     const startEditing = () => {
         setEditingName(layer.name);
@@ -51,6 +73,7 @@ const LayerItem: React.FC<LayerItemProps> = ({ layer, index }) => {
             setIsEditing(false);
         }
     };
+
     const [modal, setModal] = useState({
         open: false,
         type: 'success' as 'success' | 'error',
@@ -59,7 +82,6 @@ const LayerItem: React.FC<LayerItemProps> = ({ layer, index }) => {
 
     const deleteLayerWithNotify = (layerId: string) => {
         const result = deleteLayer(layerId);
-
         setModal({
             open: true,
             type: result.success ? 'success' : 'error',
@@ -67,7 +89,112 @@ const LayerItem: React.FC<LayerItemProps> = ({ layer, index }) => {
         });
     };
 
+    const removeElement = React.useCallback(
+        (elementId: string) => {
+            const updatedElementsByLayer = new Map(elementsByLayer);
+            const layerElements = updatedElementsByLayer.get(layer.id) || [];
+            const updatedElements = layerElements.filter(
+                el => el.id !== elementId,
+            );
+            updatedElementsByLayer.set(layer.id, updatedElements);
+            setElementsByLayer(updatedElementsByLayer);
+            recordHistory();
+            if (hoveredElementId === elementId) {
+                setHoveredElementId(null);
+            }
+        },
+        [
+            elementsByLayer,
+            layer.id,
+            setElementsByLayer,
+            recordHistory,
+            hoveredElementId,
+            setHoveredElementId,
+        ],
+    );
+
+    const handleElementHover = React.useCallback(
+        (elementId: string | null) => {
+            setHoveredElementId(elementId);
+        },
+        [setHoveredElementId],
+    );
+
     const isActive = activeLayerId === layer.id;
+    const isTopLayer = index === layers.length - 1;
+    const isBottomLayer = index === 0;
+    const layerPosition = index + 1;
+    const layerElements = elementsByLayer.get(layer.id) || [];
+    const elementCount = layerElements.length;
+
+    const getElementTypeIcon = (type: string) => {
+        const iconMap: Record<string, React.ReactNode> = {
+            rectangle: <Square className="h-3 w-3" />,
+            circle: <Circle className="h-3 w-3" />,
+            triangle: <Triangle className="h-3 w-3" />,
+            text: <Type className="h-3 w-3" />,
+            image: <ImageIcon className="h-3 w-3" />,
+            line: <Minus className="h-3 w-3" />,
+            arrow: <ArrowUp className="h-3 w-3" />,
+        };
+        return iconMap[type] || <Square className="h-3 w-3" />;
+    };
+
+    const getElementDisplayInfo = (element: DrawingElement) => {
+        const baseInfo = {
+            id: element.id,
+            type: element.type,
+            icon: getElementTypeIcon(
+                element.type === 'line-shape' ? 'line' : element.type,
+            ),
+        };
+
+        switch (element.type) {
+            case 'text':
+                return {
+                    ...baseInfo,
+                    name: `Text: "${element.text?.slice(0, 20)}${
+                        element.text?.length > 20 ? '...' : ''
+                    }"`,
+                };
+            case 'rectangle':
+                return {
+                    ...baseInfo,
+                    name: `Rectangle`,
+                };
+            case 'circle':
+                return {
+                    ...baseInfo,
+                    name: `Circle`,
+                };
+            case 'triangle':
+                return {
+                    ...baseInfo,
+                    name: `Triangle`,
+                };
+            case 'image':
+                return {
+                    ...baseInfo,
+                    name: `Image`,
+                };
+            case 'line':
+            case 'line-shape':
+                return {
+                    ...baseInfo,
+                    name: `Line`,
+                };
+            case 'arrow':
+                return {
+                    ...baseInfo,
+                    name: `Arrow`,
+                };
+            default:
+                return {
+                    ...baseInfo,
+                    name: element.type,
+                };
+        }
+    };
 
     return (
         <>
@@ -77,8 +204,13 @@ const LayerItem: React.FC<LayerItemProps> = ({ layer, index }) => {
                 message={modal.message}
                 onClose={() => setModal({ ...modal, open: false })}
             />
+
             <div
-                className={`p-2 rounded-md ${isActive ? 'bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-100 dark:border-indigo-800' : 'hover:bg-slate-50 dark:hover:bg-gray-700'}`}
+                className={`p-2 rounded-md ${
+                    isActive
+                        ? 'bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-100 dark:border-indigo-800'
+                        : 'hover:bg-slate-50 dark:hover:bg-gray-700'
+                }`}
                 onClick={() => setActiveLayerId(layer.id)}>
                 <div className="flex items-center justify-between">
                     <div className="flex items-center">
@@ -123,12 +255,47 @@ const LayerItem: React.FC<LayerItemProps> = ({ layer, index }) => {
                                 </button>
                             </div>
                         ) : (
-                            <span
-                                className={`text-sm font-medium ${!layer.visible ? 'text-slate-400 dark:text-gray-500' : 'text-slate-700 dark:text-gray-200'}`}>
-                                {layer.name}
-                            </span>
+                            <div className="flex items-center justify-between w-full">
+                                <div className="flex items-center">
+                                    {/* Layer position number */}
+                                    <span
+                                        className={`inline-flex items-center justify-center w-5 h-5 mr-2 text-xs font-medium rounded-full ${
+                                            isActive
+                                                ? 'bg-indigo-100 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-400'
+                                                : 'bg-slate-100 dark:bg-gray-700 text-slate-500 dark:text-gray-400'
+                                        }`}>
+                                        {layerPosition}
+                                    </span>
+
+                                    <div className="flex flex-col">
+                                        <span
+                                            className={`text-sm font-medium ${
+                                                !layer.visible
+                                                    ? 'text-slate-400 dark:text-gray-500'
+                                                    : 'text-slate-700 dark:text-gray-200'
+                                            }`}>
+                                            {layer.name}
+                                        </span>
+
+                                        {/* Layer level indicator */}
+                                        {(isTopLayer || isBottomLayer) && (
+                                            <span
+                                                className={`text-xs ${
+                                                    isTopLayer
+                                                        ? 'text-green-600 dark:text-green-400'
+                                                        : 'text-blue-600 dark:text-blue-400'
+                                                }`}>
+                                                {isTopLayer
+                                                    ? 'Top level'
+                                                    : 'Bottom level'}
+                                            </span>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
                         )}
                     </div>
+
                     <div className="flex items-center">
                         <button
                             className="ml-1 p-1 text-slate-500 dark:text-gray-400 rounded hover:bg-slate-100 dark:hover:bg-gray-700"
@@ -197,38 +364,57 @@ const LayerItem: React.FC<LayerItemProps> = ({ layer, index }) => {
                             </button>
 
                             <button
-                                className="px-1.5 py-1 text-xs rounded bg-slate-100 dark:bg-gray-700 text-slate-600 dark:text-gray-300 hover:bg-slate-200 dark:hover:bg-gray-600"
+                                className={`px-1.5 py-1 text-xs rounded ${
+                                    isTopLayer
+                                        ? 'bg-slate-50 dark:bg-gray-800 text-slate-400 dark:text-gray-500 cursor-not-allowed'
+                                        : 'bg-slate-100 dark:bg-gray-700 text-slate-600 dark:text-gray-300 hover:bg-slate-200 dark:hover:bg-gray-600'
+                                }`}
                                 onClick={e => {
                                     e.stopPropagation();
-                                    if (index > 0) {
+                                    if (!isTopLayer) {
                                         moveLayerUp(layer.id);
                                     }
                                 }}
-                                disabled={index === 0}>
-                                <ArrowUp className="h-3 w-3 inline mr-1" />
-                                Move Up
+                                disabled={isTopLayer}
+                                title={
+                                    isTopLayer
+                                        ? `Already at top (layer ${layerPosition})`
+                                        : `Move to position ${layerPosition + 1}`
+                                }>
+                                <ChevronUp className="h-3 w-3 inline mr-1" />
+                                Bring Forward
                             </button>
 
                             <button
-                                className="px-1.5 py-1 text-xs rounded bg-slate-100 dark:bg-gray-700 text-slate-600 dark:text-gray-300 hover:bg-slate-200 dark:hover:bg-gray-600"
+                                className={`px-1.5 py-1 text-xs rounded ${
+                                    isBottomLayer
+                                        ? 'bg-slate-50 dark:bg-gray-800 text-slate-400 dark:text-gray-500 cursor-not-allowed'
+                                        : 'bg-slate-100 dark:bg-gray-700 text-slate-600 dark:text-gray-300 hover:bg-slate-200 dark:hover:bg-gray-600'
+                                }`}
                                 onClick={e => {
                                     e.stopPropagation();
-                                    if (index < layers.length - 1) {
+                                    if (!isBottomLayer) {
                                         moveLayerDown(layer.id);
                                     }
                                 }}
-                                disabled={index === layers.length - 1}>
-                                <ArrowDown className="h-3 w-3 inline mr-1" />
-                                Move Down
+                                disabled={isBottomLayer}
+                                title={
+                                    isBottomLayer
+                                        ? `Already at bottom (layer ${layerPosition})`
+                                        : `Move to position ${layerPosition - 1}`
+                                }>
+                                <ChevronDown className="h-3 w-3 inline mr-1" />
+                                Send Backward
                             </button>
 
-                            {index < layers.length - 1 && (
+                            {!isBottomLayer && (
                                 <button
                                     className="px-1.5 py-1 text-xs rounded bg-slate-100 dark:bg-gray-700 text-slate-600 dark:text-gray-300 hover:bg-slate-200 dark:hover:bg-gray-600"
                                     onClick={e => {
                                         e.stopPropagation();
                                         mergeLayerDown(layer.id);
-                                    }}>
+                                    }}
+                                    title="Merge this layer with the layer below it">
                                     <Layers className="h-3 w-3 inline mr-1" />
                                     Merge Down
                                 </button>
@@ -245,6 +431,78 @@ const LayerItem: React.FC<LayerItemProps> = ({ layer, index }) => {
                                 Delete
                             </button>
                         </div>
+                    </div>
+                )}
+
+                {/* Elements dropdown - available for all layers */}
+                {elementCount > 0 && (
+                    <div className="mt-2 border-t border-slate-100 dark:border-gray-700 pt-2">
+                        <button
+                            className="w-full flex items-center justify-between px-2 py-1 text-xs rounded hover:bg-slate-50 dark:hover:bg-gray-700 text-slate-600 dark:text-gray-300"
+                            onClick={e => {
+                                e.stopPropagation();
+                                setShowElementsList(!showElementsList);
+                            }}>
+                            <div className="flex items-center">
+                                <List className="h-3 w-3 mr-1" />
+                                <span>Elements ({elementCount})</span>
+                            </div>
+                            <ChevronRight
+                                className={`h-3 w-3 transition-transform ${
+                                    showElementsList ? 'rotate-90' : ''
+                                }`}
+                            />
+                        </button>
+
+                        {showElementsList && (
+                            <div className="mt-1 space-y-1 max-h-32 overflow-y-auto">
+                                {layerElements.map(element => {
+                                    const elementInfo =
+                                        getElementDisplayInfo(element);
+                                    const isHovered =
+                                        hoveredElementId === element.id;
+
+                                    return (
+                                        <div
+                                            key={element.id}
+                                            className={`flex items-start justify-between px-2 py-1 text-xs rounded hover:bg-slate-50 dark:hover:bg-gray-700 cursor-pointer group ${
+                                                isHovered
+                                                    ? 'bg-indigo-50 dark:bg-indigo-900/20'
+                                                    : ''
+                                            }`}
+                                            onClick={e => e.stopPropagation()}
+                                            onMouseEnter={() =>
+                                                handleElementHover(element.id)
+                                            }
+                                            onMouseLeave={() =>
+                                                handleElementHover(null)
+                                            }>
+                                            <div className="flex items-center flex-1 min-w-0">
+                                                <div className="flex items-center mr-2 mt-0.5">
+                                                    {elementInfo.icon}
+                                                </div>
+                                                <div className="flex-1 min-w-0">
+                                                    <div className="text-slate-700 dark:text-gray-200 font-medium truncate">
+                                                        {elementInfo.name}
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            {/* Delete button for each element */}
+                                            <button
+                                                className="opacity-0 group-hover:opacity-100 ml-2 p-0.5 text-red-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-opacity"
+                                                onClick={e => {
+                                                    e.stopPropagation();
+                                                    removeElement(element.id);
+                                                }}
+                                                title="Delete element">
+                                                <X className="h-3 w-3" />
+                                            </button>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        )}
                     </div>
                 )}
             </div>

@@ -124,6 +124,8 @@ interface DrawingContextProps {
     fitImageToCanvasWithAspectRatio: (imageId: string) => void;
     toggleAspectRatio: () => void;
     opacity: number;
+    hoveredElementId: string | null;
+    setHoveredElementId: (id: string | null) => void;
     setOpacity: React.Dispatch<React.SetStateAction<number>>;
 }
 
@@ -210,6 +212,9 @@ export const DrawingProvider: React.FC<DrawingProviderProps> = ({
 
     const [showLayersPanel, setShowLayersPanel] = useState<boolean>(false);
     const [opacity, setOpacity] = useState(1);
+    const [hoveredElementId, setHoveredElementId] = useState<string | null>(
+        null,
+    );
 
     const [history, setHistory] = useState<HistoryRecord[]>(() => {
         if (initialCanvas?.layers) {
@@ -683,6 +688,8 @@ export const DrawingProvider: React.FC<DrawingProviderProps> = ({
         fitImageToCanvas,
         fitImageToCanvasWithAspectRatio,
         toggleAspectRatio,
+        hoveredElementId,
+        setHoveredElementId,
     };
 
     return (
