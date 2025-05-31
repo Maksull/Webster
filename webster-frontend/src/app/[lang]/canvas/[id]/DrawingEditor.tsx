@@ -129,6 +129,7 @@ const DrawingEditorContent: React.FC = () => {
         selectedElementIds,
         updateActiveLayerElements,
         elementsByLayer,
+        textEditingId,
     } = useDrawing();
 
     const selectedIdsRef = useRef<string[]>([]);
@@ -139,6 +140,11 @@ const DrawingEditorContent: React.FC = () => {
 
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
+            // Check if text editor is open - if so, don't process movement
+            if (textEditingId) {
+                return;
+            }
+
             const selectedIds = selectedIdsRef.current;
             const ARROW_KEYS = [
                 'ArrowUp',
@@ -208,7 +214,7 @@ const DrawingEditorContent: React.FC = () => {
         return () => {
             window.removeEventListener('keydown', handleKeyDown);
         };
-    }, [selectedElementIds, elementsByLayer]);
+    }, [selectedElementIds, elementsByLayer, textEditingId]);
 
     // Create a wrapper for handleDownload that returns a Promise<string | void>
     const handleDownloadWrapper = async (options: {

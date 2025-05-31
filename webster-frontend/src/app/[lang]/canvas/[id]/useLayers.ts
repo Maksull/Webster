@@ -239,29 +239,49 @@ export const useLayers = () => {
     // Merge layer with the one below it
     const mergeLayerDown = (layerId: string) => {
         const layerIndex = layers.findIndex(layer => layer.id === layerId);
-        if (layerIndex >= layers.length - 1) return;
 
-        const upperLayerId = layerId;
-        const lowerLayerId = layers[layerIndex + 1].id;
+        // Check if layer exists and is not already at the bottom (index 0)
+        if (layerIndex <= 0) {
+            console.warn(
+                'Cannot merge down: layer is already at the bottom or not found',
+            );
+            return;
+        }
 
-        const upperElements = elementsByLayer.get(upperLayerId) || [];
-        const lowerElements = elementsByLayer.get(lowerLayerId) || [];
+        // Get the current layer (to be merged) and the target layer (below/behind it)
+        const currentLayerId = layerId;
+        const targetLayerId = layers[layerIndex - 1].id; // Layer below (behind) the current one
 
+        const currentElements = elementsByLayer.get(currentLayerId) || [];
+        const targetElements = elementsByLayer.get(targetLayerId) || [];
+
+        // Merge elements: target layer elements first, then current layer elements on top
         const mergedElements = [
-            ...lowerElements,
-            ...upperElements.map(el => ({ ...el, layerId: lowerLayerId })),
+            ...targetElements,
+            ...currentElements.map(el => ({
+                ...el,
+                layerId: targetLayerId, // Update the layerId to the target layer
+            })),
         ];
 
-        const updatedLayers = layers.filter(layer => layer.id !== upperLayerId);
+        // Remove the current layer from the layers array
+        const updatedLayers = layers.filter(
+            layer => layer.id !== currentLayerId,
+        );
 
+        // Update the elements map
         const updatedElementsByLayer = new Map(elementsByLayer);
-        updatedElementsByLayer.delete(upperLayerId);
-        updatedElementsByLayer.set(lowerLayerId, mergedElements);
+        updatedElementsByLayer.delete(currentLayerId); // Remove current layer's elements
+        updatedElementsByLayer.set(targetLayerId, mergedElements); // Set merged elements to target layer
 
+        // Update state
         setLayers(updatedLayers);
         setElementsByLayer(updatedElementsByLayer);
-        setActiveLayerId(lowerLayerId);
 
+        // Set the target layer as active (since current layer was removed)
+        setActiveLayerId(targetLayerId);
+
+        // Update history
         const newHistory = history.slice(0, historyStep + 1);
         newHistory.push({
             layers: updatedLayers,
@@ -270,6 +290,10 @@ export const useLayers = () => {
         });
         setHistory(newHistory);
         setHistoryStep(newHistory.length - 1);
+
+        console.log(
+            `Merged layer "${layers.find(l => l.id === currentLayerId)?.name}" down into "${layers.find(l => l.id === targetLayerId)?.name}"`,
+        );
     };
 
     return {

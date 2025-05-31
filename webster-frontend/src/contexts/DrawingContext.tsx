@@ -467,6 +467,23 @@ export const DrawingProvider: React.FC<DrawingProviderProps> = ({
         (corner: string, e: KonvaEventObject<MouseEvent | TouchEvent>) => {
             console.log('Image resize started for corner:', corner);
 
+            // Check if any selected element's layer is locked
+            const hasLockedElement = selectedElementIds.some(id => {
+                for (const [layerId, elements] of elementsByLayer.entries()) {
+                    const element = elements.find(el => el.id === id);
+                    if (element) {
+                        const layer = layers.find(l => l.id === layerId);
+                        return layer?.locked || false;
+                    }
+                }
+                return false;
+            });
+
+            if (hasLockedElement) {
+                console.log('Cannot resize image: layer is locked');
+                return;
+            }
+
             if (e.evt) {
                 e.evt.preventDefault();
                 e.evt.stopPropagation();
@@ -516,7 +533,14 @@ export const DrawingProvider: React.FC<DrawingProviderProps> = ({
 
             return false;
         },
-        [selectedElementIds, getImageElement, handleMouseMove, handleMouseUp],
+        [
+            selectedElementIds,
+            getImageElement,
+            handleMouseMove,
+            handleMouseUp,
+            elementsByLayer,
+            layers,
+        ],
     );
 
     const fitImageToCanvas = useCallback(

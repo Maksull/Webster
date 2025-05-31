@@ -32,12 +32,25 @@ const ImageToolbar: React.FC<ImageToolbarProps> = ({
         fitImageToCanvasWithAspectRatio,
         toggleAspectRatio,
         maintainAspectRatio,
+        layers, // Add layers to the destructured context
     } = useDrawing();
 
     const imageTransformUtils = React.useMemo(
         () => createImageTransformUtils(elementsByLayer, setElementsByLayer),
         [elementsByLayer, setElementsByLayer],
     );
+
+    // Helper function to check if a layer is locked
+    const isImageLayerLocked = (imageId: string): boolean => {
+        for (const [layerId, elements] of elementsByLayer.entries()) {
+            const element = elements.find(el => el.id === imageId);
+            if (element) {
+                const layer = layers.find(l => l.id === layerId);
+                return layer?.locked || false;
+            }
+        }
+        return false;
+    };
 
     const selectedImage = React.useMemo((): ImageElement | null => {
         if (!selectedImageId && selectedElementIds.length === 0) return null;
@@ -57,6 +70,12 @@ const ImageToolbar: React.FC<ImageToolbarProps> = ({
 
         if (!imageId) return null;
 
+        // Check if the image's layer is locked
+        if (isImageLayerLocked(imageId)) {
+            console.log('Image toolbar blocked: layer is locked');
+            return null;
+        }
+
         let imageElement: ImageElement | null = null;
         elementsByLayer.forEach(elements => {
             const found = elements.find(
@@ -68,7 +87,7 @@ const ImageToolbar: React.FC<ImageToolbarProps> = ({
         });
 
         return imageElement;
-    }, [selectedImageId, selectedElementIds, elementsByLayer]);
+    }, [selectedImageId, selectedElementIds, elementsByLayer, layers]);
 
     if (!selectedImage) return null;
 

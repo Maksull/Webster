@@ -135,7 +135,8 @@ const Canvas: React.FC<CanvasProps> = ({
                         const lastClickTime =
                             lastClickTimes.current.get(element.id) || 0;
 
-                        if (now - lastClickTime < 300) {
+                        // Only allow image toolbar on double click if tool is 'select'
+                        if (now - lastClickTime < 300 && tool === 'select') {
                             console.log('Double click detected on image');
                             setImageEditingId(element.id);
                             if (!selectedElementIds.includes(element.id)) {
@@ -164,7 +165,8 @@ const Canvas: React.FC<CanvasProps> = ({
                         const lastClickTime =
                             lastClickTimes.current.get(element.id) || 0;
 
-                        if (now - lastClickTime < 300) {
+                        // Only allow text editing on double click if tool is 'select'
+                        if (now - lastClickTime < 300 && tool === 'select') {
                             console.log('Double click detected on text');
                             if (typeof handleTextEdit === 'function') {
                                 handleTextEdit(element.id);

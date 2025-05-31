@@ -1,5 +1,4 @@
 'use client';
-
 import React, { useRef, useState } from 'react';
 import ToolButton from './ToolButton';
 import {
@@ -50,7 +49,6 @@ const DesktopToolbar: React.FC<DesktopToolbarProps> = ({ dict, onClear }) => {
         tool,
         setTool,
     } = useDrawing();
-
     const { handleUndo, handleRedo, canUndo, canRedo } = useHistory();
     const [modal, setModal] = useState({
         open: false,
@@ -68,6 +66,7 @@ const DesktopToolbar: React.FC<DesktopToolbarProps> = ({ dict, onClear }) => {
         const result = handleImageUpload(event);
         notify(result.success ? 'success' : 'error', result.message);
     };
+
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const handleZoomIn = () => {
@@ -90,8 +89,6 @@ const DesktopToolbar: React.FC<DesktopToolbarProps> = ({ dict, onClear }) => {
                 message: 'Please select a valid image file',
             };
         }
-
-        // Check file size (limit to 10MB)
         if (file.size > 10 * 1024 * 1024) {
             return {
                 success: false,
@@ -103,15 +100,11 @@ const DesktopToolbar: React.FC<DesktopToolbarProps> = ({ dict, onClear }) => {
         const reader = new FileReader();
         reader.onload = e => {
             const src = e.target?.result as string;
-
-            // Create a temporary image to get dimensions
             const img = new Image();
             img.onload = () => {
-                // Calculate initial size (max 300px while maintaining aspect ratio)
                 const maxSize = 300;
                 let width = img.width;
                 let height = img.height;
-
                 if (width > maxSize || height > maxSize) {
                     const aspectRatio = width / height;
                     if (width > height) {
@@ -126,7 +119,7 @@ const DesktopToolbar: React.FC<DesktopToolbarProps> = ({ dict, onClear }) => {
                 const imageElement: ImageElement = {
                     id: Date.now().toString(),
                     type: 'image',
-                    x: 50, // Default position
+                    x: 50,
                     y: 50,
                     width,
                     height,
@@ -138,21 +131,15 @@ const DesktopToolbar: React.FC<DesktopToolbarProps> = ({ dict, onClear }) => {
                     layerId: activeLayerId,
                 };
 
-                // Add to active layer
                 const activeElements = getActiveLayerElements();
                 const updatedElements = [...activeElements, imageElement];
                 updateActiveLayerElements(updatedElements);
-
-                // Switch to select tool to allow immediate manipulation
                 setTool('select');
             };
-
             img.src = src;
         };
-
         reader.readAsDataURL(file);
 
-        // Reset the input
         if (fileInputRef.current) {
             fileInputRef.current.value = '';
         }
@@ -168,13 +155,14 @@ const DesktopToolbar: React.FC<DesktopToolbarProps> = ({ dict, onClear }) => {
     };
 
     return (
-        <div className="hidden md:flex w-16 flex-shrink-0 bg-white dark:bg-gray-800 border-r border-slate-200 dark:border-gray-700 flex-col items-center py-4 gap-2">
+        <div className="hidden md:flex w-16 flex-shrink-0 bg-white dark:bg-gray-800 border-r border-slate-200 dark:border-gray-700 flex-col items-center py-4 gap-2 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
             <AlertModal
                 open={modal.open}
                 type={modal.type}
                 message={modal.message}
                 onClose={() => setModal({ ...modal, open: false })}
             />
+
             {/* Hidden file input */}
             <input
                 ref={fileInputRef}
@@ -211,7 +199,6 @@ const DesktopToolbar: React.FC<DesktopToolbarProps> = ({ dict, onClear }) => {
 
             <div className="my-2 border-t border-slate-200 dark:border-gray-700 w-10"></div>
 
-            {/* Shape tools */}
             <ToolButton
                 tool="rectangle"
                 icon={Square}
@@ -248,7 +235,6 @@ const DesktopToolbar: React.FC<DesktopToolbarProps> = ({ dict, onClear }) => {
                 title={dict.drawing?.text || 'Text'}
             />
 
-            {/* Image tool */}
             <button
                 className={`p-2 rounded-lg transition-colors duration-200 ${
                     tool === 'image'
@@ -262,7 +248,6 @@ const DesktopToolbar: React.FC<DesktopToolbarProps> = ({ dict, onClear }) => {
 
             <div className="my-2 border-t border-slate-200 dark:border-gray-700 w-10"></div>
 
-            {/* Layers and settings buttons */}
             <button
                 className={`p-2 rounded-lg ${
                     showLayersPanel
@@ -309,7 +294,6 @@ const DesktopToolbar: React.FC<DesktopToolbarProps> = ({ dict, onClear }) => {
 
             <div className="my-2 border-t border-slate-200 dark:border-gray-700 w-10"></div>
 
-            {/* Clear button */}
             <button
                 className="p-2 rounded-lg text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors duration-200"
                 onClick={onClear}
@@ -319,7 +303,6 @@ const DesktopToolbar: React.FC<DesktopToolbarProps> = ({ dict, onClear }) => {
 
             <div className="my-2 border-t border-slate-200 dark:border-gray-700 w-10"></div>
 
-            {/* Zoom controls */}
             <button
                 className="p-2 rounded-lg text-slate-600 dark:text-gray-400 hover:bg-slate-100 dark:hover:bg-gray-700 transition-colors duration-200"
                 onClick={handleZoomIn}
