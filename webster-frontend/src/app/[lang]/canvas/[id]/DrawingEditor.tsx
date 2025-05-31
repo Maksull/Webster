@@ -179,6 +179,7 @@ const DrawingEditorContent: React.FC = () => {
                     case 'circle':
                     case 'triangle':
                     case 'text':
+                    case 'image':
                         return {
                             ...el,
                             x: el.x + direction.x,
