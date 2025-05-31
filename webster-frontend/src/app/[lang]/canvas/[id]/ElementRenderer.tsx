@@ -12,6 +12,7 @@ import {
     Group,
 } from 'react-konva';
 import { KonvaEventObject } from 'konva/lib/Node';
+import { useDrawing } from '@/contexts';
 import {
     LineElement,
     RectElement,
@@ -40,7 +41,9 @@ const ElementRenderer: React.FC<ElementRendererProps> = ({
     onSelect,
     onImageResizeEnd,
 }) => {
+    const { hoveredElementId } = useDrawing();
     const [imageObj, setImageObj] = useState<HTMLImageElement | null>(null);
+    const isHovered = hoveredElementId === element.id;
 
     useEffect(() => {
         if (element.type === 'image') {
@@ -56,6 +59,7 @@ const ElementRenderer: React.FC<ElementRendererProps> = ({
         }
     }, [element.type, element.type === 'image' ? element.src : '']);
 
+    // Selection props for selected elements
     const selectionProps = isSelected
         ? {
               shadowColor: '#0066FF',
@@ -70,6 +74,22 @@ const ElementRenderer: React.FC<ElementRendererProps> = ({
           }
         : {};
 
+    // Hover props for hovered elements
+    const hoverProps =
+        isHovered && !isSelected
+            ? {
+                  shadowColor: '#FFA500',
+                  shadowBlur: 8,
+                  shadowOpacity: 0.8,
+                  shadowOffset: { x: 0, y: 0 },
+                  strokeWidth:
+                      'strokeWidth' in element && element.strokeWidth !== 0
+                          ? (element.strokeWidth || 1) + 1
+                          : 2,
+                  stroke: '#FFA500',
+              }
+            : {};
+
     const hitAreaProps = {
         perfectDrawEnabled: true,
         listening: true,
@@ -80,7 +100,7 @@ const ElementRenderer: React.FC<ElementRendererProps> = ({
         id: element.id,
         name: `element-${element.id}`,
         ...hitAreaProps,
-        ...(isSelected ? selectionProps : {}),
+        ...(isSelected ? selectionProps : isHovered ? hoverProps : {}),
     };
 
     useEffect(() => {
@@ -320,13 +340,19 @@ const ElementRenderer: React.FC<ElementRendererProps> = ({
                     id={element.id}
                     name={`element-${element.id}`}
                     rotation={textElement.rotation || 0}>
-                    {/* Hit area for text selection */}
+                    {/* Invisible hit area */}
                     <Rect
                         x={textElement.x - padding}
                         y={textElement.y - padding}
                         width={textWidth + padding * 2}
                         height={textHeight + padding * 2}
-                        stroke={isSelected ? '#0066FF' : 'black'}
+                        stroke={
+                            isSelected
+                                ? '#0066FF'
+                                : isHovered
+                                  ? '#FFA500'
+                                  : 'black'
+                        }
                         data-hit-area="true"
                         strokeWidth={0}
                         opacity={0.3}
@@ -338,7 +364,11 @@ const ElementRenderer: React.FC<ElementRendererProps> = ({
                         perfectDrawEnabled={false}
                         listening={true}
                         hitStrokeWidth={20}
-                        {...(isSelected ? selectionProps : {})}
+                        {...(isSelected
+                            ? selectionProps
+                            : isHovered
+                              ? hoverProps
+                              : {})}
                     />
                     <Text
                         x={textElement.x}
