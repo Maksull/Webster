@@ -240,6 +240,11 @@ export type Dictionary = {
         fontSize: string;
         fontFamily: string;
     };
+    notFound: {
+        title: string;
+        description: string;
+        backHome: string;
+    };
     transparentBackground: string;
 };
 

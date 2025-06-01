@@ -240,5 +240,10 @@
         "fontSize": "Font Size",
         "fontFamily": "Font Family"
     },
+    "notFound": {
+        "title": "Page not found",
+        "description": "The page you are looking for does not exist.",
+        "backHome": "Back to home"
+    },
     "transparentBackground": "Transparent Background"
 }
