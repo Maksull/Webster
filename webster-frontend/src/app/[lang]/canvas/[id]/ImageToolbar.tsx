@@ -32,7 +32,8 @@ const ImageToolbar: React.FC<ImageToolbarProps> = ({
         fitImageToCanvasWithAspectRatio,
         toggleAspectRatio,
         maintainAspectRatio,
-        layers, // Add layers to the destructured context
+        layers,
+        isMoving,
     } = useDrawing();
 
     const { dict } = useDictionary();
@@ -42,7 +43,6 @@ const ImageToolbar: React.FC<ImageToolbarProps> = ({
         [elementsByLayer, setElementsByLayer],
     );
 
-    // Helper function to check if a layer is locked
     const isImageLayerLocked = (imageId: string): boolean => {
         for (const [layerId, elements] of elementsByLayer.entries()) {
             const element = elements.find(el => el.id === imageId);
@@ -72,7 +72,6 @@ const ImageToolbar: React.FC<ImageToolbarProps> = ({
 
         if (!imageId) return null;
 
-        // Check if the image's layer is locked
         if (isImageLayerLocked(imageId)) {
             console.log('Image toolbar blocked: layer is locked');
             return null;
@@ -91,7 +90,8 @@ const ImageToolbar: React.FC<ImageToolbarProps> = ({
         return imageElement;
     }, [selectedImageId, selectedElementIds, elementsByLayer, layers]);
 
-    if (!selectedImage) return null;
+    // Hide toolbar when moving elements
+    if (!selectedImage || isMoving) return null;
 
     const handleClose = () => {
         if (onClose) {

@@ -114,7 +114,6 @@ const Canvas: React.FC<CanvasProps> = ({
     const handleStageClick = (e: KonvaEventObject<MouseEvent | TouchEvent>) => {
         console.log('Canvas.handleStageClick', e.target.getClassName());
 
-        // Handle curve tool double-click to finish curve
         if (tool === 'curve' && isDrawingCurve) {
             handleStageDoubleClick(e);
             return;
@@ -142,19 +141,25 @@ const Canvas: React.FC<CanvasProps> = ({
                     ) {
                         hitImage = true;
 
-                        const now = Date.now();
-                        const lastClickTime =
-                            lastClickTimes.current.get(element.id) || 0;
+                        // Only allow image interaction if tool is 'select'
+                        if (tool === 'select') {
+                            const now = Date.now();
+                            const lastClickTime =
+                                lastClickTimes.current.get(element.id) || 0;
 
-                        // Only allow image toolbar on double click if tool is 'select'
-                        if (now - lastClickTime < 300 && tool === 'select') {
-                            console.log('Double click detected on image');
-                            setImageEditingId(element.id);
-                            if (!selectedElementIds.includes(element.id)) {
-                                setSelectedElementIds([element.id]);
+                            // Only allow image toolbar on double click if tool is 'select'
+                            if (
+                                now - lastClickTime < 300 &&
+                                tool === 'select'
+                            ) {
+                                console.log('Double click detected on image');
+                                setImageEditingId(element.id);
+                                if (!selectedElementIds.includes(element.id)) {
+                                    setSelectedElementIds([element.id]);
+                                }
                             }
+                            lastClickTimes.current.set(element.id, now);
                         }
-                        lastClickTimes.current.set(element.id, now);
                     }
                 } else if (element.type === 'text') {
                     const textWidth =
@@ -190,12 +195,18 @@ const Canvas: React.FC<CanvasProps> = ({
         });
 
         // Only clear selection if we didn't hit important elements
+        // For images, only clear if tool is 'select' and we didn't hit an image,
+        // or if tool is not 'select' (since images can't be selected with other tools)
         if (
             tool === 'select' &&
             !hitText &&
             !hitImage &&
             e.target === e.target.getStage()
         ) {
+            setSelectedElementIds([]);
+            setImageEditingId(null);
+        } else if (tool !== 'select' && e.target === e.target.getStage()) {
+            // Clear selections when using non-select tools and clicking on empty space
             setSelectedElementIds([]);
             setImageEditingId(null);
         }
