@@ -23,6 +23,7 @@ import {
     ChevronRight,
     List,
     X,
+    Waves,
 } from 'lucide-react';
 import { DrawingLayer } from '@/types/layers';
 import { useLayers } from './useLayers';
@@ -130,12 +131,15 @@ const LayerItem: React.FC<LayerItemProps> = ({ layer, index }) => {
     const getElementTypeIcon = (type: string) => {
         const iconMap: Record<string, React.ReactNode> = {
             rectangle: <Square className="h-3 w-3" />,
+            rect: <Square className="h-3 w-3" />,
             circle: <Circle className="h-3 w-3" />,
             triangle: <Triangle className="h-3 w-3" />,
             text: <Type className="h-3 w-3" />,
             image: <ImageIcon className="h-3 w-3" />,
             line: <Minus className="h-3 w-3" />,
+            'line-shape': <Minus className="h-3 w-3" />,
             arrow: <ArrowUp className="h-3 w-3" />,
+            curve: <Waves className="h-3 w-3" />,
         };
         return iconMap[type] || <Square className="h-3 w-3" />;
     };
@@ -144,9 +148,7 @@ const LayerItem: React.FC<LayerItemProps> = ({ layer, index }) => {
         const baseInfo = {
             id: element.id,
             type: element.type,
-            icon: getElementTypeIcon(
-                element.type === 'line-shape' ? 'line' : element.type,
-            ),
+            icon: getElementTypeIcon(element.type),
         };
 
         switch (element.type) {
@@ -154,44 +156,54 @@ const LayerItem: React.FC<LayerItemProps> = ({ layer, index }) => {
                 return {
                     ...baseInfo,
                     name: `Text: "${element.text?.slice(0, 20)}${
-                        element.text?.length > 20 ? '...' : ''
+                        element.text && element.text.length > 20 ? '...' : ''
                     }"`,
                 };
             case 'rectangle':
                 return {
                     ...baseInfo,
-                    name: `Rectangle`,
+                    name: 'Rectangle',
+                };
+            case 'rect':
+                return {
+                    ...baseInfo,
+                    name: 'Rectangle',
                 };
             case 'circle':
                 return {
                     ...baseInfo,
-                    name: `Circle`,
+                    name: 'Circle',
                 };
             case 'triangle':
                 return {
                     ...baseInfo,
-                    name: `Triangle`,
+                    name: 'Triangle',
                 };
             case 'image':
                 return {
                     ...baseInfo,
-                    name: `Image`,
+                    name: 'Image',
                 };
             case 'line':
             case 'line-shape':
                 return {
                     ...baseInfo,
-                    name: `Line`,
+                    name: 'Line',
                 };
             case 'arrow':
                 return {
                     ...baseInfo,
-                    name: `Arrow`,
+                    name: 'Arrow',
+                };
+            case 'curve':
+                return {
+                    ...baseInfo,
+                    name: 'Curve',
                 };
             default:
                 return {
                     ...baseInfo,
-                    name: element.type,
+                    name: (element as DrawingElement).type || 'Unknown',
                 };
         }
     };
@@ -204,7 +216,6 @@ const LayerItem: React.FC<LayerItemProps> = ({ layer, index }) => {
                 message={modal.message}
                 onClose={() => setModal({ ...modal, open: false })}
             />
-
             <div
                 className={`p-2 rounded-md ${
                     isActive
@@ -257,7 +268,6 @@ const LayerItem: React.FC<LayerItemProps> = ({ layer, index }) => {
                         ) : (
                             <div className="flex items-center justify-between w-full">
                                 <div className="flex items-center">
-                                    {/* Layer position number */}
                                     <span
                                         className={`inline-flex items-center justify-center w-5 h-5 mr-2 text-xs font-medium rounded-full ${
                                             isActive
@@ -276,8 +286,6 @@ const LayerItem: React.FC<LayerItemProps> = ({ layer, index }) => {
                                             }`}>
                                             {layer.name}
                                         </span>
-
-                                        {/* Layer level indicator */}
                                         {(isTopLayer || isBottomLayer) && (
                                             <span
                                                 className={`text-xs ${
@@ -295,7 +303,6 @@ const LayerItem: React.FC<LayerItemProps> = ({ layer, index }) => {
                             </div>
                         )}
                     </div>
-
                     <div className="flex items-center">
                         <button
                             className="ml-1 p-1 text-slate-500 dark:text-gray-400 rounded hover:bg-slate-100 dark:hover:bg-gray-700"
@@ -434,7 +441,6 @@ const LayerItem: React.FC<LayerItemProps> = ({ layer, index }) => {
                     </div>
                 )}
 
-                {/* Elements dropdown - available for all layers */}
                 {elementCount > 0 && (
                     <div className="mt-2 border-t border-slate-100 dark:border-gray-700 pt-2">
                         <button

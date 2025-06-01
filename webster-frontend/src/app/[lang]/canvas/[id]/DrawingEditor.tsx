@@ -193,6 +193,7 @@ const DrawingEditorContent: React.FC = () => {
                         };
                     case 'arrow':
                     case 'line-shape':
+                    case 'curve':
                     case 'line':
                         return {
                             ...el,
