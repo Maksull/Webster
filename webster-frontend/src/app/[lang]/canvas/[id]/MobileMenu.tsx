@@ -26,6 +26,7 @@ import {
     Linkedin,
     Copy,
     ExternalLink,
+    Waves,
 } from 'lucide-react';
 import { Dictionary } from '@/get-dictionary';
 import { useHistory } from './useHistory';
@@ -384,6 +385,20 @@ const MobileMenu: React.FC<MobileMenuProps> = ({
                             }}>
                             <Minus className="h-5 w-5 mr-2" />
                             Line
+                        </button>
+
+                        <button
+                            className={`flex items-center px-3 py-2 rounded-lg w-full ${
+                                tool === 'curve'
+                                    ? 'bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400'
+                                    : 'text-gray-600 dark:text-gray-400'
+                            }`}
+                            onClick={() => {
+                                setTool('curve');
+                                toggleMobileMenu();
+                            }}>
+                            <Waves className="h-5 w-5 mr-2" />
+                            Curve
                         </button>
 
                         <button
