@@ -3,12 +3,24 @@
 import React from 'react';
 import { CheckCircle } from 'lucide-react';
 import { Dictionary } from '@/get-dictionary';
-import { commonColors } from './colorUtils';
 import { useDrawing } from '@/contexts';
 
 interface ColorPickerProps {
     dict: Dictionary;
 }
+
+const COMMON_COLORS = [
+    '#000000',
+    '#FFFFFF',
+    '#FF0000',
+    '#FF8C00',
+    '#FFFF00',
+    '#008000',
+    '#0000FF',
+    '#4B0082',
+    '#800080',
+    '#FFC0CB',
+];
 
 const ColorPicker: React.FC<ColorPickerProps> = ({ dict }) => {
     const { color, setColor } = useDrawing();
@@ -19,7 +31,7 @@ const ColorPicker: React.FC<ColorPickerProps> = ({ dict }) => {
                 {dict.drawing?.brushColor || 'Color'}
             </label>
             <div className="grid grid-cols-5 gap-2 mb-3">
-                {commonColors.map(c => (
+                {COMMON_COLORS.map(c => (
                     <button
                         key={c}
                         className={`w-10 h-10 rounded-full ${

@@ -203,6 +203,12 @@ export type Dictionary = {
         arrow: string;
         untitledDesign: string;
         back: string;
+        drawingTools: string;
+        canvasSettings: string;
+        selectedObjectColors: string;
+        layerLocked: string;
+        strokeColor: string;
+        fillColor: string;
         editName: string;
         save: string;
         download: string;

@@ -4,7 +4,6 @@ import { useEffect, useRef } from 'react';
 import { KonvaEventObject } from 'konva/lib/Node';
 import { Node } from 'konva/lib/Node';
 import { useHistory } from './useHistory';
-import { hexToRgb, colorsMatch, colorMatchesWithTolerance } from './colorUtils';
 import {
     RectangleElement,
     CircleElement,
@@ -857,9 +856,6 @@ export const useCanvasOperations = (callbacks: CallbacksProps = {}) => {
     const handleBucketClick = (x: number, y: number) => {
         if (!stageRef.current) return;
 
-        const activeLayer = layers.find(layer => layer.id === activeLayerId);
-        if (!activeLayer || activeLayer.locked) return;
-
         const stage = stageRef.current;
         const pos = { x: Math.floor(x), y: Math.floor(y) };
 
@@ -869,6 +865,7 @@ export const useCanvasOperations = (callbacks: CallbacksProps = {}) => {
                 shape !== stage && shape.getClassName() !== 'Stage',
         );
 
+        // If no shapes or only background, change background color
         if (
             targetShapes.length === 0 ||
             (targetShapes.length === 1 &&
@@ -882,166 +879,72 @@ export const useCanvasOperations = (callbacks: CallbacksProps = {}) => {
             return;
         }
 
+        // Use Konva's intersection detection to find shapes, then map back to element data
         let targetElement: DrawingElement | null = null;
+        let targetLayerId: string | null = null;
         let targetElementIdx = -1;
-        const elements = getActiveLayerElements();
 
-        for (let i = elements.length - 1; i >= 0; i--) {
-            const element = elements[i];
-            if (isPointInElement(pos.x, pos.y, element)) {
-                targetElement = element;
-                targetElementIdx = i;
-                break;
-            }
-        }
+        // Look for shapes starting from the topmost (last in array)
+        for (let i = targetShapes.length - 1; i >= 0; i--) {
+            const shape = targetShapes[i];
+            const shapeId = shape.attrs.id;
 
-        if (targetElement && targetElementIdx !== -1) {
-            if (
-                ['rectangle', 'rect', 'circle', 'triangle'].includes(
-                    targetElement.type,
-                )
-            ) {
-                const updatedElements = [...elements];
-                updatedElements[targetElementIdx] = {
-                    ...targetElement,
-                    fill: color,
-                } as DrawingElement;
-                updateActiveLayerElements(updatedElements);
-                recordHistory();
-                return;
-            }
-        }
+            if (!shapeId) continue;
 
-        const dataURL = stage.toDataURL();
-        const img = new Image();
-        img.src = dataURL;
+            // Search across ALL layers, not just active layer
+            for (const [layerId, elements] of elementsByLayer.entries()) {
+                const elementIdx = elements.findIndex(el => el.id === shapeId);
+                if (elementIdx !== -1) {
+                    const element = elements[elementIdx];
 
-        img.onload = () => {
-            const canvas = document.createElement('canvas');
-            canvas.width = dimensions.width;
-            canvas.height = dimensions.height;
-            const ctx = canvas.getContext('2d');
-            if (!ctx) return;
+                    // Check if this layer is locked
+                    const layer = layers.find(l => l.id === layerId);
+                    if (layer?.locked) {
+                        console.log('Cannot fill element: layer is locked');
+                        continue;
+                    }
 
-            ctx.drawImage(img, 0, 0);
-
-            const imageData = ctx.getImageData(
-                0,
-                0,
-                dimensions.width,
-                dimensions.height,
-            );
-            const data = imageData.data;
-
-            const targetPos =
-                (Math.floor(y) * dimensions.width + Math.floor(x)) * 4;
-            const targetR = data[targetPos];
-            const targetG = data[targetPos + 1];
-            const targetB = data[targetPos + 2];
-            const targetA = data[targetPos + 3];
-
-            const fillColorObj = hexToRgb(color);
-            if (!fillColorObj) return;
-
-            if (
-                colorsMatch(
-                    [targetR, targetG, targetB, targetA],
-                    [fillColorObj.r, fillColorObj.g, fillColorObj.b, 255],
-                )
-            ) {
-                return;
-            }
-
-            const width = dimensions.width;
-            const height = dimensions.height;
-            const mask = new Uint8Array(width * height);
-            const queue: number[] = [];
-
-            queue.push(Math.floor(y) * width + Math.floor(x));
-
-            const tolerance = 20;
-            const dx = [0, 1, 0, -1];
-            const dy = [-1, 0, 1, 0];
-
-            while (queue.length > 0) {
-                const pos = queue.shift()!;
-                const y = Math.floor(pos / width);
-                const x = pos % width;
-
-                if (
-                    x < 0 ||
-                    x >= width ||
-                    y < 0 ||
-                    y >= height ||
-                    mask[pos] === 1
-                ) {
-                    continue;
-                }
-
-                const pixelPos = pos * 4;
-                if (
-                    !colorMatchesWithTolerance(
-                        [
-                            data[pixelPos],
-                            data[pixelPos + 1],
-                            data[pixelPos + 2],
-                            data[pixelPos + 3],
-                        ],
-                        [targetR, targetG, targetB, targetA],
-                        tolerance,
-                    )
-                ) {
-                    continue;
-                }
-
-                mask[pos] = 1;
-                data[pixelPos] = fillColorObj.r;
-                data[pixelPos + 1] = fillColorObj.g;
-                data[pixelPos + 2] = fillColorObj.b;
-                data[pixelPos + 3] = 255;
-
-                for (let i = 0; i < 4; i++) {
-                    const nx = x + dx[i];
-                    const ny = y + dy[i];
-                    const npos = ny * width + nx;
-
+                    // Check if element is fillable
                     if (
-                        nx >= 0 &&
-                        nx < width &&
-                        ny >= 0 &&
-                        ny < height &&
-                        mask[npos] === 0
+                        ['rectangle', 'rect', 'circle', 'triangle'].includes(
+                            element.type,
+                        )
                     ) {
-                        queue.push(npos);
+                        targetElement = element;
+                        targetLayerId = layerId;
+                        targetElementIdx = elementIdx;
+                        break;
                     }
                 }
             }
 
-            ctx.putImageData(imageData, 0, 0);
+            if (targetElement) break;
+        }
 
-            const fillImage = new window.Image();
-            fillImage.src = canvas.toDataURL();
+        // If found a fillable element, fill it directly
+        if (targetElement && targetLayerId && targetElementIdx !== -1) {
+            console.log(
+                `Filling ${targetElement.type} element with color ${color}`,
+            );
 
-            fillImage.onload = () => {
-                const newRect: RectElement = {
-                    x: 0,
-                    y: 0,
-                    width: dimensions.width,
-                    height: dimensions.height,
-                    fill: 'transparent',
-                    id: Date.now().toString(),
-                    type: 'rect',
-                    image: fillImage,
-                    layerId: activeLayerId,
-                    opacity: 1,
-                };
+            const updatedElementsByLayer = new Map(elementsByLayer);
+            const layerElements =
+                updatedElementsByLayer.get(targetLayerId) || [];
+            const updatedElements = [...layerElements];
 
-                const activeElements = getActiveLayerElements();
-                const newElements = [...activeElements, newRect];
-                updateActiveLayerElements(newElements);
-                recordHistory();
-            };
-        };
+            updatedElements[targetElementIdx] = {
+                ...targetElement,
+                fill: color,
+            } as DrawingElement;
+
+            updatedElementsByLayer.set(targetLayerId, updatedElements);
+            setElementsByLayer(updatedElementsByLayer);
+            recordHistory();
+            return;
+        }
+
+        // If no fillable element found, do nothing
+        console.log('Bucket tool: No fillable element found at this position');
     };
 
     const isPointInElement = (
@@ -1578,6 +1481,50 @@ export const useCanvasOperations = (callbacks: CallbacksProps = {}) => {
         }
     };
 
+    const handleElementColorChange = (
+        elementIds: string[],
+        colorType: 'stroke' | 'fill',
+        color: string,
+    ) => {
+        // Check if any selected element's layer is locked
+        const hasLockedElement = elementIds.some(id =>
+            isElementLayerLocked(id),
+        );
+
+        if (hasLockedElement) {
+            console.log('Cannot change color: one or more layers are locked');
+            return false;
+        }
+
+        const updatedElementsByLayer = new Map(elementsByLayer);
+        let hasChanges = false;
+
+        updatedElementsByLayer.forEach((elements, layerId) => {
+            const updatedElements = elements.map(element => {
+                if (elementIds.includes(element.id)) {
+                    // Check if element has the specified color property
+                    if (colorType === 'stroke' && 'stroke' in element) {
+                        hasChanges = true;
+                        return { ...element, stroke: color };
+                    } else if (colorType === 'fill' && 'fill' in element) {
+                        hasChanges = true;
+                        return { ...element, fill: color };
+                    }
+                }
+                return element;
+            });
+            updatedElementsByLayer.set(layerId, updatedElements);
+        });
+
+        if (hasChanges) {
+            setElementsByLayer(updatedElementsByLayer);
+            recordHistory(undefined, updatedElementsByLayer);
+            return true;
+        }
+
+        return false;
+    };
+
     return {
         handleMouseDown,
         handleMouseMove,
@@ -1589,5 +1536,6 @@ export const useCanvasOperations = (callbacks: CallbacksProps = {}) => {
         handleTextEdit,
         handleTextEditDone,
         handleSaveAsTemplate,
+        handleElementColorChange,
     };
 };

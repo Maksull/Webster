@@ -5,6 +5,7 @@ import ResolutionSelector from './ResolutionSelector';
 import ColorPicker from './ColorPicker';
 import StrokeWidthControl from './StrokeWidthControl';
 import ShapeFillControl from './ShapeFillControl';
+import SelectedObjectColorPicker from './SelectedObjectColorPicker';
 import { Dictionary } from '@/get-dictionary';
 import { Resolution } from '@/types/elements';
 import { useDrawing } from '@/contexts';
@@ -26,13 +27,14 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
         setTextFontFamily,
         textFontSize,
         textFontFamily,
+        selectedElementIds,
     } = useDrawing();
 
     if (!showSettings) return null;
 
     return (
         <div className="fixed right-4 top-16 md:right-6 md:top-20 bg-white dark:bg-gray-800 rounded-lg shadow-lg z-20 w-72 border border-slate-200 dark:border-gray-700 max-h-[90vh] flex flex-col">
-            {/* Sticky Header */}
+            {/* Header */}
             <div className="p-4 border-b border-slate-200 dark:border-gray-700">
                 <div className="flex justify-between items-center">
                     <h3 className="font-medium text-slate-900 dark:text-white flex items-center">
@@ -46,19 +48,31 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
                 </div>
             </div>
 
-            {/* Scrollable Settings Content */}
+            {/* Content */}
             <div className="flex-1 overflow-auto p-4 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-                <div className="space-y-4">
+                <div className="space-y-6">
+                    {/* Selected Object Colors - Show when objects are selected */}
+                    {selectedElementIds.length > 0 && (
+                        <div className="pb-4 border-b border-slate-200 dark:border-gray-700">
+                            <SelectedObjectColorPicker dict={dict} />
+                        </div>
+                    )}
+
+                    {/* Canvas Resolution */}
                     <div>
                         <ResolutionSelector
                             dict={dict}
                             onResolutionChange={onResolutionChange}
                         />
                     </div>
+
+                    {/* Text Styles */}
                     <div className="space-y-2">
                         <h4 className="text-sm font-medium text-slate-700 dark:text-gray-300">
                             {dict.drawing?.textStyles || 'Text Styles'}
                         </h4>
+
+                        {/* Font Size */}
                         <div>
                             <label className="text-xs text-slate-500 dark:text-gray-400">
                                 {dict.drawing?.fontSize || 'Font Size'}
@@ -79,6 +93,8 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
                                 <span>72px</span>
                             </div>
                         </div>
+
+                        {/* Font Family */}
                         <div>
                             <label className="text-xs text-slate-500 dark:text-gray-400">
                                 {dict.drawing?.fontFamily || 'Font Family'}
@@ -99,10 +115,30 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
                             </select>
                         </div>
                     </div>
-                    <StrokeWidthControl dict={dict} />
-                    <ColorPicker dict={dict} />
-                    <ShapeFillControl />
-                    <BackgroundTransparencyControl dict={dict} />
+
+                    {/* Drawing Tools */}
+                    <div className="space-y-4">
+                        <h4 className="text-sm font-medium text-slate-700 dark:text-gray-300">
+                            {dict.drawing?.drawingTools || 'Drawing Tools'}
+                        </h4>
+
+                        {/* Stroke Width */}
+                        <StrokeWidthControl dict={dict} />
+
+                        {/* Brush/Pen Color */}
+                        <ColorPicker dict={dict} />
+
+                        {/* Shape Fill */}
+                        <ShapeFillControl />
+                    </div>
+
+                    {/* Canvas Settings */}
+                    <div>
+                        <h4 className="text-sm font-medium text-slate-700 dark:text-gray-300 mb-3">
+                            {dict.drawing?.canvasSettings || 'Canvas Settings'}
+                        </h4>
+                        <BackgroundTransparencyControl dict={dict} />
+                    </div>
                 </div>
             </div>
         </div>
