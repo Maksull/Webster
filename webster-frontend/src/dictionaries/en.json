@@ -201,14 +201,13 @@
         "arrow": "Arrow",
         "untitledDesign": "Untitled Design",
         "back": "Back",
-
+        "curve": "Curve",
         "drawingTools": "Drawing Tools",
         "canvasSettings": "Canvas Settings",
         "fillColor": "Fill Color",
         "strokeColor": "Stroke/Border Color",
         "layerLocked": "Some elements are on locked layers",
         "selectedObjectColors": "Selected Object Colors",
-
         "editName": "Click to edit name",
         "save": "Save",
         "download": "Download",

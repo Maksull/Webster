@@ -1,5 +1,4 @@
 'use client';
-
 import React, { useState, useRef } from 'react';
 import { Stage, Layer, Rect, Circle } from 'react-konva';
 import { KonvaEventObject } from 'konva/lib/Node';
@@ -23,6 +22,7 @@ import {
     RectangleElement,
     RectElement,
     TriangleElement,
+    CurveElement,
 } from '@/types/elements';
 
 interface CanvasProps {
@@ -92,10 +92,14 @@ const Canvas: React.FC<CanvasProps> = ({
     const [isSelecting, setIsSelecting] = useState(false);
     const [imageEditingId, setImageEditingId] = useState<string | null>(null);
 
-    // Use a ref to store last click times for each element
     const lastClickTimes = useRef<Map<string, number>>(new Map());
 
-    const { handleTextEdit, handleTextEditDone } = useCanvasOperations({
+    const {
+        handleTextEdit,
+        handleTextEditDone,
+        handleStageDoubleClick,
+        isDrawingCurve,
+    } = useCanvasOperations({
         clearSelectionRect: () => {
             setSelectionRect(null);
             setIsSelecting(false);
@@ -109,6 +113,13 @@ const Canvas: React.FC<CanvasProps> = ({
 
     const handleStageClick = (e: KonvaEventObject<MouseEvent | TouchEvent>) => {
         console.log('Canvas.handleStageClick', e.target.getClassName());
+
+        // Handle curve tool double-click to finish curve
+        if (tool === 'curve' && isDrawingCurve) {
+            handleStageDoubleClick(e);
+            return;
+        }
+
         if (isImageResizing) return;
 
         const stage = e.target.getStage();
@@ -196,6 +207,12 @@ const Canvas: React.FC<CanvasProps> = ({
         console.log('Canvas.handleCanvasMouseDown', e.target.getClassName());
         if (isImageResizing) {
             console.log('Image is being resized, ignoring canvas mouse down');
+            return;
+        }
+
+        // Don't interfere with curve drawing
+        if (tool === 'curve') {
+            onMouseDown(e);
             return;
         }
 
@@ -363,11 +380,13 @@ const Canvas: React.FC<CanvasProps> = ({
             }
             case 'line':
             case 'line-shape':
-            case 'arrow': {
+            case 'arrow':
+            case 'curve': {
                 const lineElement = element as
                     | LineElement
                     | LineShapeElement
-                    | ArrowElement;
+                    | ArrowElement
+                    | CurveElement;
                 const { points } = lineElement;
                 for (let i = 0; i < points.length; i += 2) {
                     const pointX = points[i];
@@ -407,6 +426,7 @@ const Canvas: React.FC<CanvasProps> = ({
 
         const selectedId = selectedElementIds[0];
         let isImage = false;
+
         elementsByLayer.forEach(elements => {
             const element = elements.find(el => el.id === selectedId);
             if (element && element.type === 'image') {
@@ -482,6 +502,26 @@ const Canvas: React.FC<CanvasProps> = ({
         );
     };
 
+    // Render curve drawing instruction overlay
+    const renderCurveInstructions = () => {
+        if (tool !== 'curve') return null;
+
+        return (
+            <div className="absolute top-4 left-4 bg-black bg-opacity-75 text-white px-3 py-2 rounded-lg text-sm z-10">
+                {isDrawingCurve ? (
+                    <div>
+                        <div>Click to add points to your curve</div>
+                        <div className="text-xs opacity-75 mt-1">
+                            Double-click or press Enter to finish
+                        </div>
+                    </div>
+                ) : (
+                    <div>Click to start drawing a curve</div>
+                )}
+            </div>
+        );
+    };
+
     return (
         <div
             id="canvas-container"
@@ -490,6 +530,9 @@ const Canvas: React.FC<CanvasProps> = ({
                 selectedImageId={imageEditingId || getSelectedImageId()}
                 onClose={() => setImageEditingId(null)}
             />
+
+            {renderCurveInstructions()}
+
             <div className="absolute top-0 left-0 min-w-full min-h-full flex items-center justify-center p-4">
                 <div
                     style={{
@@ -511,18 +554,21 @@ const Canvas: React.FC<CanvasProps> = ({
                         onTouchMove={handleCanvasMouseMove}
                         onTouchEnd={handleCanvasMouseUp}
                         onClick={handleStageClick}
+                        onDblClick={handleStageDoubleClick}
                         ref={stageRef}
                         className={`${
                             tool === 'bucket'
                                 ? 'cursor-pointer'
                                 : tool === 'select'
                                   ? 'cursor-default'
-                                  : tool === 'pencil' ||
-                                      tool === 'brush' ||
-                                      tool === 'pen' ||
-                                      tool === 'marker'
-                                    ? 'cursor-none'
-                                    : 'cursor-crosshair'
+                                  : tool === 'curve'
+                                    ? 'cursor-crosshair'
+                                    : tool === 'pencil' ||
+                                        tool === 'brush' ||
+                                        tool === 'pen' ||
+                                        tool === 'marker'
+                                      ? 'cursor-none'
+                                      : 'cursor-crosshair'
                         }`}>
                         <Layer>
                             <Rect

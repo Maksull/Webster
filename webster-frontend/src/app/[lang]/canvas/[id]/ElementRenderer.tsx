@@ -23,6 +23,7 @@ import {
     TextElement,
     ArrowElement,
     ImageElement,
+    CurveElement,
     DrawingElement,
 } from '@/types/elements';
 
@@ -59,7 +60,6 @@ const ElementRenderer: React.FC<ElementRendererProps> = ({
         }
     }, [element.type, element.type === 'image' ? element.src : '']);
 
-    // Selection props for selected elements
     const selectionProps = isSelected
         ? {
               shadowColor: '#0066FF',
@@ -74,7 +74,6 @@ const ElementRenderer: React.FC<ElementRendererProps> = ({
           }
         : {};
 
-    // Hover props for hovered elements
     const hoverProps =
         isHovered && !isSelected
             ? {
@@ -169,6 +168,24 @@ const ElementRenderer: React.FC<ElementRendererProps> = ({
                         y: lineElement.shadowOffsetY ?? 0,
                     }}
                     {...commonProps}
+                />
+            );
+
+        case 'curve':
+            const curveElement = element as CurveElement;
+            return (
+                <Line
+                    points={curveElement.points}
+                    stroke={curveElement.stroke}
+                    strokeWidth={curveElement.strokeWidth}
+                    tension={curveElement.tension}
+                    lineCap={curveElement.lineCap}
+                    lineJoin={curveElement.lineJoin}
+                    opacity={curveElement.opacity}
+                    closed={curveElement.closed}
+                    {...commonProps}
+                    onClick={handleClick}
+                    onMouseDown={handleMouseDown}
                 />
             );
 
@@ -340,7 +357,7 @@ const ElementRenderer: React.FC<ElementRendererProps> = ({
                     id={element.id}
                     name={`element-${element.id}`}
                     rotation={textElement.rotation || 0}>
-                    {/* Invisible hit area */}
+                    {/* Hit area for better selection */}
                     <Rect
                         x={textElement.x - padding}
                         y={textElement.y - padding}

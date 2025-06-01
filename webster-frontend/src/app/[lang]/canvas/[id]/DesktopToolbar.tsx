@@ -20,6 +20,7 @@ import {
     Type,
     ArrowUpRight,
     Image as ImageIcon,
+    Waves,
 } from 'lucide-react';
 import { Dictionary } from '@/get-dictionary';
 import { useHistory } from './useHistory';
@@ -49,6 +50,7 @@ const DesktopToolbar: React.FC<DesktopToolbarProps> = ({ dict, onClear }) => {
         tool,
         setTool,
     } = useDrawing();
+
     const { handleUndo, handleRedo, canUndo, canRedo } = useHistory();
     const [modal, setModal] = useState({
         open: false,
@@ -89,6 +91,7 @@ const DesktopToolbar: React.FC<DesktopToolbarProps> = ({ dict, onClear }) => {
                 message: 'Please select a valid image file',
             };
         }
+
         if (file.size > 10 * 1024 * 1024) {
             return {
                 success: false,
@@ -105,6 +108,7 @@ const DesktopToolbar: React.FC<DesktopToolbarProps> = ({ dict, onClear }) => {
                 const maxSize = 300;
                 let width = img.width;
                 let height = img.height;
+
                 if (width > maxSize || height > maxSize) {
                     const aspectRatio = width / height;
                     if (width > height) {
@@ -215,6 +219,12 @@ const DesktopToolbar: React.FC<DesktopToolbarProps> = ({ dict, onClear }) => {
                 tool="line"
                 icon={Minus}
                 title={dict.drawing?.line || 'Line'}
+            />
+
+            <ToolButton
+                tool="curve"
+                icon={Waves}
+                title={dict.drawing?.curve || 'Curve'}
             />
 
             <ToolButton

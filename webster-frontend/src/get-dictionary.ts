@@ -204,6 +204,7 @@ export type Dictionary = {
         untitledDesign: string;
         back: string;
         drawingTools: string;
+        curve: string;
         canvasSettings: string;
         selectedObjectColors: string;
         layerLocked: string;
