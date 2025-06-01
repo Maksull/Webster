@@ -1,15 +1,16 @@
 'use client';
 
-import { useDrawing } from '@/contexts';
+import { useDictionary, useDrawing } from '@/contexts';
 import React from 'react';
 
 const ShapeFillControl: React.FC = () => {
     const { shapeFill, setShapeFill } = useDrawing();
+    const { dict } = useDictionary();
 
     return (
         <div className="mt-4">
             <label className="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-2">
-                Shape Fill
+                {dict.drawing.shapeFillLabel || 'Shape Fill'}
             </label>
             <div className="flex items-center space-x-4">
                 <button
@@ -20,7 +21,7 @@ const ShapeFillControl: React.FC = () => {
                     }`}
                     onClick={() => setShapeFill(true)}>
                     <div className="h-4 w-4 bg-current mr-2 rounded"></div>
-                    Filled
+                    {dict.drawing.filledButton || 'Filled'}
                 </button>
                 <button
                     className={`flex items-center px-3 py-2 rounded-lg ${
@@ -30,7 +31,7 @@ const ShapeFillControl: React.FC = () => {
                     }`}
                     onClick={() => setShapeFill(false)}>
                     <div className="h-4 w-4 border border-current mr-2 rounded"></div>
-                    Outline
+                    {dict.drawing.outlineButton || 'Outline'}
                 </button>
             </div>
         </div>

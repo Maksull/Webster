@@ -12,7 +12,7 @@ interface CanvasHeaderProps {
     lang: string;
     onSave: () => void;
     onDownload: (options: {
-        format: 'png' | 'jpeg' | 'pdf';
+        format: 'webp' | 'png' | 'jpeg' | 'pdf';
         quality?: number;
         pixelRatio?: number;
     }) => Promise<string | void>;
@@ -44,7 +44,7 @@ const CanvasHeader: React.FC<CanvasHeaderProps> = ({
     const nameInputRef = useRef<HTMLInputElement>(null);
     const descriptionInputRef = useRef<HTMLTextAreaElement>(null);
     const [downloadFormat, setDownloadFormat] = useState<
-        'png' | 'jpeg' | 'pdf'
+        'webp' | 'png' | 'jpeg' | 'pdf'
     >('png');
 
     useEffect(() => {
@@ -178,13 +178,13 @@ const CanvasHeader: React.FC<CanvasHeaderProps> = ({
                 <div className="flex md:hidden items-center space-x-2">
                     <button
                         onClick={onSave}
-                        className="flex items-center h-8 px-3 py-0 border border-slate-200 dark:border-gray-700 rounded-lg text-sm font-medium text-slate-700 dark:text-gray-200 bg-white dark:bg-gray-800 hover:bg-slate-50 dark:hover:bg-gray-700 transition-colors">
+                        className="cursor-pointer flex items-center h-8 px-3 py-0 border border-slate-200 dark:border-gray-700 rounded-lg text-sm font-medium text-slate-700 dark:text-gray-200 bg-white dark:bg-gray-800 hover:bg-slate-50 dark:hover:bg-gray-700 transition-colors">
                         <Save className="h-4 w-4 mr-1" />
                         {dict.drawing?.save || 'Save'}
                     </button>
 
                     <button
-                        className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-gray-700 transition-colors"
+                        className="cursor-pointer p-2 rounded-full hover:bg-slate-100 dark:hover:bg-gray-700 transition-colors"
                         onClick={toggleMobileMenu}
                         title="Menu">
                         <Menu className="h-5 w-5 text-slate-600 dark:text-gray-300" />
@@ -195,17 +195,21 @@ const CanvasHeader: React.FC<CanvasHeaderProps> = ({
                 <div className="hidden md:flex items-center space-x-3">
                     <button
                         onClick={onSave}
-                        className="flex items-center h-9 px-3 py-0 border border-slate-200 dark:border-gray-700 rounded-lg text-sm font-medium text-slate-700 dark:text-gray-200 bg-white dark:bg-gray-800 hover:bg-slate-50 dark:hover:bg-gray-700 transition-colors">
+                        className="cursor-pointer flex items-center h-9 px-3 py-0 border border-slate-200 dark:border-gray-700 rounded-lg text-sm font-medium text-slate-700 dark:text-gray-200 bg-white dark:bg-gray-800 hover:bg-slate-50 dark:hover:bg-gray-700 transition-colors">
                         <Save className="h-4 w-4 mr-1.5" />
                         {dict.drawing?.save || 'Save'}
                     </button>
 
                     <button
                         onClick={onSaveAsTemplate}
-                        className="flex items-center h-9 px-3 py-0 border border-amber-200 dark:border-amber-700 rounded-lg text-sm font-medium text-amber-700 dark:text-amber-200 bg-amber-50 dark:bg-amber-900/20 hover:bg-amber-100 dark:hover:bg-amber-900/30 transition-colors"
-                        title="Save current canvas as a reusable template">
+                        className="cursor-pointer flex items-center h-9 px-3 py-0 border border-amber-200 dark:border-amber-700 rounded-lg text-sm font-medium text-amber-700 dark:text-amber-200 bg-amber-50 dark:bg-amber-900/20 hover:bg-amber-100 dark:hover:bg-amber-900/30 transition-colors"
+                        title={
+                            dict.drawing.saveAsTemplateTooltip ||
+                            'Save current canvas as a reusable template'
+                        }>
                         <Bookmark className="h-4 w-4 mr-1.5" />
-                        Save as Template
+                        {dict.drawing.saveAsTemplateButton ||
+                            'Save as Template'}
                     </button>
 
                     {/* Desktop Social Share */}
@@ -231,21 +235,29 @@ const CanvasHeader: React.FC<CanvasHeaderProps> = ({
                                     pixelRatio: 2,
                                 })
                             }
-                            className="flex items-center h-9 px-3 py-0 bg-gradient-to-r from-indigo-500 to-violet-500 hover:from-indigo-600 hover:to-violet-600 text-white rounded-lg text-sm font-medium transition-colors shadow-sm">
+                            className="cursor-pointer flex items-center h-9 px-3 py-0 bg-gradient-to-r from-indigo-500 to-violet-500 hover:from-indigo-600 hover:to-violet-600 text-white rounded-lg text-sm font-medium transition-colors shadow-sm">
                             <Download className="h-4 w-4 mr-1.5" />
                             {dict.drawing?.download || 'Download'}
                         </button>
+                        <span className="ml-3">
+                            {dict.drawing.inExtention || 'in'}
+                        </span>
                         <select
                             value={downloadFormat}
                             onChange={e =>
                                 setDownloadFormat(
-                                    e.target.value as 'png' | 'jpeg' | 'pdf',
+                                    e.target.value as
+                                        | 'webp'
+                                        | 'png'
+                                        | 'jpeg'
+                                        | 'pdf',
                                 )
                             }
-                            className="h-9 px-2 py-0 bg-white dark:bg-gray-800 border border-slate-200 dark:border-gray-700 rounded-lg text-sm font-medium text-slate-700 dark:text-gray-200 hover:bg-slate-50 dark:hover:bg-gray-700 transition-colors appearance-none cursor-pointer ml-2">
+                            className="h-9 px-3 bg-white dark:bg-gray-800 border border-slate-300 dark:border-gray-700 rounded-lg text-sm text-slate-700 dark:text-gray-200 hover:bg-slate-50 dark:hover:bg-gray-700 transition-colors cursor-pointer shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 ml-2">
                             <option value="png">PNG</option>
                             <option value="jpeg">JPEG</option>
                             <option value="pdf">PDF</option>
+                            <option value="webp">WEBP</option>
                         </select>
                     </div>
                 </div>
@@ -260,7 +272,10 @@ const CanvasHeader: React.FC<CanvasHeaderProps> = ({
                         onChange={handleDescriptionChange}
                         onBlur={stopEditingDescription}
                         onKeyDown={handleDescriptionKeyDown}
-                        placeholder="Add a description..."
+                        placeholder={
+                            dict.drawing.descriptionPlaceholder ||
+                            'Add a description...'
+                        }
                         className="w-full text-sm text-slate-600 dark:text-gray-400 bg-transparent border border-indigo-300 dark:border-indigo-600 rounded px-2 py-1 focus:outline-none focus:border-indigo-500 resize-none"
                         rows={2}
                     />
@@ -270,15 +285,21 @@ const CanvasHeader: React.FC<CanvasHeaderProps> = ({
                         onClick={startEditingDescription}>
                         <p
                             className="text-sm text-slate-600 dark:text-gray-400 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors line-clamp-2 leading-relaxed"
-                            title="Click to edit description">
-                            {canvasDescription || 'Add a description...'}
+                            title={
+                                dict.drawing.editDescriptionTooltip ||
+                                'Click to edit description'
+                            }>
+                            {canvasDescription ||
+                                dict.drawing.descriptionPlaceholder ||
+                                'Add a description...'}
                         </p>
                         <Edit3 className="h-3 w-3 text-slate-400 dark:text-gray-500 group-hover:text-indigo-500 dark:group-hover:text-indigo-400 ml-2 opacity-0 group-hover:opacity-100 transition-all duration-200" />
                     </div>
                 )}
                 {isEditingDescription && (
                     <p className="text-xs text-slate-500 dark:text-gray-500 mt-1">
-                        Press Ctrl+Enter to save, Escape to cancel
+                        {dict.drawing.saveShortcutHint ||
+                            'Press Ctrl+Enter to save, Escape to cancel'}
                     </p>
                 )}
             </div>

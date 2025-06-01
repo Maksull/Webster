@@ -7,7 +7,7 @@
         "account": "Обліковий запис"
     },
     "home": {
-        "heroTitleFirst": "Дизайн як",
+        "heroTitleFirst": "Створюй дизайн як",
         "heroTitleSecond": "Професіонал",
         "heroDescription": "Створюйте вражаючі візуали без навичок дизайну. Наш інтуїтивно зрозумілий редактор допоможе вам створити ідеальні зображення для будь-якої платформи всього за кілька кліків.",
         "heroUsers": "дизайнерів, які вже використовують нашу платформу",
@@ -195,9 +195,30 @@
         "profileTab": "Профіль",
         "canvasesTab": "Мої полотна",
         "securityTab": "Безпека",
-        "logout": "Вийти"
+        "logout": "Вийти",
+        "enterCanvasNameMessage": "Введіть назву нового полотна на основі \"{templateName}\".",
+        "deleteTemplateConfirmationMessage": "Ви впевнені, що хочете видалити \"{templateName}\"? Цю дію не можна скасувати.",
+        "deleteCanvasConfirmationMessage": "Ви впевнені, що хочете видалити \"{canvasName}\"? Цю дію не можна скасувати."
     },
     "drawing": {
+        "preparing": "Підготовка...",
+        "share": "Поділитися",
+        "shareYourDesign": "Поділіться своїм дизайном",
+        "imageWillBeCopied": "Зображення буде скопійовано в буфер обміну",
+        "shareVia": "Поділитися через...",
+        "imageCopied": "Зображення скопійовано!",
+        "copyImage": "Копіювати зображення",
+        "linkCopied": "Посилання скопійовано!",
+        "copyLink": "Копіювати посилання",
+        "shapeFillLabel": "Заповнення фігури",
+        "filledButton": "Залите",
+        "outlineButton": "Контур",
+        "descriptionPlaceholder": "Додайте опис...",
+        "editDescriptionTooltip": "Натисніть, щоб редагувати опис",
+        "inExtention": "у",
+        "saveAsTemplateTooltip": "Зберегти поточне полотно як шаблон",
+        "saveAsTemplateButton": "Зберегти як шаблон",
+        "saveShortcutHint": "Натисніть Ctrl+Enter, щоб зберегти, Escape — щоб скасувати",
         "arrow": "Стрілка",
         "untitledDesign": "Без назви",
         "back": "Назад",
@@ -242,6 +263,26 @@
         "title": "Сторінку не знайдено",
         "description": "Сторінка, яку ви шукаєте, не існує.",
         "backHome": "Повернутися на головну"
+    },
+    "mainPage": {
+        "featureEasyImageEditingTitle": "Просте редагування зображень",
+        "featureEasyImageEditingDescription": "Перетворюйте свої фото за допомогою інтуїтивно зрозумілих інструментів — без потреби в дизайнерському досвіді. Коригуйте, обрізайте та покращуйте за кілька кліків.",
+        "featureAiEnhancementTitle": "Покращення за допомогою ШІ",
+        "featureAiEnhancementDescription": "Нехай наш ШІ автоматично аналізує й покращує зображення, розкриваючи найкраще в кожному фото.",
+        "featureSocialMediaOptimizationTitle": "Оптимізація для соцмереж",
+        "featureSocialMediaOptimizationDescription": "Автоматично змінюйте розмір і оптимізуйте дизайн для будь-якої соціальної платформи. Ідеальні розміри кожного разу.",
+        "featureCreativeTemplatesTitle": "Креативні шаблони",
+        "featureCreativeTemplatesDescription": "Отримайте доступ до сотень професійно створених шаблонів на будь-який випадок — повністю адаптованих до ваших потреб.",
+        "featureLayerManagementTitle": "Управління шарами",
+        "featureLayerManagementDescription": "Працюйте з кількома шарами для створення складних дизайнів. Додавайте текст, фігури та ефекти в організованих шарах.",
+        "featurePerformanceAnalyticsTitle": "Аналітика ефективності",
+        "featurePerformanceAnalyticsDescription": "Відстежуйте ефективність ваших дизайнів на різних платформах за допомогою детальної аналітики та метрик залучення.",
+        "templatesLabel": "Шаблони",
+        "templatesHeadline": "Почніть з шаблонів",
+        "templatesSubtext": "Оберіть шаблон із нашої колекції та налаштуйте його відповідно до свого бачення.",
+        "templatesLoading": "Завантаження шаблонів...",
+        "templatesTryAgain": "Спробувати ще раз",
+        "useTemplateButton": "Використати шаблон"
     },
     "transparentBackground": "Прозорий фон"
 }

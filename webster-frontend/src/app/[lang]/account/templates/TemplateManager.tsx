@@ -280,7 +280,10 @@ export default function TemplateManager() {
                 }
                 onConfirm={confirmDeleteTemplate}
                 title={dict.account?.deleteTemplate || 'Delete Template'}
-                message={`Are you sure you want to delete "${deleteModal.templateName}"? This action cannot be undone.`}
+                message={(
+                    dict.account.deleteTemplateConfirmationMessage ||
+                    `Are you sure you want to delete "${deleteModal.templateName}"? This action cannot be undone.`
+                ).replace('{templateName}', deleteModal.templateName)}
                 confirmText={dict.account?.delete || 'Delete'}
                 cancelText={dict.account?.cancel || 'Cancel'}
                 type="danger"
@@ -302,7 +305,10 @@ export default function TemplateManager() {
                     dict.account?.createCanvasFromTemplate ||
                     'Create Canvas from Template'
                 }
-                message={`Enter a name for the new canvas based on "${canvasModal.templateName}".`}
+                message={(
+                    dict.account.enterCanvasNameMessage ||
+                    `Enter a name for the new canvas based on "${canvasModal.templateName}".`
+                ).replace('{templateName}', canvasModal.templateName)}
                 placeholder={
                     dict.account?.enterCanvasName || 'Enter canvas name...'
                 }

@@ -83,7 +83,7 @@ export function Header() {
 
                                             <button
                                                 onClick={handleLogout}
-                                                className="ml-4 flex items-center px-3 py-2 text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-red-600 dark:hover:text-red-400 transition-colors duration-200">
+                                                className="cursor-pointer ml-4 flex items-center px-3 py-2 text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-red-600 dark:hover:text-red-400 transition-colors duration-200">
                                                 <LogOut className="h-4 w-4 mr-1" />
                                             </button>
                                         </div>
@@ -180,7 +180,7 @@ export function Header() {
                                                 handleLogout();
                                                 setIsMenuOpen(false);
                                             }}
-                                            className="w-full text-left block px-4 py-2 text-base font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800">
+                                            className="cursor-pointer w-full text-left block px-4 py-2 text-base font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800">
                                             <LogOut className="inline h-5 w-5 mr-1" />
                                             {dict.header?.logout || 'Logout'}
                                         </button>
