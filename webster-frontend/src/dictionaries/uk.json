@@ -238,5 +238,10 @@
         "fontSize": "Розмір шрифту",
         "fontFamily": "Шрифт"
     },
+    "notFound": {
+        "title": "Сторінку не знайдено",
+        "description": "Сторінка, яку ви шукаєте, не існує.",
+        "backHome": "Повернутися на головну"
+    },
     "transparentBackground": "Прозорий фон"
 }
