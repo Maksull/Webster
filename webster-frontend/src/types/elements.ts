@@ -17,6 +17,20 @@ export interface LineElement {
     shadowOffsetY?: number;
 }
 
+export interface CurveElement {
+    id: string;
+    type: 'curve';
+    points: number[];
+    stroke: string;
+    strokeWidth: number;
+    layerId: string;
+    opacity?: number;
+    tension: number; // High tension for smooth curves
+    lineCap: 'round' | 'butt' | 'square';
+    lineJoin: 'round' | 'bevel' | 'miter';
+    closed?: boolean; // Whether the curve is closed (connects back to start)
+}
+
 export interface ArrowElement {
     id: string;
     type: 'arrow';
@@ -142,7 +156,8 @@ export type DrawingElement =
     | RectangleElement
     | TriangleElement
     | ImageElement
-    | TextElement;
+    | TextElement
+    | CurveElement;
 
 export interface Resolution {
     name: string;
@@ -160,6 +175,7 @@ export type ToolType =
     | 'rectangle'
     | 'circle'
     | 'line'
+    | 'curve'
     | 'arrow'
     | 'triangle'
     | 'select'
