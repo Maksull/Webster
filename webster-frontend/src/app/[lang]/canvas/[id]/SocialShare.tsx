@@ -8,8 +8,10 @@ import {
     Linkedin,
     Copy,
     ExternalLink,
+    Link,
 } from 'lucide-react';
 import { useDrawing } from '@/contexts/DrawingContext';
+import { useDictionary } from '@/contexts';
 
 interface SocialShareProps {
     onDownload: (options: {
@@ -27,7 +29,9 @@ const SocialShare: React.FC<SocialShareProps> = ({
 }) => {
     const [isOpen, setIsOpen] = useState(false);
     const [isSharing, setIsSharing] = useState(false);
-    const [copySuccess, setCopySuccess] = useState(false);
+    const [imageCopySuccess, setImageCopySuccess] = useState(false);
+    const [linkCopySuccess, setLinkCopySuccess] = useState(false);
+    const { dict } = useDictionary();
     const dropdownRef = useRef<HTMLDivElement>(null);
     const { stageRef } = useDrawing();
 
@@ -105,8 +109,8 @@ const SocialShare: React.FC<SocialShareProps> = ({
                 canvasDescription ? ` - ${canvasDescription}` : ''
             }\n${window.location.href}`;
             await navigator.clipboard.writeText(shareText);
-            setCopySuccess(true);
-            setTimeout(() => setCopySuccess(false), 2000);
+            setLinkCopySuccess(true);
+            setTimeout(() => setLinkCopySuccess(false), 1000);
         } catch (error) {
             console.error('Failed to copy text to clipboard:', error);
         }
@@ -121,18 +125,9 @@ const SocialShare: React.FC<SocialShareProps> = ({
         const shareUrl = window.location.href;
 
         const shareUrls = {
-            facebook: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(
-                shareUrl,
-            )}&quote=${encodeURIComponent(shareText)}`,
-            twitter: `https://twitter.com/intent/tweet?text=${encodeURIComponent(
-                shareText,
-            )}&url=${encodeURIComponent(shareUrl)}`,
-            linkedin: `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(
-                shareUrl,
-            )}&summary=${encodeURIComponent(shareText)}`,
-            pinterest: `https://pinterest.com/pin/create/button/?url=${encodeURIComponent(
-                shareUrl,
-            )}&description=${encodeURIComponent(shareText)}`,
+            facebook: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`,
+            twitter: `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(shareUrl)}`,
+            linkedin: `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(shareUrl)}`,
         };
 
         if (platform === 'native' && isWebShareSupported) {
@@ -167,31 +162,35 @@ const SocialShare: React.FC<SocialShareProps> = ({
 
     const copyImageOnly = async () => {
         await generateAndCopyImage();
-        setCopySuccess(true);
-        setTimeout(() => setCopySuccess(false), 2000);
+        setImageCopySuccess(true);
+        setTimeout(() => setImageCopySuccess(false), 1000);
     };
 
     return (
         <div className="relative" ref={dropdownRef}>
             <button
                 onClick={() => setIsOpen(!isOpen)}
-                className="flex items-center h-9 px-3 py-0 border border-slate-200 dark:border-gray-700 rounded-lg text-sm font-medium text-slate-700 dark:text-gray-200 bg-white dark:bg-gray-800 hover:bg-slate-50 dark:hover:bg-gray-700 transition-colors"
+                className="flex items-center h-9 px-3 py-0 border border-slate-200 dark:border-gray-700 rounded-lg text-sm font-medium text-slate-700 dark:text-gray-200 bg-white dark:bg-gray-800 hover:bg-slate-50 dark:hover:bg-gray-700 transition-colors cursor-pointer"
                 disabled={isSharing}>
                 <Share2 className="h-4 w-4 mr-1.5" />
-                {isSharing ? 'Preparing...' : 'Share'}
+                {isSharing
+                    ? dict.drawing.preparing || 'Preparing...'
+                    : dict.drawing.share || 'Share'}
             </button>
 
             {isOpen && (
                 <div className="absolute right-0 top-full mt-2 w-64 bg-white dark:bg-gray-800 border border-slate-200 dark:border-gray-700 rounded-lg shadow-lg z-50">
                     <div className="p-3 border-b border-slate-200 dark:border-gray-700">
                         <h3 className="text-sm font-medium text-slate-900 dark:text-white">
-                            Share your design
+                            {dict.drawing.shareYourDesign ||
+                                'Share your design'}
                         </h3>
                         <p className="text-xs text-slate-500 dark:text-gray-400 mt-1">
                             {canvasName}
                         </p>
                         <p className="text-xs text-slate-400 dark:text-gray-500 mt-1">
-                            Image will be copied to clipboard
+                            {dict.drawing.imageWillBeCopied ||
+                                'Image will be copied to clipboard'}
                         </p>
                     </div>
 
@@ -200,17 +199,17 @@ const SocialShare: React.FC<SocialShareProps> = ({
                         {isWebShareSupported && (
                             <button
                                 onClick={() => handleShare('native')}
-                                className="w-full flex items-center px-3 py-2 text-sm text-slate-700 dark:text-gray-300 hover:bg-slate-100 dark:hover:bg-gray-700 rounded-md transition-colors"
+                                className="w-full flex items-center px-3 py-2 text-sm text-slate-700 dark:text-gray-300 hover:bg-slate-100 dark:hover:bg-gray-700 rounded-md transition-colors cursor-pointer"
                                 disabled={isSharing}>
-                                <ExternalLink className="h-4 w-4 mr-3 text-slate-500" />
-                                Share via...
+                                <ExternalLink className="h-4 w-4 mr-3 text-green-500" />
+                                {dict.drawing.shareVia || 'Share via...'}
                             </button>
                         )}
 
                         {/* Social Media Buttons */}
                         <button
                             onClick={() => handleShare('facebook')}
-                            className="w-full flex items-center px-3 py-2 text-sm text-slate-700 dark:text-gray-300 hover:bg-slate-100 dark:hover:bg-gray-700 rounded-md transition-colors"
+                            className="w-full flex items-center px-3 py-2 text-sm text-slate-700 dark:text-gray-300 hover:bg-slate-100 dark:hover:bg-gray-700 rounded-md transition-colors cursor-pointer"
                             disabled={isSharing}>
                             <Facebook className="h-4 w-4 mr-3 text-blue-600" />
                             Facebook
@@ -218,7 +217,7 @@ const SocialShare: React.FC<SocialShareProps> = ({
 
                         <button
                             onClick={() => handleShare('twitter')}
-                            className="w-full flex items-center px-3 py-2 text-sm text-slate-700 dark:text-gray-300 hover:bg-slate-100 dark:hover:bg-gray-700 rounded-md transition-colors"
+                            className="w-full flex items-center px-3 py-2 text-sm text-slate-700 dark:text-gray-300 hover:bg-slate-100 dark:hover:bg-gray-700 rounded-md transition-colors cursor-pointer"
                             disabled={isSharing}>
                             <Twitter className="h-4 w-4 mr-3 text-blue-400" />
                             Twitter
@@ -226,22 +225,10 @@ const SocialShare: React.FC<SocialShareProps> = ({
 
                         <button
                             onClick={() => handleShare('linkedin')}
-                            className="w-full flex items-center px-3 py-2 text-sm text-slate-700 dark:text-gray-300 hover:bg-slate-100 dark:hover:bg-gray-700 rounded-md transition-colors"
+                            className="w-full flex items-center px-3 py-2 text-sm text-slate-700 dark:text-gray-300 hover:bg-slate-100 dark:hover:bg-gray-700 rounded-md transition-colors cursor-pointer"
                             disabled={isSharing}>
                             <Linkedin className="h-4 w-4 mr-3 text-blue-700" />
                             LinkedIn
-                        </button>
-
-                        <button
-                            onClick={() => handleShare('pinterest')}
-                            className="w-full flex items-center px-3 py-2 text-sm text-slate-700 dark:text-gray-300 hover:bg-slate-100 dark:hover:bg-gray-700 rounded-md transition-colors"
-                            disabled={isSharing}>
-                            <div className="h-4 w-4 mr-3 bg-red-600 rounded-full flex items-center justify-center">
-                                <span className="text-white text-xs font-bold">
-                                    P
-                                </span>
-                            </div>
-                            Pinterest
                         </button>
 
                         <div className="border-t border-slate-200 dark:border-gray-700 my-2"></div>
@@ -249,17 +236,21 @@ const SocialShare: React.FC<SocialShareProps> = ({
                         {/* Copy Options */}
                         <button
                             onClick={copyImageOnly}
-                            className="w-full flex items-center px-3 py-2 text-sm text-slate-700 dark:text-gray-300 hover:bg-slate-100 dark:hover:bg-gray-700 rounded-md transition-colors"
+                            className="w-full flex items-center px-3 py-2 text-sm text-slate-700 dark:text-gray-300 hover:bg-slate-100 dark:hover:bg-gray-700 rounded-md transition-colors cursor-pointer"
                             disabled={isSharing}>
                             <Copy className="h-4 w-4 mr-3 text-green-500" />
-                            {copySuccess ? 'Image Copied!' : 'Copy Image'}
+                            {imageCopySuccess
+                                ? dict.drawing.imageCopied || 'Image Copied!'
+                                : dict.drawing.copyImage || 'Copy Image'}
                         </button>
 
                         <button
                             onClick={copyToClipboard}
-                            className="w-full flex items-center px-3 py-2 text-sm text-slate-700 dark:text-gray-300 hover:bg-slate-100 dark:hover:bg-gray-700 rounded-md transition-colors">
-                            <Copy className="h-4 w-4 mr-3 text-slate-500" />
-                            {copySuccess ? 'Link Copied!' : 'Copy Link'}
+                            className="w-full flex items-center px-3 py-2 text-sm text-slate-700 dark:text-gray-300 hover:bg-slate-100 dark:hover:bg-gray-700 rounded-md transition-colors cursor-pointer">
+                            <Link className="h-4 w-4 mr-3 text-green-500" />
+                            {linkCopySuccess
+                                ? dict.drawing.linkCopied || 'Link Copied!'
+                                : dict.drawing.copyLink || 'Copy Link'}
                         </button>
                     </div>
                 </div>

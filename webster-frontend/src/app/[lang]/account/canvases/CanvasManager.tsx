@@ -330,7 +330,10 @@ export default function CanvasManager() {
                 }
                 onConfirm={confirmDeleteCanvas}
                 title={dict.account?.deleteCanvas || 'Delete Canvas'}
-                message={`Are you sure you want to delete "${deleteModal.canvasName}"? This action cannot be undone.`}
+                message={(
+                    dict.account.deleteCanvasConfirmationMessage ||
+                    `Are you sure you want to delete "${deleteModal.canvasName}"? This action cannot be undone.`
+                ).replace('{canvasName}', deleteModal.canvasName)}
                 confirmText={dict.account?.delete || 'Delete'}
                 cancelText={dict.account?.cancel || 'Cancel'}
                 type="danger"

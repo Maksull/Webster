@@ -423,7 +423,7 @@ export const RegisterForm = () => {
                                 />
                                 <button
                                     type="button"
-                                    className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                                    className="cursor-pointer absolute inset-y-0 right-0 pr-3 flex items-center"
                                     onClick={() =>
                                         setShowPassword(!showPassword)
                                     }
@@ -589,7 +589,7 @@ export const RegisterForm = () => {
                                 />
                                 <button
                                     type="button"
-                                    className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                                    className="cursor-pointer absolute inset-y-0 right-0 pr-3 flex items-center"
                                     onClick={() =>
                                         setShowConfirmPassword(
                                             !showConfirmPassword,

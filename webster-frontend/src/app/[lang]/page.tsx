@@ -87,38 +87,55 @@ export default function Home() {
 
     const features = [
         {
-            title: 'Easy Image Editing',
+            title:
+                dict.mainPage.featureEasyImageEditingTitle ||
+                'Easy Image Editing',
             description:
+                dict.mainPage.featureEasyImageEditingDescription ||
                 'Transform your photos with our intuitive tools - no design experience needed. Adjust, crop, and enhance with just a few clicks.',
             icon: <ImageIcon className="w-6 h-6 text-white" />,
         },
         {
-            title: 'AI-Powered Enhancement',
+            title:
+                dict.mainPage.featureAiEnhancementTitle ||
+                'AI-Powered Enhancement',
             description:
+                dict.mainPage.featureAiEnhancementDescription ||
                 'Let our AI technology analyze and enhance your images automatically, bringing out the best in every photo.',
             icon: <Wand2 className="w-6 h-6 text-white" />,
         },
         {
-            title: 'Social Media Optimization',
+            title:
+                dict.mainPage.featureSocialMediaOptimizationTitle ||
+                'Social Media Optimization',
             description:
+                dict.mainPage.featureSocialMediaOptimizationDescription ||
                 'Automatically resize and optimize your designs for any social platform. Get perfect dimensions every time.',
             icon: <Share2 className="w-6 h-6 text-white" />,
         },
         {
-            title: 'Creative Templates',
+            title:
+                dict.mainPage.featureCreativeTemplatesTitle ||
+                'Creative Templates',
             description:
+                dict.mainPage.featureCreativeTemplatesDescription ||
                 'Access hundreds of professionally designed templates for any occasion or purpose, fully customizable to your needs.',
             icon: <Sparkles className="w-6 h-6 text-white" />,
         },
         {
-            title: 'Layer Management',
+            title:
+                dict.mainPage.featureLayerManagementTitle || 'Layer Management',
             description:
+                dict.mainPage.featureLayerManagementDescription ||
                 'Work with multiple layers to create complex designs with ease. Add text, shapes, and effects in organized layers.',
             icon: <Layers className="w-6 h-6 text-white" />,
         },
         {
-            title: 'Performance Analytics',
+            title:
+                dict.mainPage.featurePerformanceAnalyticsTitle ||
+                'Performance Analytics',
             description:
+                dict.mainPage.featurePerformanceAnalyticsDescription ||
                 'Track how your designs perform across platforms with detailed analytics and engagement metrics.',
             icon: <BarChart2 className="w-6 h-6 text-white" />,
         },
@@ -279,14 +296,15 @@ export default function Home() {
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="text-center">
                         <p className="text-base text-purple-600 dark:text-purple-400 font-semibold tracking-wide uppercase">
-                            Templates
+                            {dict.mainPage.templatesLabel || 'Templates'}
                         </p>
                         <h2 className="mt-2 text-3xl leading-8 font-extrabold tracking-tight text-gray-900 dark:text-white sm:text-4xl">
-                            Start with the Templates
+                            {dict.mainPage.templatesHeadline ||
+                                'Start with the Templates'}
                         </h2>
                         <p className="mt-4 max-w-2xl text-xl text-gray-500 dark:text-gray-400 mx-auto">
-                            Choose from our collection of designed templates and
-                            customize them to match your vision.
+                            {dict.mainPage.templatesSubtext ||
+                                'Choose from our collection of designed templates and customize them to match your vision.'}
                         </p>
                     </div>
                     <div className="mt-12">
@@ -294,7 +312,8 @@ export default function Home() {
                             <div className="flex justify-center items-center py-12">
                                 <Loader2 className="h-8 w-8 animate-spin text-purple-600" />
                                 <span className="ml-2 text-gray-600 dark:text-gray-400">
-                                    Loading templates...
+                                    {dict.mainPage.templatesLoading ||
+                                        'Loading templates...'}
                                 </span>
                             </div>
                         ) : templatesError ? (
@@ -305,7 +324,8 @@ export default function Home() {
                                 <button
                                     onClick={fetchDefaultTemplates}
                                     className="mt-4 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors">
-                                    Try Again
+                                    {dict.mainPage.templatesTryAgain ||
+                                        'Try Again'}
                                 </button>
                             </div>
                         ) : (
@@ -354,8 +374,10 @@ export default function Home() {
                                                             template,
                                                         )
                                                     }
-                                                    className="px-4 py-2 bg-white text-purple-600 rounded-lg font-medium hover:bg-purple-50 transition-colors">
-                                                    Use Template
+                                                    className="cursor-pointer px-4 py-2 bg-white text-purple-600 rounded-lg font-medium hover:bg-purple-50 transition-colors">
+                                                    {dict.mainPage
+                                                        .useTemplateButton ||
+                                                        'Use Template'}
                                                 </button>
                                             </div>
                                         </div>
