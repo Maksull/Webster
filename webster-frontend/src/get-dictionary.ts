@@ -287,6 +287,25 @@ export type Dictionary = {
         templatesTryAgain: string;
         useTemplateButton: string;
     };
+    imageToolBar: {
+        title: string;
+        resolution: string;
+        fitToCanvas: string;
+        stretch: string;
+        fit: string;
+        transform: string;
+        flipHorizontal: string;
+        flipVertical: string;
+        reset: string;
+        constraints: string;
+        toggleAspectRatio: string;
+        locked: string;
+        unlocked: string;
+        done: string;
+        selectedImage: string;
+        aspectRatio: string;
+        ratio: string;
+    };
     transparentBackground: string;
 };
 

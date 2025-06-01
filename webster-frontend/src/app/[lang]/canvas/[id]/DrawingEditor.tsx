@@ -219,7 +219,7 @@ const DrawingEditorContent: React.FC = () => {
 
     // Create a wrapper for handleDownload that returns a Promise<string | void>
     const handleDownloadWrapper = async (options: {
-        format: 'png' | 'jpeg' | 'pdf';
+        format: 'webp' | 'png' | 'jpeg' | 'pdf';
         quality?: number;
         pixelRatio?: number;
     }): Promise<string | void> => {

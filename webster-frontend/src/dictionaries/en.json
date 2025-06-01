@@ -285,5 +285,24 @@
         "templatesTryAgain": "Try Again",
         "useTemplateButton": "Use Template"
     },
+    "imageToolBar": {
+        "title": "Image Tools",
+        "resolution": "Resolution",
+        "fitToCanvas": "Fit to Canvas",
+        "stretch": "Stretch",
+        "fit": "Fit",
+        "transform": "Transform",
+        "flipHorizontal": "Flip horizontal",
+        "flipVertical": "Flip vertical",
+        "reset": "Reset all transforms",
+        "constraints": "Constraints",
+        "toggleAspectRatio": "Toggle aspect ratio lock when resizing",
+        "locked": "Locked",
+        "unlocked": "Unlocked",
+        "done": "Done",
+        "selectedImage": "Selected: Image",
+        "aspectRatio": "Aspect Ratio",
+        "ratio": "Ratio"
+    },
     "transparentBackground": "Transparent Background"
 }

@@ -285,5 +285,24 @@
         "templatesTryAgain": "Спробувати ще раз",
         "useTemplateButton": "Використати шаблон"
     },
+    "imageToolBar": {
+        "title": "Інструменти зображення",
+        "resolution": "Розміри",
+        "fitToCanvas": "Підігнати до полотна",
+        "stretch": "Розтягнути",
+        "fit": "Підігнати",
+        "transform": "Трансформація",
+        "flipHorizontal": "Горизонтальне віддзеркалення",
+        "flipVertical": "Вертикальне віддзеркалення",
+        "reset": "Скинути всі трансформації",
+        "constraints": "Обмеження",
+        "toggleAspectRatio": "Перемкнути блокування пропорцій при зміні розміру",
+        "locked": "Заблоковано",
+        "unlocked": "Розблоковано",
+        "done": "Готово",
+        "selectedImage": "Вибрано: Зображення",
+        "aspectRatio": "Співвідношення сторін",
+        "ratio": "Співвідношення"
+    },
     "transparentBackground": "Прозорий фон"
 }

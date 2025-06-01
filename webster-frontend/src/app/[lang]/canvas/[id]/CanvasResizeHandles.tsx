@@ -53,7 +53,12 @@ const CanvasResizeHandles: React.FC<CanvasResizeHandlesProps> = ({
             {/* Top-left corner handle */}
             <div
                 className="absolute top-0 left-0 w-6 h-6 cursor-nw-resize hover:bg-indigo-500/10"
-                onMouseDown={e => onResizeStart('top-left', e)}
+                onMouseDown={e => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    console.log('mousedown on top-left');
+                    onResizeStart('top-left', e);
+                }}
                 onTouchStart={e => onResizeStart('top-left', e)}>
                 <div className="absolute top-0 left-0 w-4 h-4 bg-indigo-500 rounded-br opacity-70"></div>
             </div>

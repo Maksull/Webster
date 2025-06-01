@@ -507,7 +507,7 @@ const Canvas: React.FC<CanvasProps> = ({
         if (tool !== 'curve') return null;
 
         return (
-            <div className="absolute top-4 left-4 bg-black bg-opacity-75 text-white px-3 py-2 rounded-lg text-sm z-10">
+            <div className="absolute top-4 left-4 bg-black bg-opacity-75 text-white px-3 py-2 rounded-lg text-sm z-1">
                 {isDrawingCurve ? (
                     <div>
                         <div>Click to add points to your curve</div>

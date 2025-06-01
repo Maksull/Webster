@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { KonvaEventObject } from 'konva/lib/Node';
 import { Node } from 'konva/lib/Node';
 import { useHistory } from './useHistory';
@@ -22,7 +22,7 @@ import { useAuth, useDrawing } from '@/contexts';
 import { jsPDF } from 'jspdf';
 
 interface DownloadOptions {
-    format: 'png' | 'jpeg' | 'pdf';
+    format: 'webp' | 'png' | 'jpeg' | 'pdf';
     quality?: number;
     pixelRatio?: number;
 }
@@ -1211,124 +1211,50 @@ export const useCanvasOperations = (callbacks: CallbacksProps = {}) => {
         document.addEventListener('touchend', handleResizeEnd);
     };
 
-    const handleResizeMove = (e: MouseEvent | TouchEvent) => {
-        if (!isResizing) return;
+    const handleResizeMove = useCallback(
+        (e: MouseEvent | TouchEvent) => {
+            if (!isResizing) return;
 
-        let clientX = 0;
-        let clientY = 0;
-        if ('touches' in e) {
-            clientX = e.touches[0].clientX;
-            clientY = e.touches[0].clientY;
-        } else {
-            clientX = e.clientX;
-            clientY = e.clientY;
-        }
+            let clientX = 0;
+            let clientY = 0;
+            if ('touches' in e) {
+                clientX = e.touches[0].clientX;
+                clientY = e.touches[0].clientY;
+            } else {
+                clientX = e.clientX;
+                clientY = e.clientY;
+            }
 
-        const deltaX = (clientX - resizeStartPos.x) / scale;
-        const deltaY = (clientY - resizeStartPos.y) / scale;
+            const deltaX = (clientX - resizeStartPos.x) / scale;
+            const deltaY = (clientY - resizeStartPos.y) / scale;
 
-        let newWidth = originalDimensions.width;
-        let newHeight = originalDimensions.height;
+            let newWidth = originalDimensions.width;
+            let newHeight = originalDimensions.height;
 
-        if (resizeDirection.includes('right')) {
-            newWidth = Math.max(100, originalDimensions.width + deltaX);
-        } else if (resizeDirection.includes('left')) {
-            newWidth = Math.max(100, originalDimensions.width - deltaX);
-        }
+            if (resizeDirection.includes('right')) {
+                newWidth = Math.max(100, originalDimensions.width + deltaX);
+            } else if (resizeDirection.includes('left')) {
+                newWidth = Math.max(100, originalDimensions.width - deltaX);
+            }
 
-        if (resizeDirection.includes('bottom')) {
-            newHeight = Math.max(100, originalDimensions.height + deltaY);
-        } else if (resizeDirection.includes('top')) {
-            newHeight = Math.max(100, originalDimensions.height - deltaY);
-        }
+            if (resizeDirection.includes('bottom')) {
+                newHeight = Math.max(100, originalDimensions.height + deltaY);
+            } else if (resizeDirection.includes('top')) {
+                newHeight = Math.max(100, originalDimensions.height - deltaY);
+            }
 
-        setDimensions({
-            width: Math.round(newWidth),
-            height: Math.round(newHeight),
-        });
-    };
+            setDimensions({
+                width: Math.round(newWidth),
+                height: Math.round(newHeight),
+            });
+        },
+        [isResizing, dimensions, handleMouseDown],
+    );
 
-    const handleResizeEnd = () => {
+    const handleResizeEnd = useCallback(() => {
         if (!isResizing) return;
 
         setIsResizing(false);
-
-        const scaleX = dimensions.width / originalDimensions.width;
-        const scaleY = dimensions.height / originalDimensions.height;
-
-        const scaledElementsByLayer = new Map<string, DrawingElement[]>();
-
-        for (const [layerId, layerElements] of elementsByLayer.entries()) {
-            const scaledElements = layerElements.map(element => {
-                if (element.type === 'line') {
-                    const lineElement = element as LineElement;
-                    const newPoints = [...lineElement.points];
-                    for (let i = 0; i < newPoints.length; i += 2) {
-                        newPoints[i] = newPoints[i] * scaleX;
-                        newPoints[i + 1] = newPoints[i + 1] * scaleY;
-                    }
-                    return { ...lineElement, points: newPoints };
-                } else if (element.type === 'curve') {
-                    const curveElement = element as CurveElement;
-                    const newPoints = [...curveElement.points];
-                    for (let i = 0; i < newPoints.length; i += 2) {
-                        newPoints[i] = newPoints[i] * scaleX;
-                        newPoints[i + 1] = newPoints[i + 1] * scaleY;
-                    }
-                    return { ...curveElement, points: newPoints };
-                } else if (
-                    element.type === 'rect' ||
-                    element.type === 'rectangle'
-                ) {
-                    const rectElement = element as
-                        | RectangleElement
-                        | RectElement;
-                    return {
-                        ...rectElement,
-                        x: rectElement.x * scaleX,
-                        y: rectElement.y * scaleY,
-                        width: rectElement.width * scaleX,
-                        height: rectElement.height * scaleY,
-                    };
-                } else if (element.type === 'circle') {
-                    const circleElement = element as CircleElement;
-                    return {
-                        ...circleElement,
-                        x: circleElement.x * scaleX,
-                        y: circleElement.y * scaleY,
-                        radius: circleElement.radius * Math.min(scaleX, scaleY),
-                    };
-                } else if (element.type === 'line-shape') {
-                    const lineElement = element as LineShapeElement;
-                    const newPoints = [...lineElement.points];
-                    for (let i = 0; i < newPoints.length; i += 2) {
-                        newPoints[i] = newPoints[i] * scaleX;
-                        newPoints[i + 1] = newPoints[i + 1] * scaleY;
-                    }
-                    return { ...lineElement, points: newPoints };
-                } else if (element.type === 'triangle') {
-                    const triangleElement = element as TriangleElement;
-                    return {
-                        ...triangleElement,
-                        x: triangleElement.x * scaleX,
-                        y: triangleElement.y * scaleY,
-                        radius:
-                            triangleElement.radius * Math.min(scaleX, scaleY),
-                    };
-                } else if (element.type === 'image') {
-                    const imageElement = element as ImageElement;
-                    return {
-                        ...imageElement,
-                        x: imageElement.x * scaleX,
-                        y: imageElement.y * scaleY,
-                        width: imageElement.width * scaleX,
-                        height: imageElement.height * scaleY,
-                    };
-                }
-                return element;
-            });
-            scaledElementsByLayer.set(layerId, scaledElements);
-        }
 
         const customResolution: Resolution = {
             name: `Custom (${Math.round(dimensions.width)}×${Math.round(dimensions.height)})`,
@@ -1336,7 +1262,6 @@ export const useCanvasOperations = (callbacks: CallbacksProps = {}) => {
             height: Math.round(dimensions.height),
         };
 
-        setElementsByLayer(scaledElementsByLayer);
         setSelectedResolution(customResolution);
         recordHistory();
 
@@ -1344,7 +1269,19 @@ export const useCanvasOperations = (callbacks: CallbacksProps = {}) => {
         document.removeEventListener('mouseup', handleResizeEnd);
         document.removeEventListener('touchmove', handleResizeMove);
         document.removeEventListener('touchend', handleResizeEnd);
-    };
+    }, [isResizing, dimensions, handleResizeMove]);
+
+    useEffect(() => {
+        if (isResizing) {
+            document.addEventListener('mousemove', handleResizeMove);
+            document.addEventListener('mouseup', handleResizeEnd);
+        }
+
+        return () => {
+            document.removeEventListener('mousemove', handleResizeMove);
+            document.removeEventListener('mouseup', handleResizeEnd);
+        };
+    }, [isResizing, handleResizeMove, handleResizeEnd]);
 
     const handleResolutionChange = (resolution: Resolution) => {
         setSelectedResolution(resolution);

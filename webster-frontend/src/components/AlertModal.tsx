@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { CheckCircle, XCircle } from 'lucide-react';
 
 interface AlertModalProps {
@@ -16,6 +16,16 @@ const AlertModal: React.FC<AlertModalProps> = ({
     message,
     onClose,
 }) => {
+    useEffect(() => {
+        if (!open) return;
+
+        const timer = setTimeout(() => {
+            onClose();
+        }, 5000);
+
+        return () => clearTimeout(timer);
+    }, [open, onClose]);
+
     if (!open) return null;
 
     return (
@@ -36,7 +46,7 @@ const AlertModal: React.FC<AlertModalProps> = ({
                 <span className="flex-1">{message}</span>
                 <button
                     onClick={onClose}
-                    className="ml-4 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
+                    className="cursor-pointer ml-4 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
                     aria-label="Dismiss message">
                     <XCircle className="h-4 w-4" />
                 </button>
