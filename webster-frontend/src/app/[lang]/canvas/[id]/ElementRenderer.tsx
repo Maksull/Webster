@@ -42,7 +42,7 @@ const ElementRenderer: React.FC<ElementRendererProps> = ({
     onSelect,
     onImageResizeEnd,
 }) => {
-    const { hoveredElementId } = useDrawing();
+    const { hoveredElementId, tool } = useDrawing();
     const [imageObj, setImageObj] = useState<HTMLImageElement | null>(null);
     const isHovered = hoveredElementId === element.id;
 
@@ -120,19 +120,34 @@ const ElementRenderer: React.FC<ElementRendererProps> = ({
         }
     }, [element.type, isSelected, onImageResizeEnd]);
 
+    // Modified click handler to check tool for images
     const handleClick = (e: KonvaEventObject<MouseEvent>) => {
         e.cancelBubble = true;
+
+        // For images, only allow selection when using select tool
+        if (element.type === 'image' && tool !== 'select') {
+            return;
+        }
+
         onSelect(element.id);
     };
 
+    // Modified mouse down handler to check tool for images
     const handleMouseDown = () => {
+        // For images, only allow selection when using select tool
+        if (element.type === 'image' && tool !== 'select') {
+            return;
+        }
+
         onSelect(element.id);
     };
 
     const handleDoubleClick = (e: KonvaEventObject<MouseEvent>) => {
         e.cancelBubble = true;
         console.log('Element double clicked');
-        if (onTextEdit) {
+
+        // For text elements, allow editing with select tool
+        if (element.type === 'text' && tool === 'select' && onTextEdit) {
             onTextEdit(element.id);
         }
     };
@@ -140,7 +155,9 @@ const ElementRenderer: React.FC<ElementRendererProps> = ({
     const handleDoubleTab = (e: KonvaEventObject<TouchEvent>) => {
         e.cancelBubble = true;
         console.log('Element double tapped');
-        if (onTextEdit) {
+
+        // For text elements, allow editing with select tool
+        if (element.type === 'text' && tool === 'select' && onTextEdit) {
             onTextEdit(element.id);
         }
     };
@@ -289,6 +306,7 @@ const ElementRenderer: React.FC<ElementRendererProps> = ({
 
         case 'image':
             const imageElement = element as ImageElement;
+
             if (!imageObj) {
                 return (
                     <Rect
@@ -357,7 +375,7 @@ const ElementRenderer: React.FC<ElementRendererProps> = ({
                     id={element.id}
                     name={`element-${element.id}`}
                     rotation={textElement.rotation || 0}>
-                    {/* Hit area for better selection */}
+                    {/* Hit area for text selection */}
                     <Rect
                         x={textElement.x - padding}
                         y={textElement.y - padding}
