@@ -10,6 +10,7 @@ export interface ImageTransformUtils {
 export const createImageTransformUtils = (
     elementsByLayer: Map<string, DrawingElement[]>,
     setElementsByLayer: (map: Map<string, DrawingElement[]>) => void,
+    recordHistory?: () => void, // Add recordHistory as optional parameter
 ): ImageTransformUtils => {
     const updateImageElement = (
         elementId: string,
@@ -26,6 +27,11 @@ export const createImageTransformUtils = (
             updatedElementsByLayer.set(layerId, updatedElements);
         });
         setElementsByLayer(updatedElementsByLayer);
+
+        // Record history after updating the element
+        if (recordHistory) {
+            recordHistory();
+        }
     };
 
     const getImageElement = (imageId: string): ImageElement | null => {

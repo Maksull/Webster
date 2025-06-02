@@ -6,7 +6,6 @@ import React, {
     useState,
     useRef,
     useEffect,
-    useCallback,
 } from 'react';
 import { DrawingLayer, HistoryRecord } from '../types/layers';
 import {
@@ -14,12 +13,10 @@ import {
     ToolType,
     DrawingElement,
     POPULAR_RESOLUTIONS,
-    ImageElement,
 } from '@/types/elements';
 import { Canvas } from '@/types/canvas';
 import { Stage } from 'konva/lib/Stage';
 import { Layer } from 'konva/lib/Layer';
-import { KonvaEventObject } from 'konva/lib/Node';
 
 interface DrawingContextProps {
     dimensions: { width: number; height: number };
@@ -79,7 +76,12 @@ interface DrawingContextProps {
     setOriginalDimensions: React.Dispatch<
         React.SetStateAction<{ width: number; height: number }>
     >;
-    resizeInitialRect: { x: number; y: number; width: number; height: number };
+    resizeInitialRect: {
+        x: number;
+        y: number;
+        width: number;
+        height: number;
+    };
     setResizeInitialRect: React.Dispatch<
         React.SetStateAction<{
             x: number;
@@ -111,18 +113,6 @@ interface DrawingContextProps {
     setMaintainAspectRatio: React.Dispatch<React.SetStateAction<boolean>>;
     isImageResizing: boolean;
     setIsImageResizing: React.Dispatch<React.SetStateAction<boolean>>;
-    handleImageResizeStart: (
-        corner: string,
-        e: KonvaEventObject<MouseEvent | TouchEvent>,
-    ) => boolean | void;
-    updateImageElement: (
-        elementId: string,
-        updates: Partial<ImageElement>,
-    ) => void;
-    getImageElement: (imageId: string) => ImageElement | null;
-    fitImageToCanvas: (imageId: string) => void;
-    fitImageToCanvasWithAspectRatio: (imageId: string) => void;
-    toggleAspectRatio: () => void;
     opacity: number;
     hoveredElementId: string | null;
     setHoveredElementId: (id: string | null) => void;
@@ -138,13 +128,6 @@ export const DrawingContext = createContext<DrawingContextProps | undefined>(
 interface DrawingProviderProps {
     children: React.ReactNode;
     initialCanvas?: Canvas | null;
-}
-
-interface ResizeState {
-    corner: string;
-    startPos: { x: number; y: number };
-    originalElement: ImageElement | null;
-    stage: Stage | null;
 }
 
 export const DrawingProvider: React.FC<DrawingProviderProps> = ({
@@ -256,6 +239,7 @@ export const DrawingProvider: React.FC<DrawingProviderProps> = ({
 
     const [selectedElementIds, setSelectedElementIds] = useState<string[]>([]);
     const [isMoving, setIsMoving] = useState(false);
+
     const [canvasName, setCanvasName] = useState<string>(
         initialCanvas?.name || '',
     );
@@ -264,339 +248,12 @@ export const DrawingProvider: React.FC<DrawingProviderProps> = ({
     );
 
     const [isDrawingCurve, setIsDrawingCurve] = useState(false);
-
     const [textEditingId, setTextEditingId] = useState<string | null>(null);
     const [textValue, setTextValue] = useState('');
     const [textFontSize, setTextFontSize] = useState(20);
     const [textFontFamily, setTextFontFamily] = useState('Arial');
     const [maintainAspectRatio, setMaintainAspectRatio] = useState(true);
     const [isImageResizing, setIsImageResizing] = useState(false);
-
-    const resizeStateRef = useRef<ResizeState>({
-        corner: '',
-        startPos: { x: 0, y: 0 },
-        originalElement: null,
-        stage: null,
-    });
-
-    const updateImageElement = useCallback(
-        (elementId: string, updates: Partial<ImageElement>) => {
-            const updatedElementsByLayer = new Map(elementsByLayer);
-            updatedElementsByLayer.forEach((elements, layerId) => {
-                const updatedElements = elements.map(element => {
-                    if (element.id === elementId && element.type === 'image') {
-                        return { ...element, ...updates };
-                    }
-                    return element;
-                });
-                updatedElementsByLayer.set(layerId, updatedElements);
-            });
-            setElementsByLayer(updatedElementsByLayer);
-        },
-        [elementsByLayer, setElementsByLayer],
-    );
-
-    const getImageElement = useCallback(
-        (imageId: string): ImageElement | null => {
-            let imageElement: ImageElement | null = null;
-            elementsByLayer.forEach(elements => {
-                const found = elements.find(
-                    el => el.id === imageId && el.type === 'image',
-                ) as ImageElement;
-                if (found) {
-                    imageElement = found;
-                }
-            });
-            return imageElement;
-        },
-        [elementsByLayer],
-    );
-
-    const handleMouseMove = useCallback(
-        (e: MouseEvent | TouchEvent) => {
-            if (
-                !resizeStateRef.current.originalElement ||
-                !resizeStateRef.current.stage
-            )
-                return;
-
-            e.preventDefault();
-            e.stopPropagation();
-
-            let clientX = 0;
-            let clientY = 0;
-
-            if ('touches' in e) {
-                clientX = e.touches[0].clientX;
-                clientY = e.touches[0].clientY;
-            } else {
-                clientX = e.clientX;
-                clientY = e.clientY;
-            }
-
-            const stage = resizeStateRef.current.stage;
-            const stageContainer = stage.container();
-            const rect = stageContainer.getBoundingClientRect();
-            const stageX = (clientX - rect.left) / stage.scaleX();
-            const stageY = (clientY - rect.top) / stage.scaleY();
-
-            const deltaX = stageX - resizeStateRef.current.startPos.x;
-            const deltaY = stageY - resizeStateRef.current.startPos.y;
-
-            const original = resizeStateRef.current.originalElement;
-            let newX = original.x;
-            let newY = original.y;
-            let newWidth = original.width;
-            let newHeight = original.height;
-
-            const aspectRatio = original.width / original.height;
-            const corner = resizeStateRef.current.corner;
-
-            switch (corner) {
-                case 'top-left':
-                    newX = original.x + deltaX;
-                    newY = original.y + deltaY;
-                    newWidth = original.width - deltaX;
-                    newHeight = original.height - deltaY;
-                    if (maintainAspectRatio) {
-                        const scale = Math.min(
-                            newWidth / original.width,
-                            newHeight / original.height,
-                        );
-                        newWidth = original.width * scale;
-                        newHeight = original.height * scale;
-                        newX = original.x + original.width - newWidth;
-                        newY = original.y + original.height - newHeight;
-                    }
-                    break;
-                case 'top-right':
-                    newY = original.y + deltaY;
-                    newWidth = original.width + deltaX;
-                    newHeight = original.height - deltaY;
-                    if (maintainAspectRatio) {
-                        if (Math.abs(deltaX) > Math.abs(deltaY)) {
-                            newHeight = newWidth / aspectRatio;
-                            newY = original.y + original.height - newHeight;
-                        } else {
-                            newWidth = newHeight * aspectRatio;
-                        }
-                    }
-                    break;
-                case 'bottom-left':
-                    newX = original.x + deltaX;
-                    newWidth = original.width - deltaX;
-                    newHeight = original.height + deltaY;
-                    if (maintainAspectRatio) {
-                        if (Math.abs(deltaX) > Math.abs(deltaY)) {
-                            newHeight = newWidth / aspectRatio;
-                        } else {
-                            newWidth = newHeight * aspectRatio;
-                            newX = original.x + original.width - newWidth;
-                        }
-                    }
-                    break;
-                case 'bottom-right':
-                    newWidth = original.width + deltaX;
-                    newHeight = original.height + deltaY;
-                    if (maintainAspectRatio) {
-                        if (Math.abs(deltaX) > Math.abs(deltaY)) {
-                            newHeight = newWidth / aspectRatio;
-                        } else {
-                            newWidth = newHeight * aspectRatio;
-                        }
-                    }
-                    break;
-                case 'top-center':
-                    newY = original.y + deltaY;
-                    newHeight = original.height - deltaY;
-                    if (maintainAspectRatio) {
-                        newWidth = newHeight * aspectRatio;
-                        newX = original.x - (newWidth - original.width) / 2;
-                    }
-                    break;
-                case 'bottom-center':
-                    newHeight = original.height + deltaY;
-                    if (maintainAspectRatio) {
-                        newWidth = newHeight * aspectRatio;
-                        newX = original.x - (newWidth - original.width) / 2;
-                    }
-                    break;
-                case 'left-center':
-                    newX = original.x + deltaX;
-                    newWidth = original.width - deltaX;
-                    if (maintainAspectRatio) {
-                        newHeight = newWidth / aspectRatio;
-                        newY = original.y - (newHeight - original.height) / 2;
-                    }
-                    break;
-                case 'right-center':
-                    newWidth = original.width + deltaX;
-                    if (maintainAspectRatio) {
-                        newHeight = newWidth / aspectRatio;
-                        newY = original.y - (newHeight - original.height) / 2;
-                    }
-                    break;
-            }
-
-            newWidth = Math.max(20, newWidth);
-            newHeight = Math.max(20, newHeight);
-
-            updateImageElement(original.id, {
-                x: newX,
-                y: newY,
-                width: newWidth,
-                height: newHeight,
-            });
-        },
-        [maintainAspectRatio, updateImageElement],
-    );
-
-    const handleMouseUp = useCallback(() => {
-        console.log('Image resize ended');
-        setIsImageResizing(false);
-        resizeStateRef.current = {
-            corner: '',
-            startPos: { x: 0, y: 0 },
-            originalElement: null,
-            stage: null,
-        };
-
-        document.removeEventListener('mousemove', handleMouseMove);
-        document.removeEventListener('mouseup', handleMouseUp);
-        document.removeEventListener('touchmove', handleMouseMove);
-        document.removeEventListener('touchend', handleMouseUp);
-    }, [handleMouseMove]);
-
-    const handleImageResizeStart = useCallback(
-        (corner: string, e: KonvaEventObject<MouseEvent | TouchEvent>) => {
-            console.log('Image resize started for corner:', corner);
-
-            // Check if any selected element's layer is locked
-            const hasLockedElement = selectedElementIds.some(id => {
-                for (const [layerId, elements] of elementsByLayer.entries()) {
-                    const element = elements.find(el => el.id === id);
-                    if (element) {
-                        const layer = layers.find(l => l.id === layerId);
-                        return layer?.locked || false;
-                    }
-                }
-                return false;
-            });
-
-            if (hasLockedElement) {
-                console.log('Cannot resize image: layer is locked');
-                return;
-            }
-
-            if (e.evt) {
-                e.evt.preventDefault();
-                e.evt.stopPropagation();
-            }
-
-            const stage = e.target.getStage();
-            if (!stage) {
-                console.error('No stage found');
-                return;
-            }
-
-            const pos = stage.getPointerPosition();
-            if (!pos) {
-                console.error('No pointer position found');
-                return;
-            }
-
-            let imageElement: ImageElement | null = null;
-            selectedElementIds.forEach(id => {
-                const element = getImageElement(id);
-                if (element) {
-                    imageElement = element;
-                }
-            });
-
-            if (!imageElement) {
-                console.error('No image element found for resize');
-                return;
-            }
-
-            resizeStateRef.current = {
-                corner,
-                startPos: pos,
-                originalElement: JSON.parse(JSON.stringify(imageElement)),
-                stage,
-            };
-
-            setIsImageResizing(true);
-            document.addEventListener('mousemove', handleMouseMove, {
-                passive: false,
-            });
-            document.addEventListener('mouseup', handleMouseUp);
-            document.addEventListener('touchmove', handleMouseMove, {
-                passive: false,
-            });
-            document.addEventListener('touchend', handleMouseUp);
-
-            return false;
-        },
-        [
-            selectedElementIds,
-            getImageElement,
-            handleMouseMove,
-            handleMouseUp,
-            elementsByLayer,
-            layers,
-        ],
-    );
-
-    const fitImageToCanvas = useCallback(
-        (imageId: string) => {
-            updateImageElement(imageId, {
-                x: 0,
-                y: 0,
-                width: dimensions.width,
-                height: dimensions.height,
-            });
-        },
-        [updateImageElement, dimensions],
-    );
-
-    const fitImageToCanvasWithAspectRatio = useCallback(
-        (imageId: string) => {
-            const imageElement = getImageElement(imageId);
-            if (!imageElement) return;
-
-            const imageAspectRatio = imageElement.width / imageElement.height;
-            const canvasAspectRatio = dimensions.width / dimensions.height;
-
-            let newWidth: number;
-            let newHeight: number;
-            let newX: number;
-            let newY: number;
-
-            if (imageAspectRatio > canvasAspectRatio) {
-                newWidth = dimensions.width;
-                newHeight = dimensions.width / imageAspectRatio;
-                newX = 0;
-                newY = (dimensions.height - newHeight) / 2;
-            } else {
-                newHeight = dimensions.height;
-                newWidth = dimensions.height * imageAspectRatio;
-                newX = (dimensions.width - newWidth) / 2;
-                newY = 0;
-            }
-
-            updateImageElement(imageId, {
-                x: newX,
-                y: newY,
-                width: newWidth,
-                height: newHeight,
-            });
-        },
-        [getImageElement, updateImageElement, dimensions],
-    );
-
-    const toggleAspectRatio = useCallback(() => {
-        setMaintainAspectRatio(prev => !prev);
-    }, []);
 
     useEffect(() => {
         if (!initialCanvas && layers.length === 0) {
@@ -608,7 +265,6 @@ export const DrawingProvider: React.FC<DrawingProviderProps> = ({
                 locked: false,
                 opacity: 1,
             };
-
             setLayers([defaultLayer]);
             setActiveLayerId(defaultLayerId);
             setElementsByLayer(new Map([[defaultLayerId, []]]));
@@ -629,9 +285,8 @@ export const DrawingProvider: React.FC<DrawingProviderProps> = ({
     const updateActiveLayerElements = (newElements: DrawingElement[]) => {
         setElementsByLayer(prev => {
             const updatedMap = new Map(prev);
-            // Make sure we clone the array too
             updatedMap.set(activeLayerId, [...newElements]);
-            return new Map(updatedMap); // new reference
+            return new Map(updatedMap);
         });
     };
 
@@ -710,12 +365,6 @@ export const DrawingProvider: React.FC<DrawingProviderProps> = ({
         setMaintainAspectRatio,
         isImageResizing,
         setIsImageResizing,
-        handleImageResizeStart,
-        updateImageElement,
-        getImageElement,
-        fitImageToCanvas,
-        fitImageToCanvasWithAspectRatio,
-        toggleAspectRatio,
         hoveredElementId,
         setHoveredElementId,
         isDrawingCurve,
