@@ -31,6 +31,27 @@ export default function Home() {
         fetchDefaultTemplates();
     }, []);
 
+    useEffect(() => {
+        const hiddenElements = document.querySelectorAll('.hidden-element')
+
+        const observer = new IntersectionObserver(
+            (entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('visible-element')
+                    }
+                })
+            },
+            { threshold: 1.0 }
+        )
+
+        hiddenElements.forEach(e => observer.observe(e))
+
+        return () => {
+            hiddenElements.forEach((element) => observer.unobserve(element));
+        };
+    });
+
     const fetchDefaultTemplates = async () => {
         try {
             setTemplatesLoading(true);
@@ -167,12 +188,12 @@ export default function Home() {
                     <div className="relative z-10 pt-16 pb-20 lg:pt-24 lg:pb-28 px-4 sm:px-6 lg:px-8">
                         <div className="lg:grid lg:grid-cols-12 lg:gap-8 items-center">
                             <div className="lg:col-span-6">
-                                <h1 className="text-4xl tracking-tight font-extrabold text-gray-900 dark:text-white sm:text-5xl md:text-6xl">
+                                <h1 className="hidden-element title-a text-4xl tracking-tight font-extrabold text-gray-900 dark:text-white sm:text-5xl md:text-6xl">
                                     <span className="block xl:inline">
                                         {dict.home.heroTitleFirst ||
                                             'Design Like a'}
                                     </span>
-                                    <span className="block text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-pink-600 dark:from-purple-400 dark:to-pink-400 xl:inline">
+                                    <span className="hidden-element professional-a block text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-pink-600 dark:from-purple-400 dark:to-pink-400 xl:inline">
                                         {' '}
                                         {dict.home.heroTitleSecond ||
                                             'Professional'}
@@ -185,7 +206,7 @@ export default function Home() {
                                 <div className="mt-8 flex flex-col sm:flex-row gap-4">
                                     <Link
                                         href={`/${lang}/register`}
-                                        className="inline-flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-lg text-white bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 shadow-md hover:shadow-lg transition-all duration-200">
+                                        className="hidden-element inline-flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-lg text-white bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 shadow-md hover:shadow-lg transition-all duration-200">
                                         {dict.header.register ||
                                             'Start Creating'}{' '}
                                         <ArrowRight className="ml-2 h-4 w-4" />
@@ -218,7 +239,7 @@ export default function Home() {
                             </div>
 
                             {/* Editor mockup */}
-                            <div className="mt-12 lg:mt-0 lg:col-span-6">
+                            <div className="hidden-element mt-12 lg:mt-0 lg:col-span-6">
                                 <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl overflow-hidden transform rotate-1 hover:rotate-0 transition-all duration-300">
                                     <div className="px-1 py-1 sm:p-2">
                                         <div className="flex items-center gap-2 px-3 py-2">
@@ -294,7 +315,7 @@ export default function Home() {
             {/* Templates Section */}
             <div className="py-16 bg-white dark:bg-gray-800">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="text-center">
+                    <div className="hidden-element text-center">
                         <p className="text-base text-purple-600 dark:text-purple-400 font-semibold tracking-wide uppercase">
                             {dict.mainPage.templatesLabel || 'Templates'}
                         </p>
@@ -333,7 +354,7 @@ export default function Home() {
                                 {templates.map((template, index) => (
                                     <div
                                         key={index}
-                                        className="group bg-gray-50 dark:bg-gray-700 rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
+                                        className="hidden-element template-a group bg-gray-50 dark:bg-gray-700 rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
                                         {/* Template preview */}
                                         <div className="relative aspect-video overflow-hidden">
                                             <div
@@ -408,7 +429,7 @@ export default function Home() {
             {/* Features Section */}
             <div className="py-16 bg-gray-50 dark:bg-gray-900">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="lg:text-center">
+                    <div className="hidden-element lg:text-center">
                         <p className="text-base text-purple-600 dark:text-purple-400 font-semibold tracking-wide uppercase">
                             {dict.home.featuresTitle || 'Features'}
                         </p>
@@ -426,7 +447,7 @@ export default function Home() {
                             {features.map((feature, index) => (
                                 <div
                                     key={index}
-                                    className="group bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-1">
+                                    className="hidden-element feature-a group bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-1">
                                     <div className="flex items-center gap-4 mb-4">
                                         <div
                                             className={`rounded-lg p-3 ${
@@ -458,7 +479,7 @@ export default function Home() {
             {/* CTA Section */}
             <div className="bg-gradient-to-r from-purple-600 to-pink-600 dark:from-purple-900 dark:to-pink-900">
                 <div className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:py-16 lg:px-8 lg:flex lg:items-center lg:justify-between">
-                    <h2 className="text-3xl font-extrabold tracking-tight text-white sm:text-4xl">
+                    <h2 className="hidden-element ready-to-design-a text-3xl font-extrabold tracking-tight text-white sm:text-4xl">
                         <span className="block">
                             {dict.home.ctaReady ||
                                 'Ready to create amazing designs?'}
@@ -487,7 +508,7 @@ export default function Home() {
             <div className="py-16 bg-white dark:bg-gray-800 overflow-hidden">
                 <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="relative">
-                        <div className="text-center">
+                        <div className="hidden-element text-center">
                             <h2 className="text-3xl tracking-tight font-extrabold text-gray-900 dark:text-white sm:text-4xl">
                                 {dict.home.testimonialsTitle ||
                                     'Loved by creators worldwide'}
@@ -520,7 +541,7 @@ export default function Home() {
                             ].map((testimonial, i) => (
                                 <div
                                     key={i}
-                                    className="bg-gray-50 dark:bg-gray-700 rounded-xl shadow-md p-6 flex flex-col">
+                                    className="hidden-element bg-gray-50 dark:bg-gray-700 rounded-xl shadow-md p-6 flex flex-col">
                                     <div className="flex items-center mb-4">
                                         {[1, 2, 3, 4, 5].map(star => (
                                             <Star
