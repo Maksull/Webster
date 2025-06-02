@@ -23,7 +23,7 @@ import {
     ChevronRight,
     List,
     X,
-    Waves,
+    Spline,
 } from 'lucide-react';
 import { DrawingLayer } from '@/types/layers';
 import { useLayers } from './useLayers';
@@ -139,7 +139,7 @@ const LayerItem: React.FC<LayerItemProps> = ({ layer, index }) => {
             line: <Minus className="h-3 w-3" />,
             'line-shape': <Minus className="h-3 w-3" />,
             arrow: <ArrowUp className="h-3 w-3" />,
-            curve: <Waves className="h-3 w-3" />,
+            curve: <Spline className="h-3 w-3" />,
         };
         return iconMap[type] || <Square className="h-3 w-3" />;
     };

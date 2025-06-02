@@ -80,16 +80,15 @@ export const useCanvasOperations = (callbacks: CallbacksProps = {}) => {
         setTextFontFamily,
         setTextFontSize,
         setColor,
+        isDrawingCurve,
+        setIsDrawingCurve,
     } = useDrawing();
 
     const { isAuthenticated } = useAuth();
     const { recordHistory } = useHistory();
 
-    // Curve drawing state
-    const isDrawingCurve = useRef(false);
     const currentCurveId = useRef<string | null>(null);
     const curvePoints = useRef<number[]>([]);
-
     const dragStartPos = useRef({ x: 0, y: 0 });
     const lastMousePos = useRef({ x: 0, y: 0 });
     const dragOffset = useRef({ x: 0, y: 0 });
@@ -103,12 +102,11 @@ export const useCanvasOperations = (callbacks: CallbacksProps = {}) => {
         };
     }, []);
 
-    // Add event listener for finishing curves with keyboard
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
             if (
                 tool === 'curve' &&
-                isDrawingCurve.current &&
+                isDrawingCurve &&
                 (e.key === 'Enter' || e.key === 'Escape')
             ) {
                 finishCurve();
@@ -119,20 +117,17 @@ export const useCanvasOperations = (callbacks: CallbacksProps = {}) => {
         return () => {
             document.removeEventListener('keydown', handleKeyDown);
         };
-    }, [tool]);
+    }, [tool, isDrawingCurve]);
 
     const finishCurve = () => {
         if (
-            isDrawingCurve.current &&
+            isDrawingCurve &&
             currentCurveId.current &&
             curvePoints.current.length >= 4
         ) {
-            // Curve is complete, record history
             recordHistory();
         }
-
-        // Reset curve drawing state
-        isDrawingCurve.current = false;
+        setIsDrawingCurve(false);
         currentCurveId.current = null;
         curvePoints.current = [];
     };
@@ -140,8 +135,8 @@ export const useCanvasOperations = (callbacks: CallbacksProps = {}) => {
     const addPointToCurve = (x: number, y: number) => {
         const activeElements = getActiveLayerElements();
 
-        if (!isDrawingCurve.current) {
-            // Start new curve
+        if (!isDrawingCurve) {
+            // Starting a new curve
             const newCurve: CurveElement = {
                 id: Date.now().toString(),
                 type: 'curve',
@@ -150,19 +145,21 @@ export const useCanvasOperations = (callbacks: CallbacksProps = {}) => {
                 strokeWidth,
                 layerId: activeLayerId,
                 opacity: opacity || 1,
-                tension: 0.5, // High tension for smooth curves
+                tension: 0.5,
                 lineCap: 'round',
                 lineJoin: 'round',
             };
 
-            isDrawingCurve.current = true;
+            console.log('Adding new curve:', newCurve);
+            setIsDrawingCurve(true);
             currentCurveId.current = newCurve.id;
             curvePoints.current = [x, y];
 
             const updatedElements = [...activeElements, newCurve];
             updateActiveLayerElements(updatedElements);
         } else {
-            // Add point to existing curve
+            // Adding point to existing curve
+            console.log('Adding point to existing curve:', x, y);
             const newPoints = [...curvePoints.current, x, y];
             curvePoints.current = newPoints;
 
@@ -181,7 +178,7 @@ export const useCanvasOperations = (callbacks: CallbacksProps = {}) => {
 
             updateActiveLayerElements(updatedElements);
 
-            // Check if user clicked near the starting point to close the curve
+            // Check if we should close the curve (if user clicks near the starting point)
             if (newPoints.length >= 6) {
                 const startX = newPoints[0];
                 const startY = newPoints[1];
@@ -190,7 +187,7 @@ export const useCanvasOperations = (callbacks: CallbacksProps = {}) => {
                 );
 
                 if (distance < 20) {
-                    // Close the curve by connecting to start point
+                    // Close the curve
                     const closedPoints = [...newPoints, startX, startY];
                     const updatedElementsWithClosure = activeElements.map(
                         element => {
@@ -215,11 +212,10 @@ export const useCanvasOperations = (callbacks: CallbacksProps = {}) => {
         }
     };
 
-    // Handle double-click to finish curve
     const handleStageDoubleClick = (
         e: KonvaEventObject<MouseEvent | TouchEvent>,
     ) => {
-        if (tool === 'curve' && isDrawingCurve.current) {
+        if (tool === 'curve' && isDrawingCurve) {
             finishCurve();
             e.cancelBubble = true;
         }
@@ -292,6 +288,7 @@ export const useCanvasOperations = (callbacks: CallbacksProps = {}) => {
             const updatedElements = layerElements.filter(
                 el => el.id !== elementToRemoveId,
             );
+
             updatedElementsByLayer.set(elementLayerId, updatedElements);
             setElementsByLayer(updatedElementsByLayer);
 
@@ -421,7 +418,6 @@ export const useCanvasOperations = (callbacks: CallbacksProps = {}) => {
         const activeLayer = layers.find(layer => layer.id === activeLayerId);
         if (!activeLayer || !activeLayer.visible || activeLayer.locked) return;
 
-        // Handle resize handles
         if (
             e.target.getClassName() === 'Circle' &&
             e.target.attrs.fill === 'white' &&
@@ -434,9 +430,7 @@ export const useCanvasOperations = (callbacks: CallbacksProps = {}) => {
             return;
         }
 
-        // Handle curve tool - click-based point addition
         if (tool === 'curve') {
-            // Only add points when clicking on the stage background
             if (e.target === stage) {
                 addPointToCurve(pos.x, pos.y);
             }
@@ -533,7 +527,6 @@ export const useCanvasOperations = (callbacks: CallbacksProps = {}) => {
 
                     const isShiftPressed =
                         e.evt && (e.evt.shiftKey || e.evt.ctrlKey);
-
                     if (isShiftPressed) {
                         const newSelectedIds = [...selectedElementIds];
                         const index = newSelectedIds.indexOf(foundElementId);
@@ -669,7 +662,6 @@ export const useCanvasOperations = (callbacks: CallbacksProps = {}) => {
             return;
         }
 
-        // Handle regular drawing tools (pencil, brush, etc.)
         setIsDrawing(true);
 
         function getOpacity(tool: string): number {
@@ -762,6 +754,7 @@ export const useCanvasOperations = (callbacks: CallbacksProps = {}) => {
             const hasLockedElement = selectedElementIds.some(id =>
                 isElementLayerLocked(id),
             );
+
             if (hasLockedElement) {
                 console.log(
                     'Cannot move elements: one or more layers are locked',
@@ -793,7 +786,7 @@ export const useCanvasOperations = (callbacks: CallbacksProps = {}) => {
                             }
                             return { ...lineElement, points: newPoints };
 
-                        case 'curve': // Added curve support for movement
+                        case 'curve':
                             const curveElement = element as CurveElement;
                             const newCurvePoints = [...curveElement.points];
                             for (let i = 0; i < newCurvePoints.length; i += 2) {
@@ -967,6 +960,7 @@ export const useCanvasOperations = (callbacks: CallbacksProps = {}) => {
         if (lastElement.type === 'line') {
             const lineElement = lastElement as LineElement;
             lineElement.points = lineElement.points.concat([point.x, point.y]);
+
             const updatedElements = [
                 ...activeElements.slice(0, -1),
                 lineElement,
@@ -990,6 +984,7 @@ export const useCanvasOperations = (callbacks: CallbacksProps = {}) => {
         }
     };
 
+    // Rest of the functions remain the same...
     const handleBucketClick = (x: number, y: number) => {
         if (!stageRef.current) return;
 
@@ -1032,6 +1027,7 @@ export const useCanvasOperations = (callbacks: CallbacksProps = {}) => {
                         console.log('Cannot fill element: layer is locked');
                         continue;
                     }
+
                     if (
                         ['rectangle', 'rect', 'circle', 'triangle'].includes(
                             element.type,
@@ -1169,6 +1165,9 @@ export const useCanvasOperations = (callbacks: CallbacksProps = {}) => {
         return Math.sqrt(dx * dx + dy * dy);
     };
 
+    // Include all other existing functions (handleResizeStart, handleSave, etc.)
+    // ... (keeping the rest of your existing functions as they were)
+
     const handleResizeStart = (
         direction: string,
         e: React.MouseEvent | React.TouchEvent,
@@ -1255,13 +1254,13 @@ export const useCanvasOperations = (callbacks: CallbacksProps = {}) => {
         if (!isResizing) return;
 
         setIsResizing(false);
-
         const customResolution: Resolution = {
-            name: `Custom (${Math.round(dimensions.width)}×${Math.round(dimensions.height)})`,
+            name: `Custom (${Math.round(dimensions.width)}×${Math.round(
+                dimensions.height,
+            )})`,
             width: Math.round(dimensions.width),
             height: Math.round(dimensions.height),
         };
-
         setSelectedResolution(customResolution);
         recordHistory();
 
@@ -1276,7 +1275,6 @@ export const useCanvasOperations = (callbacks: CallbacksProps = {}) => {
             document.addEventListener('mousemove', handleResizeMove);
             document.addEventListener('mouseup', handleResizeEnd);
         }
-
         return () => {
             document.removeEventListener('mousemove', handleResizeMove);
             document.removeEventListener('mouseup', handleResizeEnd);
@@ -1533,7 +1531,6 @@ export const useCanvasOperations = (callbacks: CallbacksProps = {}) => {
 
             const result = await response.json();
             console.log('Template created successfully:', result);
-
             return {
                 success: true,
                 message: `Template "${templateName}" created successfully!`,
@@ -1557,6 +1554,7 @@ export const useCanvasOperations = (callbacks: CallbacksProps = {}) => {
         const hasLockedElement = elementIds.some(id =>
             isElementLayerLocked(id),
         );
+
         if (hasLockedElement) {
             console.log('Cannot change color: one or more layers are locked');
             return false;
@@ -1604,6 +1602,5 @@ export const useCanvasOperations = (callbacks: CallbacksProps = {}) => {
         handleElementColorChange,
         handleStageDoubleClick,
         finishCurve,
-        isDrawingCurve: isDrawingCurve.current,
     };
 };

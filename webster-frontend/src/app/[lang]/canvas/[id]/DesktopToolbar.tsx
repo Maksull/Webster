@@ -20,7 +20,7 @@ import {
     Type,
     ArrowUpRight,
     Image as ImageIcon,
-    Waves,
+    Spline,
 } from 'lucide-react';
 import { Dictionary } from '@/get-dictionary';
 import { useHistory } from './useHistory';
@@ -223,7 +223,7 @@ const DesktopToolbar: React.FC<DesktopToolbarProps> = ({ dict, onClear }) => {
 
             <ToolButton
                 tool="curve"
-                icon={Waves}
+                icon={Spline}
                 title={dict.drawing?.curve || 'Curve'}
             />
 

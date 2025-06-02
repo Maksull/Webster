@@ -261,6 +261,9 @@ export type Dictionary = {
         textStyles: string;
         fontSize: string;
         fontFamily: string;
+        curveClickToAdd: string;
+        curveDoubleClickFinish: string;
+        curveClickToStart: string;
     };
     notFound: {
         title: string;

@@ -258,7 +258,10 @@
         "opacity": "Непрозорість",
         "textStyles": "Стилі тексту",
         "fontSize": "Розмір шрифту",
-        "fontFamily": "Шрифт"
+        "fontFamily": "Шрифт",
+        "curveClickToAdd": "Клікніть, щоб додати точки до вашої кривої",
+        "curveDoubleClickFinish": "Подвійний клік або натисніть Enter, щоб завершити",
+        "curveClickToStart": "Клікніть, щоб почати малювати криву"
     },
     "notFound": {
         "title": "Сторінку не знайдено",
