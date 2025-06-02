@@ -7,10 +7,7 @@ import { Footer } from './Footer';
 import { Header } from './Header';
 
 export const metadata: Metadata = {
-    title: {
-        default: 'Webster',
-        template: '%s - Webster',
-    },
+    title: 'Webster',
     description:
         'Find and attend events to expand your network and grow professionally',
 };
