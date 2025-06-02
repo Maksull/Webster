@@ -111,7 +111,6 @@ Once the application is running, you can access it at `http://localhost:3000`. U
 ### 📱 Responsive Design
 
 The application is fully responsive using Tailwind CSS utility classes:
-- Mobile-first approach
 - Breakpoint system
 - Dark mode support
 
