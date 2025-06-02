@@ -1,6 +1,6 @@
 'use client';
 import React, { useState, useRef } from 'react';
-import { Stage, Layer, Rect, Circle } from 'react-konva';
+import { Stage, Layer, Rect, Circle, Line } from 'react-konva';
 import { KonvaEventObject } from 'konva/lib/Node';
 import LayerRenderer from './LayerRenderer';
 import { useDrawing } from '@/contexts';
@@ -11,6 +11,7 @@ import { createPortal } from 'react-dom';
 import { useEraserCursor } from './useEraserCursor';
 import ImageToolbar from './ImageToolbar';
 import ImageResizeHandles from './ImageResizeHandles';
+import { useDictionary } from '@/contexts';
 import {
     TextElement,
     DrawingElement,
@@ -78,11 +79,13 @@ const Canvas: React.FC<CanvasProps> = ({
         color,
         setColor,
         setIsImageResizing,
+        isDrawingCurve,
         handleImageResizeStart: contextHandleImageResizeStart,
     } = useDrawing();
 
-    useEraserCursor(stageRef, tool, elementsByLayer);
+    const { dict } = useDictionary();
 
+    useEraserCursor(stageRef, tool, elementsByLayer);
     const [selectionRect, setSelectionRect] = useState<SelectionRect | null>(
         null,
     );
@@ -91,21 +94,18 @@ const Canvas: React.FC<CanvasProps> = ({
     const [cursorPosition, setCursorPosition] = useState<Point>({ x: 0, y: 0 });
     const [isSelecting, setIsSelecting] = useState(false);
     const [imageEditingId, setImageEditingId] = useState<string | null>(null);
-
+    const [curvePreviewPosition, setCurvePreviewPosition] =
+        useState<Point | null>(null);
     const lastClickTimes = useRef<Map<string, number>>(new Map());
 
-    const {
-        handleTextEdit,
-        handleTextEditDone,
-        handleStageDoubleClick,
-        isDrawingCurve,
-    } = useCanvasOperations({
-        clearSelectionRect: () => {
-            setSelectionRect(null);
-            setIsSelecting(false);
-            setSelectionStartPoint(null);
-        },
-    });
+    const { handleTextEdit, handleTextEditDone, handleStageDoubleClick } =
+        useCanvasOperations({
+            clearSelectionRect: () => {
+                setSelectionRect(null);
+                setIsSelecting(false);
+                setSelectionStartPoint(null);
+            },
+        });
 
     const handleImageResizeEnd = () => {
         setIsImageResizing(false);
@@ -113,9 +113,17 @@ const Canvas: React.FC<CanvasProps> = ({
 
     const handleStageClick = (e: KonvaEventObject<MouseEvent | TouchEvent>) => {
         console.log('Canvas.handleStageClick', e.target.getClassName());
-
-        if (tool === 'curve' && isDrawingCurve) {
-            handleStageDoubleClick(e);
+        if (tool === 'curve') {
+            if (isDrawingCurve) {
+                const now = Date.now();
+                const target = e.target;
+                const targetId = target.attrs?.id || 'stage';
+                const lastClickTime = lastClickTimes.current.get(targetId) || 0;
+                if (now - lastClickTime < 300) {
+                    handleStageDoubleClick(e);
+                }
+                lastClickTimes.current.set(targetId, now);
+            }
             return;
         }
 
@@ -273,6 +281,13 @@ const Canvas: React.FC<CanvasProps> = ({
             setCursorPosition(pos);
         }
 
+        // Handle curve preview
+        if (tool === 'curve' && isDrawingCurve) {
+            setCurvePreviewPosition(pos);
+        } else {
+            setCurvePreviewPosition(null);
+        }
+
         if (
             isSelecting &&
             tool === 'select' &&
@@ -322,6 +337,15 @@ const Canvas: React.FC<CanvasProps> = ({
         setSelectionRect(null);
         setSelectionStartPoint(null);
         onMouseUp();
+    };
+
+    const getCurrentCurve = (): CurveElement | null => {
+        const activeElements =
+            elementsByLayer.get(layers.find(l => l.id)?.id || '') || [];
+        const currentCurve = activeElements
+            .filter(el => el.type === 'curve')
+            .pop();
+        return (currentCurve as CurveElement) || null;
     };
 
     const isElementInSelectionRect = (
@@ -434,17 +458,14 @@ const Canvas: React.FC<CanvasProps> = ({
 
     const getSelectedImageId = (): string | undefined => {
         if (selectedElementIds.length !== 1) return undefined;
-
         const selectedId = selectedElementIds[0];
         let isImage = false;
-
         elementsByLayer.forEach(elements => {
             const element = elements.find(el => el.id === selectedId);
             if (element && element.type === 'image') {
                 isImage = true;
             }
         });
-
         return isImage ? selectedId : undefined;
     };
 
@@ -513,21 +534,28 @@ const Canvas: React.FC<CanvasProps> = ({
         );
     };
 
-    // Render curve drawing instruction overlay
     const renderCurveInstructions = () => {
+        console.log('Canvas.renderCurveInstructions', tool, isDrawingCurve);
         if (tool !== 'curve') return null;
 
         return (
-            <div className="absolute top-4 left-4 bg-black bg-opacity-75 text-white px-3 py-2 rounded-lg text-sm z-1">
+            <div className="absolute top-4 left-4 bg-black bg-opacity-75 text-white px-3 py-2 rounded-lg text-sm z-10">
                 {isDrawingCurve ? (
                     <div>
-                        <div>Click to add points to your curve</div>
+                        <div>
+                            {dict.drawing.curveClickToAdd ||
+                                'Click to add points to your curve'}
+                        </div>
                         <div className="text-xs opacity-75 mt-1">
-                            Double-click or press Enter to finish
+                            {dict.drawing.curveDoubleClickFinish ||
+                                'Double-click or press Enter to finish'}
                         </div>
                     </div>
                 ) : (
-                    <div>Click to start drawing a curve</div>
+                    <div>
+                        {dict.drawing.curveClickToStart ||
+                            'Click to start drawing a curve'}
+                    </div>
                 )}
             </div>
         );
@@ -541,9 +569,7 @@ const Canvas: React.FC<CanvasProps> = ({
                 selectedImageId={imageEditingId || getSelectedImageId()}
                 onClose={() => setImageEditingId(null)}
             />
-
             {renderCurveInstructions()}
-
             <div className="absolute top-0 left-0 min-w-full min-h-full flex items-center justify-center p-4">
                 <div
                     style={{
@@ -592,11 +618,9 @@ const Canvas: React.FC<CanvasProps> = ({
                             />
                         </Layer>
 
-                        {/* Render each layer */}
                         {layers.map(layer => {
                             const layerElements =
                                 elementsByLayer.get(layer.id) || [];
-
                             return (
                                 <LayerRenderer
                                     key={layer.id}
@@ -610,7 +634,6 @@ const Canvas: React.FC<CanvasProps> = ({
                                         setSelectionRect(null);
                                         setIsSelecting(false);
                                         setSelectionStartPoint(null);
-
                                         if (
                                             window.event &&
                                             ((window.event as KeyboardEvent)
@@ -623,13 +646,11 @@ const Canvas: React.FC<CanvasProps> = ({
                                             ];
                                             const index =
                                                 newSelectedIds.indexOf(id);
-
                                             if (index !== -1) {
                                                 newSelectedIds.splice(index, 1);
                                             } else {
                                                 newSelectedIds.push(id);
                                             }
-
                                             setSelectedElementIds(
                                                 newSelectedIds,
                                             );
@@ -643,7 +664,6 @@ const Canvas: React.FC<CanvasProps> = ({
                             );
                         })}
 
-                        {/* Selection rectangle */}
                         {selectionRect &&
                             tool === 'select' &&
                             isSelecting &&
@@ -665,7 +685,80 @@ const Canvas: React.FC<CanvasProps> = ({
                                 </Layer>
                             )}
 
-                        {/* Custom cursor for drawing tools */}
+                        {/*Curve preview layer*/}
+                        {tool === 'curve' &&
+                            isDrawingCurve &&
+                            curvePreviewPosition && (
+                                <Layer listening={false}>
+                                    {(() => {
+                                        const currentCurve = getCurrentCurve();
+                                        if (
+                                            !currentCurve ||
+                                            currentCurve.points.length < 2
+                                        )
+                                            return null;
+
+                                        const lastPointIndex =
+                                            currentCurve.points.length - 2;
+                                        const lastX =
+                                            currentCurve.points[lastPointIndex];
+                                        const lastY =
+                                            currentCurve.points[
+                                                lastPointIndex + 1
+                                            ];
+
+                                        return (
+                                            <>
+                                                {/*Preview line from last point to cursor*/}
+                                                <Line
+                                                    points={[
+                                                        lastX,
+                                                        lastY,
+                                                        curvePreviewPosition.x,
+                                                        curvePreviewPosition.y,
+                                                    ]}
+                                                    stroke={color}
+                                                    strokeWidth={strokeWidth}
+                                                    opacity={0.5}
+                                                    dash={[5, 5]}
+                                                    lineCap="round"
+                                                    lineJoin="round"
+                                                    listening={false}
+                                                />
+                                                {currentCurve.points.length >=
+                                                    2 && (
+                                                    <Line
+                                                        points={[
+                                                            ...currentCurve.points,
+                                                            curvePreviewPosition.x,
+                                                            curvePreviewPosition.y,
+                                                        ]}
+                                                        stroke={color}
+                                                        strokeWidth={
+                                                            strokeWidth
+                                                        }
+                                                        opacity={0.3}
+                                                        tension={0.5}
+                                                        lineCap="round"
+                                                        lineJoin="round"
+                                                        listening={false}
+                                                    />
+                                                )}
+                                                <Circle
+                                                    x={curvePreviewPosition.x}
+                                                    y={curvePreviewPosition.y}
+                                                    radius={4}
+                                                    fill={color}
+                                                    opacity={0.7}
+                                                    listening={false}
+                                                />
+                                            </>
+                                        );
+                                    })()}
+                                </Layer>
+                            )}
+
+                        {/*Custom cursor for drawing tools*/}
                         {(tool === 'pencil' ||
                             tool === 'brush' ||
                             tool === 'pen' ||
@@ -684,7 +777,7 @@ const Canvas: React.FC<CanvasProps> = ({
                         )}
                     </Stage>
 
-                    {/* Render HTML-based image resize handles for all selected images */}
+                    {/*Render HTML-based image resize handles for all selected images*/}
                     {selectedElementIds.map(elementId => {
                         let imageElement: ImageElement | null = null;
                         elementsByLayer.forEach(elements => {

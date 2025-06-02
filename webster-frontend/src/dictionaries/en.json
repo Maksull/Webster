@@ -258,7 +258,10 @@
         "opacity": "Opacity",
         "textStyles": "Text Styles",
         "fontSize": "Font Size",
-        "fontFamily": "Font Family"
+        "fontFamily": "Font Family",
+        "curveClickToAdd": "Click to add points to your curve",
+        "curveDoubleClickFinish": "Double-click or press Enter to finish",
+        "curveClickToStart": "Click to start drawing a curve"
     },
     "notFound": {
         "title": "Page not found",

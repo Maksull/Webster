@@ -26,7 +26,7 @@ import {
     Linkedin,
     Copy,
     ExternalLink,
-    Waves,
+    Spline,
 } from 'lucide-react';
 import { Dictionary } from '@/get-dictionary';
 import { useHistory } from './useHistory';
@@ -397,7 +397,7 @@ const MobileMenu: React.FC<MobileMenuProps> = ({
                                 setTool('curve');
                                 toggleMobileMenu();
                             }}>
-                            <Waves className="h-5 w-5 mr-2" />
+                            <Spline className="h-5 w-5 mr-2" />
                             Curve
                         </button>
 

@@ -127,6 +127,8 @@ interface DrawingContextProps {
     hoveredElementId: string | null;
     setHoveredElementId: (id: string | null) => void;
     setOpacity: React.Dispatch<React.SetStateAction<number>>;
+    isDrawingCurve: boolean;
+    setIsDrawingCurve: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
 export const DrawingContext = createContext<DrawingContextProps | undefined>(
@@ -260,6 +262,8 @@ export const DrawingProvider: React.FC<DrawingProviderProps> = ({
     const [canvasDescription, setCanvasDescription] = useState<string | null>(
         initialCanvas?.description || null,
     );
+
+    const [isDrawingCurve, setIsDrawingCurve] = useState(false);
 
     const [textEditingId, setTextEditingId] = useState<string | null>(null);
     const [textValue, setTextValue] = useState('');
@@ -714,6 +718,8 @@ export const DrawingProvider: React.FC<DrawingProviderProps> = ({
         toggleAspectRatio,
         hoveredElementId,
         setHoveredElementId,
+        isDrawingCurve,
+        setIsDrawingCurve,
     };
 
     return (
