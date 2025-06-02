@@ -83,17 +83,29 @@ const Canvas: React.FC<CanvasProps> = ({
         setColor,
         setIsImageResizing,
         isDrawingCurve,
-        handleImageResizeStart: contextHandleImageResizeStart,
     } = useDrawing();
 
     const [contextMenu, setContextMenu] = useState<{
         x: number;
         y: number;
         isVisible: boolean;
-    }>({
-        x: 0,
-        y: 0,
-        isVisible: false,
+    }>({ x: 0, y: 0, isVisible: false });
+
+    const {
+        handleTextEdit,
+        handleTextEditDone,
+        handleStageDoubleClick,
+        handleDeleteSelectedElements,
+        handleImageResizeStart,
+        fitImageToCanvas,
+        fitImageToCanvasWithAspectRatio,
+        toggleAspectRatio,
+    } = useCanvasOperations({
+        clearSelectionRect: () => {
+            setSelectionRect(null);
+            setIsSelecting(false);
+            setSelectionStartPoint(null);
+        },
     });
 
     const handleContextMenu = (e: KonvaEventObject<PointerEvent>) => {
@@ -107,7 +119,6 @@ const Canvas: React.FC<CanvasProps> = ({
         if (!pos) return;
 
         const shapes = stage.getAllIntersections(pos);
-
         const targetShapes = shapes.filter((shape: KonvaNode) => {
             if (shape === stage || shape.getClassName() === 'Stage') {
                 return false;
@@ -125,7 +136,6 @@ const Canvas: React.FC<CanvasProps> = ({
         });
 
         let clickedElementId: string | null = null;
-
         if (targetShapes.length > 0) {
             for (let i = targetShapes.length - 1; i >= 0; i--) {
                 const shape = targetShapes[i];
@@ -190,6 +200,7 @@ const Canvas: React.FC<CanvasProps> = ({
     };
 
     const { dict } = useDictionary();
+
     useEraserCursor(stageRef, tool, elementsByLayer);
 
     const [selectionRect, setSelectionRect] = useState<SelectionRect | null>(
@@ -204,19 +215,6 @@ const Canvas: React.FC<CanvasProps> = ({
         useState<Point | null>(null);
 
     const lastClickTimes = useRef<Map<string, number>>(new Map());
-
-    const {
-        handleTextEdit,
-        handleTextEditDone,
-        handleStageDoubleClick,
-        handleDeleteSelectedElements,
-    } = useCanvasOperations({
-        clearSelectionRect: () => {
-            setSelectionRect(null);
-            setIsSelecting(false);
-            setSelectionStartPoint(null);
-        },
-    });
 
     const handleImageResizeEnd = () => {
         setIsImageResizing(false);
@@ -604,8 +602,8 @@ const Canvas: React.FC<CanvasProps> = ({
 
         const stage = stageRef.current;
         const containerRect = stage.container().getBoundingClientRect();
-
         const typedTextElement = textElement as TextElement;
+
         return {
             x: typedTextElement.x * scale + containerRect.left,
             y: typedTextElement.y * scale + containerRect.top,
@@ -632,8 +630,8 @@ const Canvas: React.FC<CanvasProps> = ({
         if (!textEditingId) return null;
 
         const position = getTextEditorPosition();
-
         let currentTextElement: TextElement | null = null;
+
         elementsByLayer.forEach(elements => {
             const found = elements.find(
                 el => el.id === textEditingId && el.type === 'text',
@@ -703,6 +701,11 @@ const Canvas: React.FC<CanvasProps> = ({
             <ImageToolbar
                 selectedImageId={imageEditingId || getSelectedImageId()}
                 onClose={() => setImageEditingId(null)}
+                fitImageToCanvas={fitImageToCanvas}
+                fitImageToCanvasWithAspectRatio={
+                    fitImageToCanvasWithAspectRatio
+                }
+                toggleAspectRatio={toggleAspectRatio}
             />
             {renderCurveInstructions()}
             <div className="absolute top-0 left-0 min-w-full min-h-full flex items-center justify-center p-4">
@@ -941,9 +944,7 @@ const Canvas: React.FC<CanvasProps> = ({
                                         height: typedImageElement.height,
                                     }}
                                     isSelected={true}
-                                    onResizeStart={
-                                        contextHandleImageResizeStart
-                                    }
+                                    onResizeStart={handleImageResizeStart}
                                 />
                             );
                         }
