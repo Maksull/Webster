@@ -70,7 +70,7 @@ export default function CanvasList({
                                         dict.account?.editCanvas ||
                                         'Edit canvas'
                                     }>
-                                    <Edit2 className="h-4 w-4" />
+                                    <Edit2 className="sm:h-4 sm:w-4 h-5 w-5" />
                                 </Link>
 
                                 <button
@@ -84,9 +84,9 @@ export default function CanvasList({
                                         'Delete canvas'
                                     }>
                                     {isDeleting === canvas.id ? (
-                                        <Loader className="h-4 w-4 animate-spin" />
+                                        <Loader className="sm:h-4 sm:w-4 h-5 w-5 animate-spin" />
                                     ) : (
-                                        <Trash2 className="h-4 w-4" />
+                                        <Trash2 className="sm:h-4 sm:w-4 h-5 w-5" />
                                     )}
                                 </button>
                             </div>

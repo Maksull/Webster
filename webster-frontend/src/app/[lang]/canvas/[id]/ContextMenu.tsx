@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useRef } from 'react';
-import { useDrawing } from '@/contexts';
+import { useDictionary, useDrawing } from '@/contexts';
 
 interface ContextMenuProps {
     x: number;
@@ -31,19 +31,20 @@ const ContextMenu: React.FC<ContextMenuProps> = ({
 }) => {
     const { selectedElementIds } = useDrawing();
     const menuRef = useRef<HTMLDivElement>(null);
+    const { dict } = useDictionary();
 
     const hasSelectedElements = selectedElementIds.length > 0;
 
     const menuItems: ContextMenuItem[] = [
         {
-            label: 'Copy image',
+            label: dict.drawing.copyImage || 'Copy image',
             action: () => {
                 onCopyImage?.();
                 onClose();
             },
         },
         {
-            label: 'Remove',
+            label: dict.drawing.remove || 'Remove',
             action: () => {
                 onDeleteSelected();
                 onClose();
@@ -139,7 +140,7 @@ const ContextMenu: React.FC<ContextMenuProps> = ({
                             ${!item.disabled && 'cursor-pointer'}
                         `}>
                         <div className="flex items-center gap-2">
-                            {item.danger && !item.disabled && (
+                            {item.danger && (
                                 <svg
                                     className="w-4 h-4"
                                     fill="none"
@@ -153,7 +154,8 @@ const ContextMenu: React.FC<ContextMenuProps> = ({
                                     />
                                 </svg>
                             )}
-                            {item.label === 'Copy image' && (
+                            {(item.label === 'Copy Image' ||
+                                item.label === 'Копіювати зображення') && (
                                 <svg
                                     className="w-4 h-4"
                                     fill="none"

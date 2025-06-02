@@ -85,7 +85,7 @@ export default function TemplateGrid({
                             <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 dark:bg-purple-900/50 text-purple-800 dark:text-purple-300 group-hover:bg-purple-200 dark:group-hover:bg-purple-800/60 transition-colors duration-300">
                                 {template.width}x{template.height}
                             </span>
-                            <div className="mt-auto flex space-x-1 opacity-0 group-hover:opacity-100 transition-all duration-300 ease-out z-20">
+                            <div className="mt-auto flex space-x-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-all duration-300 ease-out z-20">
                                 <button
                                     onClick={e => {
                                         e.preventDefault();
@@ -96,16 +96,16 @@ export default function TemplateGrid({
                                         );
                                     }}
                                     disabled={creatingCanvas === template.id}
-                                    className=" cursor-pointer p-1 text-gray-500 dark:text-gray-400 hover:text-green-600 dark:hover:text-green-400 hover:bg-white/20 dark:hover:bg-gray-800/50 rounded disabled:opacity-50 transition-all duration-200"
+                                    className="cursor-pointer p-1 text-gray-500 dark:text-gray-400 hover:text-green-600 dark:hover:text-green-400 hover:bg-white/20 dark:hover:bg-gray-800/50 rounded disabled:opacity-50 transition-all duration-200"
                                     title={
                                         dict.account
                                             ?.createCanvasFromTemplate ||
                                         'Create canvas from template'
                                     }>
                                     {creatingCanvas === template.id ? (
-                                        <Loader className="h-4 w-4 animate-spin" />
+                                        <Loader className="sm:h-4 sm:w-4 h-5 w-5 animate-spin" />
                                     ) : (
-                                        <Copy className="h-4 w-4" />
+                                        <Copy className="sm:h-4 sm:w-4 h-5 w-5" />
                                     )}
                                 </button>
 
@@ -125,9 +125,9 @@ export default function TemplateGrid({
                                         'Delete template'
                                     }>
                                     {isDeleting === template.id ? (
-                                        <Loader className="h-4 w-4 animate-spin" />
+                                        <Loader className="sm:h-4 sm:w-4 h-5 w-5 animate-spin" />
                                     ) : (
-                                        <Trash2 className="h-4 w-4" />
+                                        <Trash2 className="sm:h-4 sm:w-4 h-5 w-5" />
                                     )}
                                 </button>
                             </div>

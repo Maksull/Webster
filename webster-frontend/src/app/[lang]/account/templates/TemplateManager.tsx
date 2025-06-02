@@ -173,7 +173,7 @@ export default function TemplateManager() {
                 <h2 className="text-xl font-semibold text-gray-800 dark:text-white">
                     {dict.account?.templatesTitle || 'My Templates'}
                 </h2>
-                <div className="flex items-center gap-3 w-full sm:w-auto">
+                <div className="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto">
                     <div className="relative w-full sm:w-auto">
                         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                         <input
@@ -187,11 +187,12 @@ export default function TemplateManager() {
                             onChange={e => setSearchTerm(e.target.value)}
                         />
                     </div>
-                    <div className="flex border border-gray-300 dark:border-gray-600 rounded-lg overflow-hidden">
+
+                    <div className="flex border border-gray-300 dark:border-gray-600 rounded-lg overflow-hidden w-full sm:w-auto">
                         <button
                             onClick={() => setViewMode('grid')}
                             title={dict.account?.gridView || 'Grid view'}
-                            className={`p-2 ${
+                            className={`p-2 flex-1 flex justify-center items-center ${
                                 viewMode === 'grid'
                                     ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400'
                                     : 'cursor-pointer bg-white dark:bg-gray-700 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-600'
@@ -201,7 +202,7 @@ export default function TemplateManager() {
                         <button
                             onClick={() => setViewMode('list')}
                             title={dict.account?.listView || 'List view'}
-                            className={`p-2 ${
+                            className={`p-2 flex-1 flex justify-center items-center ${
                                 viewMode === 'list'
                                     ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400'
                                     : 'cursor-pointer bg-white dark:bg-gray-700 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-600'

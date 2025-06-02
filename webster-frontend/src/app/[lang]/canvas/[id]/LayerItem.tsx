@@ -27,7 +27,7 @@ import {
 } from 'lucide-react';
 import { DrawingLayer } from '@/types/layers';
 import { useLayers } from './useLayers';
-import { useDrawing } from '@/contexts';
+import { useDictionary, useDrawing } from '@/contexts';
 import { useHistory } from './useHistory';
 import AlertModal from '@/components/AlertModal';
 import { DrawingElement } from '@/types/elements';
@@ -208,6 +208,8 @@ const LayerItem: React.FC<LayerItemProps> = ({ layer, index }) => {
         }
     };
 
+    const { dict } = useDictionary();
+
     return (
         <>
             <AlertModal
@@ -231,7 +233,11 @@ const LayerItem: React.FC<LayerItemProps> = ({ layer, index }) => {
                                 e.stopPropagation();
                                 toggleLayerVisibility(layer.id);
                             }}
-                            title={layer.visible ? 'Hide Layer' : 'Show Layer'}>
+                            title={
+                                layer.visible
+                                    ? dict.drawing.hideLayer || 'Hide layer'
+                                    : dict.drawing.showLayer || 'Show layer'
+                            }>
                             {layer.visible ? (
                                 <Eye className="h-4 w-4" />
                             ) : (
@@ -294,8 +300,11 @@ const LayerItem: React.FC<LayerItemProps> = ({ layer, index }) => {
                                                         : 'text-blue-600 dark:text-blue-400'
                                                 }`}>
                                                 {isTopLayer
-                                                    ? 'Top level'
-                                                    : 'Bottom level'}
+                                                    ? dict.drawing.topLevel ||
+                                                      'Top level'
+                                                    : dict.drawing
+                                                          .bottomLevel ||
+                                                      'Bottom level'}
                                             </span>
                                         )}
                                     </div>
@@ -311,7 +320,9 @@ const LayerItem: React.FC<LayerItemProps> = ({ layer, index }) => {
                                 toggleLayerLock(layer.id);
                             }}
                             title={
-                                layer.locked ? 'Unlock Layer' : 'Lock Layer'
+                                layer.locked
+                                    ? dict.drawing.unlockLayer || 'Unlock Layer'
+                                    : dict.drawing.lockLayer || 'Lock Layer'
                             }>
                             {layer.locked ? (
                                 <Lock className="h-3.5 w-3.5" />
@@ -326,7 +337,7 @@ const LayerItem: React.FC<LayerItemProps> = ({ layer, index }) => {
                     <div className="mt-2 pl-6 flex flex-col gap-2">
                         <div className="flex items-center text-xs">
                             <span className="w-16 text-slate-500 dark:text-gray-400">
-                                Opacity:
+                                {dict.drawing.opacity || 'Opacity:'}
                             </span>
                             <input
                                 type="range"
@@ -357,7 +368,7 @@ const LayerItem: React.FC<LayerItemProps> = ({ layer, index }) => {
                                     startEditing();
                                 }}>
                                 <Edit className="h-3 w-3 inline mr-1" />
-                                Rename
+                                {dict.drawing.rename || 'Rename'}
                             </button>
 
                             <button
@@ -367,7 +378,7 @@ const LayerItem: React.FC<LayerItemProps> = ({ layer, index }) => {
                                     duplicateLayer(layer.id);
                                 }}>
                                 <Copy className="h-3 w-3 inline mr-1" />
-                                Duplicate
+                                {dict.drawing.duplicate || 'Duplicate'}
                             </button>
 
                             <button
@@ -385,11 +396,19 @@ const LayerItem: React.FC<LayerItemProps> = ({ layer, index }) => {
                                 disabled={isTopLayer}
                                 title={
                                     isTopLayer
-                                        ? `Already at top (layer ${layerPosition})`
-                                        : `Move to position ${layerPosition + 1}`
+                                        ? dict.drawing.alreadyAtTop?.replace(
+                                              '{{position}}',
+                                              layerPosition.toString(),
+                                          ) ||
+                                          `Already at top (layer ${layerPosition})`
+                                        : dict.drawing.moveToPositionDown?.replace(
+                                              '{{position}}',
+                                              (layerPosition + 1).toString(),
+                                          ) ||
+                                          `Move to position ${layerPosition + 1}`
                                 }>
                                 <ChevronUp className="h-3 w-3 inline mr-1" />
-                                Bring Forward
+                                {dict.drawing.bringForward || 'Bring Forward'}
                             </button>
 
                             <button
@@ -407,11 +426,19 @@ const LayerItem: React.FC<LayerItemProps> = ({ layer, index }) => {
                                 disabled={isBottomLayer}
                                 title={
                                     isBottomLayer
-                                        ? `Already at bottom (layer ${layerPosition})`
-                                        : `Move to position ${layerPosition - 1}`
+                                        ? dict.drawing.alreadyAtBottom?.replace(
+                                              '{{position}}',
+                                              layerPosition.toString(),
+                                          ) ||
+                                          `Already at bottom (layer ${layerPosition})`
+                                        : dict.drawing.moveToPositionUp?.replace(
+                                              '{{position}}',
+                                              (layerPosition - 1).toString(),
+                                          ) ||
+                                          `Move to position ${layerPosition - 1}`
                                 }>
                                 <ChevronDown className="h-3 w-3 inline mr-1" />
-                                Send Backward
+                                {dict.drawing.sendBackward || 'Send Backward'}
                             </button>
 
                             {!isBottomLayer && (
@@ -421,9 +448,12 @@ const LayerItem: React.FC<LayerItemProps> = ({ layer, index }) => {
                                         e.stopPropagation();
                                         mergeLayerDown(layer.id);
                                     }}
-                                    title="Merge this layer with the layer below it">
+                                    title={
+                                        dict.drawing.mergeWithBelow ||
+                                        'Merge this layer with the layer below it'
+                                    }>
                                     <Layers className="h-3 w-3 inline mr-1" />
-                                    Merge Down
+                                    {dict.drawing.mergeDown || 'Merge down'}
                                 </button>
                             )}
 
@@ -435,7 +465,7 @@ const LayerItem: React.FC<LayerItemProps> = ({ layer, index }) => {
                                 }}
                                 disabled={layers.length <= 1}>
                                 <Trash className="h-3 w-3 inline mr-1" />
-                                Delete
+                                {dict.drawing.delete || 'Delete'}
                             </button>
                         </div>
                     </div>
@@ -451,7 +481,10 @@ const LayerItem: React.FC<LayerItemProps> = ({ layer, index }) => {
                             }}>
                             <div className="flex items-center">
                                 <List className="h-3 w-3 mr-1" />
-                                <span>Elements ({elementCount})</span>
+                                <span>
+                                    {dict.drawing.elements || 'Elements'} (
+                                    {elementCount})
+                                </span>
                             </div>
                             <ChevronRight
                                 className={`h-3 w-3 transition-transform ${
@@ -501,7 +534,11 @@ const LayerItem: React.FC<LayerItemProps> = ({ layer, index }) => {
                                                     e.stopPropagation();
                                                     removeElement(element.id);
                                                 }}
-                                                title="Delete element">
+                                                title={
+                                                    dict.drawing
+                                                        .deleteElement ||
+                                                    'Delete element'
+                                                }>
                                                 <X className="h-3 w-3" />
                                             </button>
                                         </div>

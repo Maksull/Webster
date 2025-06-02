@@ -216,8 +216,8 @@ export default function CanvasManager() {
                 <h2 className="text-xl font-semibold text-gray-800 dark:text-white">
                     {dict.account?.myCanvases || 'My Canvases'}
                 </h2>
-                <div className="flex items-center gap-3">
-                    <div className="relative">
+                <div className="flex flex-col sm:flex-row items-center gap-y-3 sm:gap-x-3 w-full sm:w-auto">
+                    <div className="relative w-full sm:w-auto">
                         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                         <input
                             type="text"
@@ -225,14 +225,15 @@ export default function CanvasManager() {
                                 dict.account?.searchCanvases ||
                                 'Search canvases...'
                             }
-                            className="pl-9 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white w-full sm:w-auto"
+                            className="pl-9 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white w-full"
                             value={searchQuery}
                             onChange={e => setSearchQuery(e.target.value)}
                         />
                     </div>
-                    <div className="flex border border-gray-300 dark:border-gray-600 rounded-lg overflow-hidden">
+
+                    <div className="flex border border-gray-300 dark:border-gray-600 rounded-lg overflow-hidden w-full sm:w-auto max-w-xs">
                         <button
-                            className={`p-2 ${
+                            className={`p-2 flex-1 flex items-center justify-center ${
                                 viewMode === 'grid'
                                     ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400'
                                     : 'cursor-pointer bg-white dark:bg-gray-700 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-600'
@@ -242,7 +243,7 @@ export default function CanvasManager() {
                             <LayoutGrid className="h-5 w-5" />
                         </button>
                         <button
-                            className={`p-2 ${
+                            className={`p-2 flex-1 flex items-center justify-center ${
                                 viewMode === 'list'
                                     ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400'
                                     : 'cursor-pointer bg-white dark:bg-gray-700 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-600'
@@ -252,8 +253,9 @@ export default function CanvasManager() {
                             <List className="h-5 w-5" />
                         </button>
                     </div>
+
                     <select
-                        className="cursor-pointer border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white p-2 text-sm"
+                        className="cursor-pointer border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white p-2 text-sm w-full sm:w-auto max-w-xs"
                         value={sortBy}
                         onChange={e => setSortBy(e.target.value)}>
                         <option value="updatedAt">
@@ -267,10 +269,11 @@ export default function CanvasManager() {
                             {dict.account?.sortByName || 'Name'}
                         </option>
                     </select>
+
                     <button
                         onClick={handleCreateCanvas}
                         disabled={isCreatingCanvas}
-                        className="cursor-pointer bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white px-4 py-2 rounded-lg font-medium transition-colors duration-200 flex items-center shadow-sm hover:shadow disabled:opacity-70">
+                        className="items-center justify-center cursor-pointer bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white px-4 py-2 rounded-lg font-medium transition-colors duration-200 flex items-center shadow-sm hover:shadow disabled:opacity-70 w-full sm:w-auto mt-2 sm:mt-0">
                         {isCreatingCanvas ? (
                             <>
                                 <Loader className="mr-2 h-4 w-4 animate-spin" />

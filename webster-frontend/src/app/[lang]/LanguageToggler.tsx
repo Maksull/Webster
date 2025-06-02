@@ -18,7 +18,7 @@ export function LanguageToggler({ currentLang }: LanguageTogglerProps) {
 
     return (
         <div className="flex items-center justify-center md:gap-2">
-            <Globe className="h-4 w-4 text-gray-400 dark:text-gray-500" />
+            <Globe className="h-4 w-4 text-gray-400 dark:text-gray-500 mr-1" />
             <div className="flex">
                 {i18n.locales.map(locale => (
                     <button

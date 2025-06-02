@@ -264,6 +264,39 @@ export type Dictionary = {
         curveClickToAdd: string;
         curveDoubleClickFinish: string;
         curveClickToStart: string;
+        remove: string;
+        saveAndExport: string;
+        zoom: string;
+        clearCanvas: string;
+        colorAndSize: string;
+        history: string;
+        viewAndSettings: string;
+        toolsActions: string;
+        shapes: string;
+        showBottomLayerFirst: string;
+        showTopLayerFirst: string;
+        addLayer: string;
+        topLayerFirst: string;
+        bottomLayerFirst: string;
+        hideLayer: string;
+        showLayer: string;
+        topLevel: string;
+        bottomLevel: string;
+        unlockLayer: string;
+        lockLayer: string;
+        duplicate: string;
+        bringForward: string;
+        rename: string;
+        sendBackward: string;
+        mergeDown: string;
+        delete: string;
+        elements: string;
+        deleteElement: string;
+        alreadyAtTop: string;
+        moveToPositionDown: string;
+        alreadyAtBottom: string;
+        moveToPositionUp: string;
+        mergeWithBelow: string;
     };
     notFound: {
         title: string;
@@ -291,6 +324,8 @@ export type Dictionary = {
         useTemplateButton: string;
     };
     imageToolBar: {
+        fitImageStretch: string;
+        fitImageMaintainAspect: string;
         title: string;
         resolution: string;
         fitToCanvas: string;

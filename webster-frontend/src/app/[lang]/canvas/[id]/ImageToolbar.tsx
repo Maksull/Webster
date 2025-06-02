@@ -141,7 +141,10 @@ const ImageToolbar: React.FC<ImageToolbarProps> = ({
                                     fitImageToCanvas(selectedImage.id)
                                 }
                                 className="inline-flex items-center px-3 py-2 text-sm font-medium text-white bg-blue-500 hover:bg-blue-600 rounded-lg shadow-sm transition-all duration-200 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-                                title="Fit image to canvas (stretch)">
+                                title={
+                                    dict.imageToolBar.fitImageStretch ||
+                                    'Fit image to canvas (stretch)'
+                                }>
                                 <Maximize className="w-4 h-4 mr-1.5" />
                                 {dict.imageToolBar.stretch || 'Stretch'}
                             </button>
@@ -153,7 +156,10 @@ const ImageToolbar: React.FC<ImageToolbarProps> = ({
                                     )
                                 }
                                 className="inline-flex items-center px-3 py-2 text-sm font-medium text-white bg-emerald-500 hover:bg-emerald-600 rounded-lg shadow-sm transition-all duration-200 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2"
-                                title="Fit image to canvas (maintain aspect ratio)">
+                                title={
+                                    dict.imageToolBar.fitImageMaintainAspect ||
+                                    'Fit image to canvas (maintain aspect ratio)'
+                                }>
                                 <Square className="w-4 h-4 mr-1.5" />
                                 {dict.imageToolBar.fit || 'Fit'}
                             </button>

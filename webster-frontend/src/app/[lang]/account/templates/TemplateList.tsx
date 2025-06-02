@@ -98,9 +98,9 @@ export default function TemplateList({
                                         'Create canvas from template'
                                     }>
                                     {creatingCanvas === template.id ? (
-                                        <Loader className="h-4 w-4 animate-spin" />
+                                        <Loader className="sm:h-4 sm:w-4 h-5 w-5 animate-spin" />
                                     ) : (
-                                        <Copy className="h-4 w-4" />
+                                        <Copy className="sm:h-4 sm:w-4 h-5 w-5" />
                                     )}
                                 </button>
 
@@ -118,9 +118,9 @@ export default function TemplateList({
                                         'Delete template'
                                     }>
                                     {isDeleting === template.id ? (
-                                        <Loader className="h-4 w-4 animate-spin" />
+                                        <Loader className="sm:h-4 sm:w-4 h-5 w-5 animate-spin" />
                                     ) : (
-                                        <Trash2 className="h-4 w-4" />
+                                        <Trash2 className="sm:h-4 sm:w-4 h-5 w-5" />
                                     )}
                                 </button>
                             </div>

@@ -64,7 +64,7 @@ export default function CanvasGrid({
                             <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 dark:bg-purple-900/50 text-purple-800 dark:text-purple-300 group-hover:bg-purple-200 dark:group-hover:bg-purple-800/60 transition-colors duration-300">
                                 {canvas.width}x{canvas.height}
                             </span>
-                            <div className="mt-auto flex space-x-1 opacity-0 group-hover:opacity-100 transition-all duration-300 ease-out z-20">
+                            <div className="mt-auto flex space-x-1 sm:opacity-0 sm:group-hover:opacity-100 opacity-100 transition-all duration-300 ease-out z-20">
                                 <Link
                                     href={`/${lang}/canvas/${canvas.id}`}
                                     className="p-1 text-gray-500 dark:text-gray-400 hover:text-purple-600 dark:hover:text-purple-400 hover:bg-white/20 dark:hover:bg-gray-800/50 rounded transition-all duration-200"
@@ -72,7 +72,7 @@ export default function CanvasGrid({
                                         dict.account?.editCanvas ||
                                         'Edit canvas'
                                     }>
-                                    <Edit2 className="h-4 w-4" />
+                                    <Edit2 className="sm:h-4 sm:w-4 h-5 w-5" />
                                 </Link>
 
                                 <button
@@ -88,9 +88,9 @@ export default function CanvasGrid({
                                         'Delete canvas'
                                     }>
                                     {isDeleting === canvas.id ? (
-                                        <Loader className="h-4 w-4 animate-spin" />
+                                        <Loader className="sm:h-4 sm:w-4 h-5 w-5 animate-spin" />
                                     ) : (
-                                        <Trash2 className="h-4 w-4" />
+                                        <Trash2 className="sm:h-4 sm:w-4 h-5 w-5" />
                                     )}
                                 </button>
                             </div>

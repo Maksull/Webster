@@ -43,8 +43,10 @@ const LayerPanel: React.FC<LayerPanelProps> = ({ dict }) => {
                             onClick={() => setDisplayTopFirst(!displayTopFirst)}
                             title={
                                 displayTopFirst
-                                    ? 'Show bottom layer first'
-                                    : 'Show top layer first'
+                                    ? dict.drawing.showBottomLayerFirst ||
+                                      'Show bottom layer first'
+                                    : dict.drawing.showTopLayerFirst ||
+                                      'Show top layer first'
                             }>
                             {displayTopFirst ? (
                                 <ArrowDown className="h-4 w-4" />
@@ -55,7 +57,7 @@ const LayerPanel: React.FC<LayerPanelProps> = ({ dict }) => {
                         <button
                             className="p-1.5 rounded-md hover:bg-slate-100 dark:hover:bg-gray-700 text-slate-700 dark:text-gray-300"
                             onClick={addLayer}
-                            title="Add Layer">
+                            title={dict.drawing.addLayer || 'Add Layer'}>
                             <Plus className="h-4 w-4" />
                         </button>
                         <button
@@ -70,12 +72,13 @@ const LayerPanel: React.FC<LayerPanelProps> = ({ dict }) => {
                     {displayTopFirst ? (
                         <>
                             <ArrowDown className="h-3 w-3 mr-1" />
-                            Top layer first
+                            {dict.drawing.topLayerFirst || 'Top layer first'}
                         </>
                     ) : (
                         <>
                             <ArrowUp className="h-3 w-3 mr-1" />
-                            Bottom layer first
+                            {dict.drawing.bottomLayerFirst ||
+                                'Bottom layer first'}
                         </>
                     )}
                 </div>

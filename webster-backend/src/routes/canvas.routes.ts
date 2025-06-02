@@ -41,7 +41,7 @@ const createCanvasSchema = {
                             id: { type: 'string' },
                             type: {
                                 type: 'string',
-                                enum: ['line', 'rect', 'circle', 'line-shape', 'rectangle', 'triangle', 'text', 'image'],
+                                enum: ['line', 'rect', 'circle', 'line-shape', 'rectangle', 'triangle', 'text', 'image', 'curve'],
                             },
                             layerId: { type: 'string' },
                             x: { type: 'number' },
@@ -117,7 +117,7 @@ const updateCanvasSchema = {
                             id: { type: 'string' },
                             type: {
                                 type: 'string',
-                                enum: ['line', 'rect', 'circle', 'line-shape', 'rectangle', 'triangle', 'text', 'image', 'arrow'],
+                                enum: ['line', 'rect', 'circle', 'line-shape', 'rectangle', 'triangle', 'text', 'image', 'arrow', 'curve'],
                             },
                             layerId: { type: 'string' },
                             x: { type: 'number' },

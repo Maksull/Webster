@@ -246,7 +246,7 @@ const DesktopToolbar: React.FC<DesktopToolbarProps> = ({ dict, onClear }) => {
             />
 
             <button
-                className={`p-2 rounded-lg transition-colors duration-200 ${
+                className={`cursor-pointer p-2 rounded-lg transition-colors duration-200 ${
                     tool === 'image'
                         ? 'bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400'
                         : 'text-slate-600 dark:text-gray-400 hover:bg-slate-100 dark:hover:bg-gray-700'
@@ -259,7 +259,7 @@ const DesktopToolbar: React.FC<DesktopToolbarProps> = ({ dict, onClear }) => {
             <div className="my-2 border-t border-slate-200 dark:border-gray-700 w-10"></div>
 
             <button
-                className={`p-2 rounded-lg ${
+                className={`cursor-pointer p-2 rounded-lg ${
                     showLayersPanel
                         ? 'bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400'
                         : 'text-slate-600 dark:text-gray-400 hover:bg-slate-100 dark:hover:bg-gray-700'
@@ -270,7 +270,7 @@ const DesktopToolbar: React.FC<DesktopToolbarProps> = ({ dict, onClear }) => {
             </button>
 
             <button
-                className="p-2 rounded-lg text-slate-600 dark:text-gray-400 hover:bg-slate-100 dark:hover:bg-gray-700 transition-colors duration-200 relative"
+                className="cursor-pointer p-2 rounded-lg text-slate-600 dark:text-gray-400 hover:bg-slate-100 dark:hover:bg-gray-700 transition-colors duration-200 relative"
                 onClick={() => setShowSettings(!showSettings)}
                 title={dict.drawing?.settings || 'Settings'}>
                 <Palette className="h-5 w-5" />
@@ -283,7 +283,7 @@ const DesktopToolbar: React.FC<DesktopToolbarProps> = ({ dict, onClear }) => {
 
             {/* History controls */}
             <button
-                className={`p-2 rounded-lg text-slate-600 dark:text-gray-400 hover:bg-slate-100 dark:hover:bg-gray-700 transition-colors duration-200 ${
+                className={`cursor-pointer p-2 rounded-lg text-slate-600 dark:text-gray-400 hover:bg-slate-100 dark:hover:bg-gray-700 transition-colors duration-200 ${
                     !canUndo ? 'opacity-50 cursor-not-allowed' : ''
                 }`}
                 onClick={handleUndo}
@@ -293,7 +293,7 @@ const DesktopToolbar: React.FC<DesktopToolbarProps> = ({ dict, onClear }) => {
             </button>
 
             <button
-                className={`p-2 rounded-lg text-slate-600 dark:text-gray-400 hover:bg-slate-100 dark:hover:bg-gray-700 transition-colors duration-200 ${
+                className={`cursor-pointer p-2 rounded-lg text-slate-600 dark:text-gray-400 hover:bg-slate-100 dark:hover:bg-gray-700 transition-colors duration-200 ${
                     !canRedo ? 'opacity-50 cursor-not-allowed' : ''
                 }`}
                 onClick={handleRedo}
@@ -305,7 +305,7 @@ const DesktopToolbar: React.FC<DesktopToolbarProps> = ({ dict, onClear }) => {
             <div className="my-2 border-t border-slate-200 dark:border-gray-700 w-10"></div>
 
             <button
-                className="p-2 rounded-lg text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors duration-200"
+                className="cursor-pointer p-2 rounded-lg text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors duration-200"
                 onClick={onClear}
                 title={dict.drawing?.clear || 'Clear'}>
                 <Trash2 className="h-5 w-5" />
@@ -314,7 +314,7 @@ const DesktopToolbar: React.FC<DesktopToolbarProps> = ({ dict, onClear }) => {
             <div className="my-2 border-t border-slate-200 dark:border-gray-700 w-10"></div>
 
             <button
-                className="p-2 rounded-lg text-slate-600 dark:text-gray-400 hover:bg-slate-100 dark:hover:bg-gray-700 transition-colors duration-200"
+                className="cursor-pointer p-2 rounded-lg text-slate-600 dark:text-gray-400 hover:bg-slate-100 dark:hover:bg-gray-700 transition-colors duration-200"
                 onClick={handleZoomIn}
                 title="Zoom In">
                 <ZoomIn className="h-5 w-5" />
@@ -325,14 +325,14 @@ const DesktopToolbar: React.FC<DesktopToolbarProps> = ({ dict, onClear }) => {
             </div>
 
             <button
-                className="p-2 rounded-lg text-slate-600 dark:text-gray-400 hover:bg-slate-100 dark:hover:bg-gray-700 transition-colors duration-200"
+                className="cursor-pointer p-2 rounded-lg text-slate-600 dark:text-gray-400 hover:bg-slate-100 dark:hover:bg-gray-700 transition-colors duration-200"
                 onClick={handleZoomOut}
                 title="Zoom Out">
                 <ZoomOut className="h-5 w-5" />
             </button>
 
             <button
-                className="p-2 rounded-lg text-slate-600 dark:text-gray-400 hover:bg-slate-100 dark:hover:bg-gray-700 transition-colors duration-200"
+                className="cursor-pointer p-2 rounded-lg text-slate-600 dark:text-gray-400 hover:bg-slate-100 dark:hover:bg-gray-700 transition-colors duration-200"
                 onClick={handleResetZoom}
                 title="Reset Zoom">
                 <Maximize className="h-5 w-5" />
