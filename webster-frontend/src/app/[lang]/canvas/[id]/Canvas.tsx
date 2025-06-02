@@ -203,6 +203,8 @@ const Canvas: React.FC<CanvasProps> = ({
         });
 
         // Only clear selection if we didn't hit important elements
+        // For images, only clear if tool is 'select' and we didn't hit an image,
+        // or if tool is not 'select' (since images can't be selected with other tools)
         if (
             tool === 'select' &&
             !hitText &&
