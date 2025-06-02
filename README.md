@@ -15,7 +15,7 @@ A powerful and intuitive web-based graphic editor designed for creating, editing
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/Maksull/Uevent.git
+   git clone https://github.com/Maksull/Webster.git
    cd yourproject
    ```
 
