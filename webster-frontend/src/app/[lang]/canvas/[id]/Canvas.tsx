@@ -1,7 +1,9 @@
 'use client';
+
 import React, { useState, useRef } from 'react';
 import { Stage, Layer, Rect, Circle, Line } from 'react-konva';
 import { KonvaEventObject } from 'konva/lib/Node';
+import { Node as KonvaNode } from 'konva/lib/Node';
 import LayerRenderer from './LayerRenderer';
 import { useDrawing } from '@/contexts';
 import CanvasResizeHandles from './CanvasResizeHandles';
@@ -25,6 +27,7 @@ import {
     TriangleElement,
     CurveElement,
 } from '@/types/elements';
+import ContextMenu from './ContextMenu';
 
 interface CanvasProps {
     onMouseDown: (e: KonvaEventObject<MouseEvent | TouchEvent>) => void;
@@ -83,9 +86,112 @@ const Canvas: React.FC<CanvasProps> = ({
         handleImageResizeStart: contextHandleImageResizeStart,
     } = useDrawing();
 
-    const { dict } = useDictionary();
+    const [contextMenu, setContextMenu] = useState<{
+        x: number;
+        y: number;
+        isVisible: boolean;
+    }>({
+        x: 0,
+        y: 0,
+        isVisible: false,
+    });
 
+    const handleContextMenu = (e: KonvaEventObject<PointerEvent>) => {
+        e.evt.preventDefault();
+        e.cancelBubble = true;
+
+        const stage = e.target.getStage();
+        if (!stage) return;
+
+        const pos = stage.getPointerPosition();
+        if (!pos) return;
+
+        const shapes = stage.getAllIntersections(pos);
+
+        const targetShapes = shapes.filter((shape: KonvaNode) => {
+            if (shape === stage || shape.getClassName() === 'Stage') {
+                return false;
+            }
+            return [
+                'Rect',
+                'Circle',
+                'Line',
+                'Group',
+                'Arrow',
+                'RegularPolygon',
+                'Text',
+                'Image',
+            ].includes(shape.getClassName());
+        });
+
+        let clickedElementId: string | null = null;
+
+        if (targetShapes.length > 0) {
+            for (let i = targetShapes.length - 1; i >= 0; i--) {
+                const shape = targetShapes[i];
+                const shapeId = shape.attrs.id;
+                if (!shapeId) continue;
+
+                let foundElement = false;
+                for (const [, elements] of Array.from(
+                    elementsByLayer.entries(),
+                )) {
+                    const element = elements.find(el => el.id === shapeId);
+                    if (element) {
+                        clickedElementId = shapeId;
+                        foundElement = true;
+                        break;
+                    }
+                }
+                if (foundElement) break;
+            }
+        }
+
+        if (clickedElementId) {
+            if (!selectedElementIds.includes(clickedElementId)) {
+                if (tool === 'select') {
+                    setSelectedElementIds([clickedElementId]);
+                }
+            }
+        } else {
+            if (tool === 'select') {
+                setSelectedElementIds([]);
+                setImageEditingId(null);
+            }
+        }
+
+        setContextMenu({
+            x: e.evt.clientX,
+            y: e.evt.clientY,
+            isVisible: true,
+        });
+    };
+
+    const handleCloseContextMenu = () => {
+        setContextMenu(prev => ({ ...prev, isVisible: false }));
+    };
+
+    const handleCopyImage = async () => {
+        if (stageRef.current) {
+            try {
+                const canvas = stageRef.current.toCanvas();
+                canvas.toBlob(async blob => {
+                    if (blob) {
+                        await navigator.clipboard.write([
+                            new ClipboardItem({ 'image/png': blob }),
+                        ]);
+                        console.log('Image copied to clipboard');
+                    }
+                });
+            } catch (error) {
+                console.error('Failed to copy image:', error);
+            }
+        }
+    };
+
+    const { dict } = useDictionary();
     useEraserCursor(stageRef, tool, elementsByLayer);
+
     const [selectionRect, setSelectionRect] = useState<SelectionRect | null>(
         null,
     );
@@ -96,16 +202,21 @@ const Canvas: React.FC<CanvasProps> = ({
     const [imageEditingId, setImageEditingId] = useState<string | null>(null);
     const [curvePreviewPosition, setCurvePreviewPosition] =
         useState<Point | null>(null);
+
     const lastClickTimes = useRef<Map<string, number>>(new Map());
 
-    const { handleTextEdit, handleTextEditDone, handleStageDoubleClick } =
-        useCanvasOperations({
-            clearSelectionRect: () => {
-                setSelectionRect(null);
-                setIsSelecting(false);
-                setSelectionStartPoint(null);
-            },
-        });
+    const {
+        handleTextEdit,
+        handleTextEditDone,
+        handleStageDoubleClick,
+        handleDeleteSelectedElements,
+    } = useCanvasOperations({
+        clearSelectionRect: () => {
+            setSelectionRect(null);
+            setIsSelecting(false);
+            setSelectionStartPoint(null);
+        },
+    });
 
     const handleImageResizeEnd = () => {
         setIsImageResizing(false);
@@ -113,12 +224,18 @@ const Canvas: React.FC<CanvasProps> = ({
 
     const handleStageClick = (e: KonvaEventObject<MouseEvent | TouchEvent>) => {
         console.log('Canvas.handleStageClick', e.target.getClassName());
+
+        if (e.evt && 'button' in e.evt && e.evt.button === 2) {
+            return;
+        }
+
         if (tool === 'curve') {
             if (isDrawingCurve) {
                 const now = Date.now();
                 const target = e.target;
                 const targetId = target.attrs?.id || 'stage';
                 const lastClickTime = lastClickTimes.current.get(targetId) || 0;
+
                 if (now - lastClickTime < 300) {
                     handleStageDoubleClick(e);
                 }
@@ -458,14 +575,17 @@ const Canvas: React.FC<CanvasProps> = ({
 
     const getSelectedImageId = (): string | undefined => {
         if (selectedElementIds.length !== 1) return undefined;
+
         const selectedId = selectedElementIds[0];
         let isImage = false;
+
         elementsByLayer.forEach(elements => {
             const element = elements.find(el => el.id === selectedId);
             if (element && element.type === 'image') {
                 isImage = true;
             }
         });
+
         return isImage ? selectedId : undefined;
     };
 
@@ -484,20 +604,36 @@ const Canvas: React.FC<CanvasProps> = ({
 
         const stage = stageRef.current;
         const containerRect = stage.container().getBoundingClientRect();
-        const typedTextElement = textElement as TextElement;
 
+        const typedTextElement = textElement as TextElement;
         return {
             x: typedTextElement.x * scale + containerRect.left,
             y: typedTextElement.y * scale + containerRect.top,
         };
     };
 
+    const renderContextMenu = () => {
+        if (!contextMenu.isVisible) return null;
+
+        return createPortal(
+            <ContextMenu
+                x={contextMenu.x}
+                y={contextMenu.y}
+                isVisible={contextMenu.isVisible}
+                onClose={handleCloseContextMenu}
+                onDeleteSelected={handleDeleteSelectedElements}
+                onCopyImage={handleCopyImage}
+            />,
+            document.getElementById('canvas-container')!,
+        );
+    };
+
     const renderTextEditor = () => {
         if (!textEditingId) return null;
 
         const position = getTextEditorPosition();
-        let currentTextElement: TextElement | null = null;
 
+        let currentTextElement: TextElement | null = null;
         elementsByLayer.forEach(elements => {
             const found = elements.find(
                 el => el.id === textEditingId && el.type === 'text',
@@ -535,7 +671,6 @@ const Canvas: React.FC<CanvasProps> = ({
     };
 
     const renderCurveInstructions = () => {
-        console.log('Canvas.renderCurveInstructions', tool, isDrawingCurve);
         if (tool !== 'curve') return null;
 
         return (
@@ -591,6 +726,7 @@ const Canvas: React.FC<CanvasProps> = ({
                         onTouchMove={handleCanvasMouseMove}
                         onTouchEnd={handleCanvasMouseUp}
                         onClick={handleStageClick}
+                        onContextMenu={handleContextMenu}
                         onDblClick={handleStageDoubleClick}
                         ref={stageRef}
                         className={`${
@@ -634,6 +770,7 @@ const Canvas: React.FC<CanvasProps> = ({
                                         setSelectionRect(null);
                                         setIsSelecting(false);
                                         setSelectionStartPoint(null);
+
                                         if (
                                             window.event &&
                                             ((window.event as KeyboardEvent)
@@ -818,6 +955,7 @@ const Canvas: React.FC<CanvasProps> = ({
                         onResizeStart={onResizeStart}
                     />
                     {renderTextEditor()}
+                    {renderContextMenu()}
                 </div>
             </div>
         </div>

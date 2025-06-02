@@ -1546,6 +1546,88 @@ export const useCanvasOperations = (callbacks: CallbacksProps = {}) => {
         }
     };
 
+    const handleDeleteSelectedElements = useCallback((): boolean => {
+        if (selectedElementIds.length === 0) {
+            console.log('No elements selected for deletion');
+            return false;
+        }
+
+        // Check if any selected elements are in locked layers
+        const hasLockedElement = selectedElementIds.some(id => {
+            for (const [layerId, elements] of elementsByLayer.entries()) {
+                const element = elements.find(el => el.id === id);
+                if (element) {
+                    const layer = layers.find(l => l.id === layerId);
+                    return layer?.locked || false;
+                }
+            }
+            return false;
+        });
+
+        if (hasLockedElement) {
+            console.log(
+                'Cannot delete elements: one or more layers are locked',
+            );
+            return false;
+        }
+
+        // Create updated elements map without the selected elements
+        const updatedElementsByLayer = new Map(elementsByLayer);
+        let deletedCount = 0;
+
+        updatedElementsByLayer.forEach((elements, layerId) => {
+            const filteredElements = elements.filter(element => {
+                const shouldDelete = selectedElementIds.includes(element.id);
+                if (shouldDelete) {
+                    deletedCount++;
+                }
+                return !shouldDelete;
+            });
+            updatedElementsByLayer.set(layerId, filteredElements);
+        });
+
+        if (deletedCount > 0) {
+            // Update the state
+            setElementsByLayer(updatedElementsByLayer);
+            setSelectedElementIds([]);
+
+            // Record history for undo/redo
+            recordHistory(undefined, updatedElementsByLayer);
+
+            console.log(`Deleted ${deletedCount} element(s)`);
+            return true;
+        }
+
+        return false;
+    }, [
+        selectedElementIds,
+        elementsByLayer,
+        layers,
+        setElementsByLayer,
+        setSelectedElementIds,
+        recordHistory,
+    ]);
+
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            // Only trigger deletion on Delete or Backspace keys
+            // AND only when not typing in an input field or textarea
+            if (
+                (e.key === 'Delete' || e.key === 'Backspace') &&
+                (e.target as HTMLElement).tagName !== 'INPUT' &&
+                (e.target as HTMLElement).tagName !== 'TEXTAREA'
+            ) {
+                e.preventDefault();
+                handleDeleteSelectedElements();
+            }
+        };
+
+        document.addEventListener('keydown', handleKeyDown);
+        return () => {
+            document.removeEventListener('keydown', handleKeyDown);
+        };
+    }, [handleDeleteSelectedElements]);
+
     const handleElementColorChange = (
         elementIds: string[],
         colorType: 'stroke' | 'fill',
@@ -1601,6 +1683,7 @@ export const useCanvasOperations = (callbacks: CallbacksProps = {}) => {
         handleSaveAsTemplate,
         handleElementColorChange,
         handleStageDoubleClick,
+        handleDeleteSelectedElements,
         finishCurve,
     };
 };
