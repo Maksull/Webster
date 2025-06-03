@@ -32,23 +32,23 @@ export default function Home() {
     }, []);
 
     useEffect(() => {
-        const hiddenElements = document.querySelectorAll('.hidden-element')
+        const hiddenElements = document.querySelectorAll('.hidden-element');
 
         const observer = new IntersectionObserver(
-            (entries) => {
+            entries => {
                 entries.forEach(entry => {
                     if (entry.isIntersecting) {
-                        entry.target.classList.add('visible-element')
+                        entry.target.classList.add('visible-element');
                     }
-                })
+                });
             },
-            { threshold: 1.0 }
-        )
+            { threshold: 1.0 },
+        );
 
-        hiddenElements.forEach(e => observer.observe(e))
+        hiddenElements.forEach(e => observer.observe(e));
 
         return () => {
-            hiddenElements.forEach((element) => observer.unobserve(element));
+            hiddenElements.forEach(element => observer.unobserve(element));
         };
     });
 
