@@ -122,7 +122,7 @@ const ImageToolbar: React.FC<ImageToolbarProps> = ({
                     </div>
                     <button
                         onClick={handleClose}
-                        className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                        className="cursor-pointer p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
                         title="Close toolbar">
                         <X className="w-4 h-4" />
                     </button>
@@ -140,7 +140,7 @@ const ImageToolbar: React.FC<ImageToolbarProps> = ({
                                 onClick={() =>
                                     fitImageToCanvas(selectedImage.id)
                                 }
-                                className="inline-flex items-center px-3 py-2 text-sm font-medium text-white bg-blue-500 hover:bg-blue-600 rounded-lg shadow-sm transition-all duration-200 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                                className="cursor-pointer inline-flex items-center px-3 py-2 text-sm font-medium text-white bg-blue-500 hover:bg-blue-600 rounded-lg shadow-sm transition-all duration-200 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
                                 title={
                                     dict.imageToolBar.fitImageStretch ||
                                     'Fit image to canvas (stretch)'
@@ -155,7 +155,7 @@ const ImageToolbar: React.FC<ImageToolbarProps> = ({
                                         selectedImage.id,
                                     )
                                 }
-                                className="inline-flex items-center px-3 py-2 text-sm font-medium text-white bg-emerald-500 hover:bg-emerald-600 rounded-lg shadow-sm transition-all duration-200 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2"
+                                className="cursor-pointer inline-flex items-center px-3 py-2 text-sm font-medium text-white bg-emerald-500 hover:bg-emerald-600 rounded-lg shadow-sm transition-all duration-200 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2"
                                 title={
                                     dict.imageToolBar.fitImageMaintainAspect ||
                                     'Fit image to canvas (maintain aspect ratio)'
@@ -181,7 +181,7 @@ const ImageToolbar: React.FC<ImageToolbarProps> = ({
                                         selectedImage.id,
                                     )
                                 }
-                                className="inline-flex items-center justify-center p-2 text-white bg-indigo-500 hover:bg-indigo-600 rounded-lg shadow-sm transition-all duration-200 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+                                className="cursor-pointer inline-flex items-center justify-center p-2 text-white bg-indigo-500 hover:bg-indigo-600 rounded-lg shadow-sm transition-all duration-200 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
                                 title={
                                     dict.imageToolBar.flipHorizontal ||
                                     'Flip horizontal'
@@ -195,7 +195,7 @@ const ImageToolbar: React.FC<ImageToolbarProps> = ({
                                         selectedImage.id,
                                     )
                                 }
-                                className="inline-flex items-center justify-center p-2 text-white bg-indigo-500 hover:bg-indigo-600 rounded-lg shadow-sm transition-all duration-200 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+                                className="cursor-pointer inline-flex items-center justify-center p-2 text-white bg-indigo-500 hover:bg-indigo-600 rounded-lg shadow-sm transition-all duration-200 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
                                 title={
                                     dict.imageToolBar.flipVertical ||
                                     'Flip vertical'
@@ -209,7 +209,7 @@ const ImageToolbar: React.FC<ImageToolbarProps> = ({
                                         selectedImage.id,
                                     )
                                 }
-                                className="inline-flex items-center justify-center p-2 text-gray-700 dark:text-gray-300 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 rounded-lg shadow-sm transition-all duration-200 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
+                                className="cursor-pointer inline-flex items-center justify-center p-2 text-gray-700 dark:text-gray-300 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 rounded-lg shadow-sm transition-all duration-200 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
                                 title={
                                     dict.imageToolBar.reset ||
                                     'Reset all transforms'
@@ -230,7 +230,7 @@ const ImageToolbar: React.FC<ImageToolbarProps> = ({
                         <div className="flex items-center gap-2">
                             <button
                                 onClick={toggleAspectRatio}
-                                className={`inline-flex items-center px-3 py-2 text-sm font-medium rounded-lg shadow-sm transition-all duration-200 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-2 ${
+                                className={`cursor-pointer inline-flex items-center px-3 py-2 text-sm font-medium rounded-lg shadow-sm transition-all duration-200 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-2 ${
                                     maintainAspectRatio
                                         ? 'text-white bg-amber-500 hover:bg-amber-600 focus:ring-amber-500 shadow-lg'
                                         : 'text-gray-700 dark:text-gray-300 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 focus:ring-gray-500'
@@ -255,7 +255,7 @@ const ImageToolbar: React.FC<ImageToolbarProps> = ({
 
                             <button
                                 onClick={handleClose}
-                                className="px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 rounded-lg shadow-sm transition-all duration-200 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
+                                className="cursor-pointer px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 rounded-lg shadow-sm transition-all duration-200 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
                                 title="Close and deselect">
                                 {dict.imageToolBar.done || 'Done'}
                             </button>

@@ -264,14 +264,20 @@ const DesktopToolbar: React.FC<DesktopToolbarProps> = ({ dict, onClear }) => {
                         ? 'bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400'
                         : 'text-slate-600 dark:text-gray-400 hover:bg-slate-100 dark:hover:bg-gray-700'
                 } transition-colors duration-200`}
-                onClick={() => setShowLayersPanel(!showLayersPanel)}
+                onClick={() => {
+                    setShowSettings(false);
+                    setShowLayersPanel(!showLayersPanel);
+                }}
                 title={dict.drawing?.layers || 'Layers'}>
                 <Layers className="h-5 w-5" />
             </button>
 
             <button
                 className="cursor-pointer p-2 rounded-lg text-slate-600 dark:text-gray-400 hover:bg-slate-100 dark:hover:bg-gray-700 transition-colors duration-200 relative"
-                onClick={() => setShowSettings(!showSettings)}
+                onClick={() => {
+                    setShowSettings(!showSettings);
+                    setShowLayersPanel(false);
+                }}
                 title={dict.drawing?.settings || 'Settings'}>
                 <Palette className="h-5 w-5" />
                 <div
