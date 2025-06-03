@@ -1,5 +1,8 @@
+// ImageToolbar.tsx - Update to use recordHistory
+
 import React from 'react';
 import { useDictionary, useDrawing } from '@/contexts';
+import { useHistory } from './useHistory'; // Import useHistory
 import { createImageTransformUtils } from './imageTransformUtils';
 import { ImageElement } from '@/types/elements';
 import {
@@ -17,32 +20,43 @@ import {
 interface ImageToolbarProps {
     selectedImageId?: string;
     onClose?: () => void;
+    fitImageToCanvas: (imageId: string) => void;
+    fitImageToCanvasWithAspectRatio: (imageId: string) => void;
+    toggleAspectRatio: () => void;
 }
 
 const ImageToolbar: React.FC<ImageToolbarProps> = ({
     selectedImageId,
     onClose,
+    fitImageToCanvas,
+    fitImageToCanvasWithAspectRatio,
+    toggleAspectRatio,
 }) => {
     const {
         elementsByLayer,
         selectedElementIds,
         setElementsByLayer,
         setSelectedElementIds,
-        fitImageToCanvas,
-        fitImageToCanvasWithAspectRatio,
-        toggleAspectRatio,
         maintainAspectRatio,
         layers,
         isMoving,
     } = useDrawing();
 
     const { dict } = useDictionary();
+    const { recordHistory } = useHistory(); // Get recordHistory function
 
+    // Pass recordHistory to imageTransformUtils
     const imageTransformUtils = React.useMemo(
-        () => createImageTransformUtils(elementsByLayer, setElementsByLayer),
-        [elementsByLayer, setElementsByLayer],
+        () =>
+            createImageTransformUtils(
+                elementsByLayer,
+                setElementsByLayer,
+                recordHistory, // Pass recordHistory function
+            ),
+        [elementsByLayer, setElementsByLayer, recordHistory],
     );
 
+    // Rest of the component remains the same...
     const isImageLayerLocked = (imageId: string): boolean => {
         for (const [layerId, elements] of elementsByLayer.entries()) {
             const element = elements.find(el => el.id === imageId);
@@ -90,7 +104,6 @@ const ImageToolbar: React.FC<ImageToolbarProps> = ({
         return imageElement;
     }, [selectedImageId, selectedElementIds, elementsByLayer, layers]);
 
-    // Hide toolbar when moving elements
     if (!selectedImage || isMoving) return null;
 
     const handleClose = () => {
@@ -111,10 +124,10 @@ const ImageToolbar: React.FC<ImageToolbarProps> = ({
                         </div>
                         <div>
                             <h3 className="text-base font-semibold text-gray-900 dark:text-white">
-                                {dict.imageToolBar.title || 'Image Tools'}
+                                {dict.imageToolBar?.title || 'Image Tools'}
                             </h3>
                             <p className="text-xs text-gray-500 dark:text-gray-400">
-                                {dict.imageToolBar.resolution || 'Resolution'}:{' '}
+                                {dict.imageToolBar?.resolution || 'Resolution'}:{' '}
                                 {Math.round(selectedImage.width)}×
                                 {Math.round(selectedImage.height)}px
                             </p>
@@ -128,12 +141,12 @@ const ImageToolbar: React.FC<ImageToolbarProps> = ({
                     </button>
                 </div>
 
-                {/* Controls */}
+                {/* Main toolbar */}
                 <div className="flex items-center gap-6 flex-wrap">
                     {/* Fit to Canvas */}
                     <div className="flex flex-col gap-2">
                         <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
-                            {dict.imageToolBar.fitToCanvas || 'Fit to Canvas'}
+                            {dict.imageToolBar?.fitToCanvas || 'Fit to Canvas'}
                         </span>
                         <div className="flex items-center gap-2">
                             <button
@@ -142,11 +155,11 @@ const ImageToolbar: React.FC<ImageToolbarProps> = ({
                                 }
                                 className="cursor-pointer inline-flex items-center px-3 py-2 text-sm font-medium text-white bg-blue-500 hover:bg-blue-600 rounded-lg shadow-sm transition-all duration-200 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
                                 title={
-                                    dict.imageToolBar.fitImageStretch ||
+                                    dict.imageToolBar?.fitImageStretch ||
                                     'Fit image to canvas (stretch)'
                                 }>
                                 <Maximize className="w-4 h-4 mr-1.5" />
-                                {dict.imageToolBar.stretch || 'Stretch'}
+                                {dict.imageToolBar?.stretch || 'Stretch'}
                             </button>
 
                             <button
@@ -157,11 +170,11 @@ const ImageToolbar: React.FC<ImageToolbarProps> = ({
                                 }
                                 className="cursor-pointer inline-flex items-center px-3 py-2 text-sm font-medium text-white bg-emerald-500 hover:bg-emerald-600 rounded-lg shadow-sm transition-all duration-200 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2"
                                 title={
-                                    dict.imageToolBar.fitImageMaintainAspect ||
+                                    dict.imageToolBar?.fitImageMaintainAspect ||
                                     'Fit image to canvas (maintain aspect ratio)'
                                 }>
                                 <Square className="w-4 h-4 mr-1.5" />
-                                {dict.imageToolBar.fit || 'Fit'}
+                                {dict.imageToolBar?.fit || 'Fit'}
                             </button>
                         </div>
                     </div>
@@ -172,7 +185,7 @@ const ImageToolbar: React.FC<ImageToolbarProps> = ({
                     {/* Transform */}
                     <div className="flex flex-col gap-2">
                         <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
-                            {dict.imageToolBar.transform || 'Transform'}
+                            {dict.imageToolBar?.transform || 'Transform'}
                         </span>
                         <div className="flex items-center gap-1.5">
                             <button
@@ -183,7 +196,7 @@ const ImageToolbar: React.FC<ImageToolbarProps> = ({
                                 }
                                 className="cursor-pointer inline-flex items-center justify-center p-2 text-white bg-indigo-500 hover:bg-indigo-600 rounded-lg shadow-sm transition-all duration-200 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
                                 title={
-                                    dict.imageToolBar.flipHorizontal ||
+                                    dict.imageToolBar?.flipHorizontal ||
                                     'Flip horizontal'
                                 }>
                                 <FlipHorizontal className="w-4 h-4" />
@@ -197,7 +210,7 @@ const ImageToolbar: React.FC<ImageToolbarProps> = ({
                                 }
                                 className="cursor-pointer inline-flex items-center justify-center p-2 text-white bg-indigo-500 hover:bg-indigo-600 rounded-lg shadow-sm transition-all duration-200 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
                                 title={
-                                    dict.imageToolBar.flipVertical ||
+                                    dict.imageToolBar?.flipVertical ||
                                     'Flip vertical'
                                 }>
                                 <FlipVertical className="w-4 h-4" />
@@ -211,7 +224,7 @@ const ImageToolbar: React.FC<ImageToolbarProps> = ({
                                 }
                                 className="cursor-pointer inline-flex items-center justify-center p-2 text-gray-700 dark:text-gray-300 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 rounded-lg shadow-sm transition-all duration-200 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
                                 title={
-                                    dict.imageToolBar.reset ||
+                                    dict.imageToolBar?.reset ||
                                     'Reset all transforms'
                                 }>
                                 <RotateCcw className="w-4 h-4" />
@@ -225,7 +238,7 @@ const ImageToolbar: React.FC<ImageToolbarProps> = ({
                     {/* Constraints */}
                     <div className="flex flex-col gap-2">
                         <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
-                            {dict.imageToolBar.constraints || 'Constraints'}
+                            {dict.imageToolBar?.constraints || 'Constraints'}
                         </span>
                         <div className="flex items-center gap-2">
                             <button
@@ -236,18 +249,18 @@ const ImageToolbar: React.FC<ImageToolbarProps> = ({
                                         : 'text-gray-700 dark:text-gray-300 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 focus:ring-gray-500'
                                 }`}
                                 title={
-                                    dict.imageToolBar.toggleAspectRatio ||
+                                    dict.imageToolBar?.toggleAspectRatio ||
                                     'Toggle aspect ratio lock when resizing'
                                 }>
                                 {maintainAspectRatio ? (
                                     <>
                                         <Lock className="w-4 h-4 mr-1.5" />
-                                        {dict.imageToolBar.locked || 'Locked'}
+                                        {dict.imageToolBar?.locked || 'Locked'}
                                     </>
                                 ) : (
                                     <>
                                         <Unlock className="w-4 h-4 mr-1.5" />
-                                        {dict.imageToolBar.unlocked ||
+                                        {dict.imageToolBar?.unlocked ||
                                             'Unlocked'}
                                     </>
                                 )}
@@ -257,7 +270,7 @@ const ImageToolbar: React.FC<ImageToolbarProps> = ({
                                 onClick={handleClose}
                                 className="cursor-pointer px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 rounded-lg shadow-sm transition-all duration-200 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
                                 title="Close and deselect">
-                                {dict.imageToolBar.done || 'Done'}
+                                {dict.imageToolBar?.done || 'Done'}
                             </button>
                         </div>
                     </div>
@@ -267,21 +280,21 @@ const ImageToolbar: React.FC<ImageToolbarProps> = ({
                 <div className="mt-4 pt-3 border-t border-gray-200 dark:border-gray-700">
                     <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
                         <span>
-                            {dict.imageToolBar.selectedImage ||
+                            {dict.imageToolBar?.selectedImage ||
                                 'Selected: Image'}{' '}
                             #{selectedImage.id.slice(-8)}
                         </span>
                         <div className="flex items-center gap-4">
                             <span>
-                                {dict.imageToolBar.aspectRatio ||
+                                {dict.imageToolBar?.aspectRatio ||
                                     'Aspect Ratio'}
                                 :{' '}
                                 {maintainAspectRatio
-                                    ? dict.imageToolBar.locked || 'Locked'
-                                    : dict.imageToolBar.unlocked || 'Free'}
+                                    ? dict.imageToolBar?.locked || 'Locked'
+                                    : dict.imageToolBar?.unlocked || 'Free'}
                             </span>
                             <span>
-                                {dict.imageToolBar.ratio || 'Ratio'}:{' '}
+                                {dict.imageToolBar?.ratio || 'Ratio'}:{' '}
                                 {(
                                     selectedImage.width / selectedImage.height
                                 ).toFixed(2)}

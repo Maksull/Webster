@@ -1,4 +1,5 @@
 'use client';
+
 import { useCallback, useEffect, useRef } from 'react';
 import { KonvaEventObject } from 'konva/lib/Node';
 import { Node } from 'konva/lib/Node';
@@ -20,6 +21,7 @@ import {
 import { API_URL } from '@/config';
 import { useAuth, useDrawing } from '@/contexts';
 import { jsPDF } from 'jspdf';
+import { Stage } from 'konva/lib/Stage';
 
 interface DownloadOptions {
     format: 'webp' | 'png' | 'jpeg' | 'pdf';
@@ -29,6 +31,13 @@ interface DownloadOptions {
 
 interface CallbacksProps {
     clearSelectionRect?: () => void;
+}
+
+interface ResizeState {
+    corner: string;
+    startPos: { x: number; y: number };
+    originalElement: ImageElement | null;
+    stage: Stage | null;
 }
 
 export const useCanvasOperations = (callbacks: CallbacksProps = {}) => {
@@ -82,6 +91,9 @@ export const useCanvasOperations = (callbacks: CallbacksProps = {}) => {
         setColor,
         isDrawingCurve,
         setIsDrawingCurve,
+        maintainAspectRatio,
+        setMaintainAspectRatio,
+        setIsImageResizing,
     } = useDrawing();
 
     const { isAuthenticated } = useAuth();
@@ -93,6 +105,346 @@ export const useCanvasOperations = (callbacks: CallbacksProps = {}) => {
     const lastMousePos = useRef({ x: 0, y: 0 });
     const dragOffset = useRef({ x: 0, y: 0 });
 
+    // Image resize state
+    const resizeStateRef = useRef<ResizeState>({
+        corner: '',
+        startPos: { x: 0, y: 0 },
+        originalElement: null,
+        stage: null,
+    });
+
+    // Image-related functions
+    const updateImageElement = useCallback(
+        (elementId: string, updates: Partial<ImageElement>) => {
+            const updatedElementsByLayer = new Map(elementsByLayer);
+            updatedElementsByLayer.forEach((elements, layerId) => {
+                const updatedElements = elements.map(element => {
+                    if (element.id === elementId && element.type === 'image') {
+                        return { ...element, ...updates };
+                    }
+                    return element;
+                });
+                updatedElementsByLayer.set(layerId, updatedElements);
+            });
+            setElementsByLayer(updatedElementsByLayer);
+        },
+        [elementsByLayer, setElementsByLayer],
+    );
+
+    const getImageElement = useCallback(
+        (imageId: string): ImageElement | null => {
+            let imageElement: ImageElement | null = null;
+            elementsByLayer.forEach(elements => {
+                const found = elements.find(
+                    el => el.id === imageId && el.type === 'image',
+                ) as ImageElement;
+                if (found) {
+                    imageElement = found;
+                }
+            });
+            return imageElement;
+        },
+        [elementsByLayer],
+    );
+
+    const handleImageMouseMove = useCallback(
+        (e: MouseEvent | TouchEvent) => {
+            if (
+                !resizeStateRef.current.originalElement ||
+                !resizeStateRef.current.stage
+            )
+                return;
+
+            e.preventDefault();
+            e.stopPropagation();
+
+            let clientX = 0;
+            let clientY = 0;
+            if ('touches' in e) {
+                clientX = e.touches[0].clientX;
+                clientY = e.touches[0].clientY;
+            } else {
+                clientX = e.clientX;
+                clientY = e.clientY;
+            }
+
+            const stage = resizeStateRef.current.stage;
+            const stageContainer = stage.container();
+            const rect = stageContainer.getBoundingClientRect();
+            const stageX = (clientX - rect.left) / stage.scaleX();
+            const stageY = (clientY - rect.top) / stage.scaleY();
+
+            const deltaX = stageX - resizeStateRef.current.startPos.x;
+            const deltaY = stageY - resizeStateRef.current.startPos.y;
+
+            const original = resizeStateRef.current.originalElement;
+            let newX = original.x;
+            let newY = original.y;
+            let newWidth = original.width;
+            let newHeight = original.height;
+
+            const aspectRatio = original.width / original.height;
+            const corner = resizeStateRef.current.corner;
+
+            switch (corner) {
+                case 'top-left':
+                    newX = original.x + deltaX;
+                    newY = original.y + deltaY;
+                    newWidth = original.width - deltaX;
+                    newHeight = original.height - deltaY;
+                    if (maintainAspectRatio) {
+                        const scale = Math.min(
+                            newWidth / original.width,
+                            newHeight / original.height,
+                        );
+                        newWidth = original.width * scale;
+                        newHeight = original.height * scale;
+                        newX = original.x + original.width - newWidth;
+                        newY = original.y + original.height - newHeight;
+                    }
+                    break;
+                case 'top-right':
+                    newY = original.y + deltaY;
+                    newWidth = original.width + deltaX;
+                    newHeight = original.height - deltaY;
+                    if (maintainAspectRatio) {
+                        if (Math.abs(deltaX) > Math.abs(deltaY)) {
+                            newHeight = newWidth / aspectRatio;
+                            newY = original.y + original.height - newHeight;
+                        } else {
+                            newWidth = newHeight * aspectRatio;
+                        }
+                    }
+                    break;
+                case 'bottom-left':
+                    newX = original.x + deltaX;
+                    newWidth = original.width - deltaX;
+                    newHeight = original.height + deltaY;
+                    if (maintainAspectRatio) {
+                        if (Math.abs(deltaX) > Math.abs(deltaY)) {
+                            newHeight = newWidth / aspectRatio;
+                        } else {
+                            newWidth = newHeight * aspectRatio;
+                            newX = original.x + original.width - newWidth;
+                        }
+                    }
+                    break;
+                case 'bottom-right':
+                    newWidth = original.width + deltaX;
+                    newHeight = original.height + deltaY;
+                    if (maintainAspectRatio) {
+                        if (Math.abs(deltaX) > Math.abs(deltaY)) {
+                            newHeight = newWidth / aspectRatio;
+                        } else {
+                            newWidth = newHeight * aspectRatio;
+                        }
+                    }
+                    break;
+                case 'top-center':
+                    newY = original.y + deltaY;
+                    newHeight = original.height - deltaY;
+                    if (maintainAspectRatio) {
+                        newWidth = newHeight * aspectRatio;
+                        newX = original.x - (newWidth - original.width) / 2;
+                    }
+                    break;
+                case 'bottom-center':
+                    newHeight = original.height + deltaY;
+                    if (maintainAspectRatio) {
+                        newWidth = newHeight * aspectRatio;
+                        newX = original.x - (newWidth - original.width) / 2;
+                    }
+                    break;
+                case 'left-center':
+                    newX = original.x + deltaX;
+                    newWidth = original.width - deltaX;
+                    if (maintainAspectRatio) {
+                        newHeight = newWidth / aspectRatio;
+                        newY = original.y - (newHeight - original.height) / 2;
+                    }
+                    break;
+                case 'right-center':
+                    newWidth = original.width + deltaX;
+                    if (maintainAspectRatio) {
+                        newHeight = newWidth / aspectRatio;
+                        newY = original.y - (newHeight - original.height) / 2;
+                    }
+                    break;
+            }
+
+            newWidth = Math.max(20, newWidth);
+            newHeight = Math.max(20, newHeight);
+
+            updateImageElement(original.id, {
+                x: newX,
+                y: newY,
+                width: newWidth,
+                height: newHeight,
+            });
+        },
+        [maintainAspectRatio, updateImageElement],
+    );
+
+    // Also update the handleImageMouseUp function to record history after resize
+    const handleImageMouseUp = useCallback(() => {
+        console.log('Image resize ended');
+        setIsImageResizing(false);
+
+        // Record history after image resize is complete
+        recordHistory();
+
+        resizeStateRef.current = {
+            corner: '',
+            startPos: { x: 0, y: 0 },
+            originalElement: null,
+            stage: null,
+        };
+
+        document.removeEventListener('mousemove', handleImageMouseMove);
+        document.removeEventListener('mouseup', handleImageMouseUp);
+        document.removeEventListener('touchmove', handleImageMouseMove);
+        document.removeEventListener('touchend', handleImageMouseUp);
+    }, [handleImageMouseMove, recordHistory]);
+
+    const handleImageResizeStart = useCallback(
+        (corner: string, e: KonvaEventObject<MouseEvent | TouchEvent>) => {
+            console.log('Image resize started for corner:', corner);
+
+            const hasLockedElement = selectedElementIds.some(id => {
+                for (const [layerId, elements] of elementsByLayer.entries()) {
+                    const element = elements.find(el => el.id === id);
+                    if (element) {
+                        const layer = layers.find(l => l.id === layerId);
+                        return layer?.locked || false;
+                    }
+                }
+                return false;
+            });
+
+            if (hasLockedElement) {
+                console.log('Cannot resize image: layer is locked');
+                return;
+            }
+
+            if (e.evt) {
+                e.evt.preventDefault();
+                e.evt.stopPropagation();
+            }
+
+            const stage = e.target.getStage();
+            if (!stage) {
+                console.error('No stage found');
+                return;
+            }
+
+            const pos = stage.getPointerPosition();
+            if (!pos) {
+                console.error('No pointer position found');
+                return;
+            }
+
+            let imageElement: ImageElement | null = null;
+            selectedElementIds.forEach(id => {
+                const element = getImageElement(id);
+                if (element) {
+                    imageElement = element;
+                }
+            });
+
+            if (!imageElement) {
+                console.error('No image element found for resize');
+                return;
+            }
+
+            resizeStateRef.current = {
+                corner,
+                startPos: pos,
+                originalElement: JSON.parse(JSON.stringify(imageElement)),
+                stage,
+            };
+
+            setIsImageResizing(true);
+
+            document.addEventListener('mousemove', handleImageMouseMove, {
+                passive: false,
+            });
+            document.addEventListener('mouseup', handleImageMouseUp);
+            document.addEventListener('touchmove', handleImageMouseMove, {
+                passive: false,
+            });
+            document.addEventListener('touchend', handleImageMouseUp);
+
+            return false;
+        },
+        [
+            selectedElementIds,
+            getImageElement,
+            handleImageMouseMove,
+            handleImageMouseUp,
+            elementsByLayer,
+            layers,
+        ],
+    );
+
+    const fitImageToCanvas = useCallback(
+        (imageId: string) => {
+            updateImageElement(imageId, {
+                x: 0,
+                y: 0,
+                width: dimensions.width,
+                height: dimensions.height,
+            });
+            // Record history after image transformation
+            recordHistory();
+        },
+        [updateImageElement, dimensions, recordHistory],
+    );
+
+    const fitImageToCanvasWithAspectRatio = useCallback(
+        (imageId: string) => {
+            const imageElement = getImageElement(imageId);
+            if (!imageElement) return;
+
+            const imageAspectRatio = imageElement.width / imageElement.height;
+            const canvasAspectRatio = dimensions.width / dimensions.height;
+
+            let newWidth: number;
+            let newHeight: number;
+            let newX: number;
+            let newY: number;
+
+            if (imageAspectRatio > canvasAspectRatio) {
+                newWidth = dimensions.width;
+                newHeight = dimensions.width / imageAspectRatio;
+                newX = 0;
+                newY = (dimensions.height - newHeight) / 2;
+            } else {
+                newHeight = dimensions.height;
+                newWidth = dimensions.height * imageAspectRatio;
+                newX = (dimensions.width - newWidth) / 2;
+                newY = 0;
+            }
+
+            updateImageElement(imageId, {
+                x: newX,
+                y: newY,
+                width: newWidth,
+                height: newHeight,
+            });
+            // Record history after image transformation
+            recordHistory();
+        },
+        [getImageElement, updateImageElement, dimensions, recordHistory],
+    );
+
+    // Make sure to add recordHistory to the dependencies
+    const toggleAspectRatio = useCallback(() => {
+        setMaintainAspectRatio(prev => !prev);
+        // Note: This doesn't modify the canvas directly, so no history recording needed
+        // History will be recorded when the user actually resizes an image with the new setting
+    }, [setMaintainAspectRatio]);
+
+    // Rest of the existing functions remain the same...
     useEffect(() => {
         return () => {
             document.removeEventListener('mousemove', handleResizeMove);
@@ -112,7 +464,6 @@ export const useCanvasOperations = (callbacks: CallbacksProps = {}) => {
                 finishCurve();
             }
         };
-
         document.addEventListener('keydown', handleKeyDown);
         return () => {
             document.removeEventListener('keydown', handleKeyDown);
@@ -136,7 +487,6 @@ export const useCanvasOperations = (callbacks: CallbacksProps = {}) => {
         const activeElements = getActiveLayerElements();
 
         if (!isDrawingCurve) {
-            // Starting a new curve
             const newCurve: CurveElement = {
                 id: Date.now().toString(),
                 type: 'curve',
@@ -158,7 +508,6 @@ export const useCanvasOperations = (callbacks: CallbacksProps = {}) => {
             const updatedElements = [...activeElements, newCurve];
             updateActiveLayerElements(updatedElements);
         } else {
-            // Adding point to existing curve
             console.log('Adding point to existing curve:', x, y);
             const newPoints = [...curvePoints.current, x, y];
             curvePoints.current = newPoints;
@@ -168,17 +517,12 @@ export const useCanvasOperations = (callbacks: CallbacksProps = {}) => {
                     element.id === currentCurveId.current &&
                     element.type === 'curve'
                 ) {
-                    return {
-                        ...element,
-                        points: newPoints,
-                    } as CurveElement;
+                    return { ...element, points: newPoints } as CurveElement;
                 }
                 return element;
             });
-
             updateActiveLayerElements(updatedElements);
 
-            // Check if we should close the curve (if user clicks near the starting point)
             if (newPoints.length >= 6) {
                 const startX = newPoints[0];
                 const startY = newPoints[1];
@@ -187,7 +531,6 @@ export const useCanvasOperations = (callbacks: CallbacksProps = {}) => {
                 );
 
                 if (distance < 20) {
-                    // Close the curve
                     const closedPoints = [...newPoints, startX, startY];
                     const updatedElementsWithClosure = activeElements.map(
                         element => {
@@ -204,7 +547,6 @@ export const useCanvasOperations = (callbacks: CallbacksProps = {}) => {
                             return element;
                         },
                     );
-
                     updateActiveLayerElements(updatedElementsWithClosure);
                     finishCurve();
                 }
@@ -288,7 +630,6 @@ export const useCanvasOperations = (callbacks: CallbacksProps = {}) => {
             const updatedElements = layerElements.filter(
                 el => el.id !== elementToRemoveId,
             );
-
             updatedElementsByLayer.set(elementLayerId, updatedElements);
             setElementsByLayer(updatedElementsByLayer);
 
@@ -527,6 +868,7 @@ export const useCanvasOperations = (callbacks: CallbacksProps = {}) => {
 
                     const isShiftPressed =
                         e.evt && (e.evt.shiftKey || e.evt.ctrlKey);
+
                     if (isShiftPressed) {
                         const newSelectedIds = [...selectedElementIds];
                         const index = newSelectedIds.indexOf(foundElementId);
@@ -984,12 +1326,12 @@ export const useCanvasOperations = (callbacks: CallbacksProps = {}) => {
         }
     };
 
-    // Rest of the functions remain the same...
     const handleBucketClick = (x: number, y: number) => {
         if (!stageRef.current) return;
 
         const stage = stageRef.current;
         const pos = { x: Math.floor(x), y: Math.floor(y) };
+
         const shapes = stage.getAllIntersections(pos);
         const targetShapes = shapes.filter(
             (shape: Node) =>
@@ -1052,7 +1394,6 @@ export const useCanvasOperations = (callbacks: CallbacksProps = {}) => {
             const layerElements =
                 updatedElementsByLayer.get(targetLayerId) || [];
             const updatedElements = [...layerElements];
-
             updatedElements[targetElementIdx] = {
                 ...targetElement,
                 fill: color,
@@ -1165,9 +1506,6 @@ export const useCanvasOperations = (callbacks: CallbacksProps = {}) => {
         return Math.sqrt(dx * dx + dy * dy);
     };
 
-    // Include all other existing functions (handleResizeStart, handleSave, etc.)
-    // ... (keeping the rest of your existing functions as they were)
-
     const handleResizeStart = (
         direction: string,
         e: React.MouseEvent | React.TouchEvent,
@@ -1254,6 +1592,7 @@ export const useCanvasOperations = (callbacks: CallbacksProps = {}) => {
         if (!isResizing) return;
 
         setIsResizing(false);
+
         const customResolution: Resolution = {
             name: `Custom (${Math.round(dimensions.width)}×${Math.round(
                 dimensions.height,
@@ -1261,6 +1600,7 @@ export const useCanvasOperations = (callbacks: CallbacksProps = {}) => {
             width: Math.round(dimensions.width),
             height: Math.round(dimensions.height),
         };
+
         setSelectedResolution(customResolution);
         recordHistory();
 
@@ -1387,6 +1727,7 @@ export const useCanvasOperations = (callbacks: CallbacksProps = {}) => {
                         'backup_canvas_data',
                         JSON.stringify(canvasData),
                     );
+
                     return {
                         success: false,
                         message: `Failed to save to cloud: ${
@@ -1531,6 +1872,7 @@ export const useCanvasOperations = (callbacks: CallbacksProps = {}) => {
 
             const result = await response.json();
             console.log('Template created successfully:', result);
+
             return {
                 success: true,
                 message: `Template "${templateName}" created successfully!`,
@@ -1552,7 +1894,6 @@ export const useCanvasOperations = (callbacks: CallbacksProps = {}) => {
             return false;
         }
 
-        // Check if any selected elements are in locked layers
         const hasLockedElement = selectedElementIds.some(id => {
             for (const [layerId, elements] of elementsByLayer.entries()) {
                 const element = elements.find(el => el.id === id);
@@ -1571,7 +1912,6 @@ export const useCanvasOperations = (callbacks: CallbacksProps = {}) => {
             return false;
         }
 
-        // Create updated elements map without the selected elements
         const updatedElementsByLayer = new Map(elementsByLayer);
         let deletedCount = 0;
 
@@ -1587,13 +1927,9 @@ export const useCanvasOperations = (callbacks: CallbacksProps = {}) => {
         });
 
         if (deletedCount > 0) {
-            // Update the state
             setElementsByLayer(updatedElementsByLayer);
             setSelectedElementIds([]);
-
-            // Record history for undo/redo
             recordHistory(undefined, updatedElementsByLayer);
-
             console.log(`Deleted ${deletedCount} element(s)`);
             return true;
         }
@@ -1610,8 +1946,6 @@ export const useCanvasOperations = (callbacks: CallbacksProps = {}) => {
 
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
-            // Only trigger deletion on Delete or Backspace keys
-            // AND only when not typing in an input field or textarea
             if (
                 (e.key === 'Delete' || e.key === 'Backspace') &&
                 (e.target as HTMLElement).tagName !== 'INPUT' &&
@@ -1685,5 +2019,12 @@ export const useCanvasOperations = (callbacks: CallbacksProps = {}) => {
         handleStageDoubleClick,
         handleDeleteSelectedElements,
         finishCurve,
+        // Image-related functions
+        updateImageElement,
+        getImageElement,
+        handleImageResizeStart,
+        fitImageToCanvas,
+        fitImageToCanvasWithAspectRatio,
+        toggleAspectRatio,
     };
 };
