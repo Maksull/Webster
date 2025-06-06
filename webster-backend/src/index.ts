@@ -6,7 +6,8 @@ import multipart from '@fastify/multipart';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import fastifyStatic from '@fastify/static';
-import { environmentConfig } from './config/index.js';
+import { AppDataSource, environmentConfig } from './config/index.js';
+import { registerRoutes } from './routes/index.js';
 
 // Get current directory for ES modules
 const __filename = fileURLToPath(import.meta.url);
@@ -25,6 +26,8 @@ app.register(fastifyStatic, {
 
 const start = async () => {
     try {
+        await AppDataSource.initialize();
+
         await app.register(multipart);
         await app.register(cors, {
             origin: ['http://localhost:3000', 'http://127.0.0.1:3000'],
@@ -32,6 +35,8 @@ const start = async () => {
             credentials: true,
             allowedHeaders: ['Content-Type', 'Authorization'],
         });
+
+        app.register(registerRoutes);
 
         app.get('/', async () => {
             return { message: 'Hello, Fastify!' };

@@ -3,10 +3,7 @@ import './globals.css';
 import { i18n } from '@/i18n-config';
 
 export const metadata: Metadata = {
-    title: {
-        default: 'Webster',
-        template: '%s - Webster',
-    },
+    title: 'Webster',
     description: 'Webster helps you design images quickly and easily.',
 };
 

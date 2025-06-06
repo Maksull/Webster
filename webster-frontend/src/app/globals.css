@@ -27,3 +27,67 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+.bg-checkerboard {
+  background-image: linear-gradient(45deg, #ccc 25%, transparent 25%),
+    linear-gradient(-45deg, #ccc 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, #ccc 75%),
+    linear-gradient(-45deg, transparent 75%, #ccc 75%);
+  background-size: 20px 20px;
+  background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+}
+
+.dark .bg-checkerboard {
+  background-image: linear-gradient(45deg, #444 25%, transparent 25%),
+    linear-gradient(-45deg, #444 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, #444 75%),
+    linear-gradient(-45deg, transparent 75%, #444 75%);
+}
+
+.scrollbar-hide {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+.hidden-element {
+  opacity: 0;
+  transition: all 1s;
+}
+
+.title-a {
+  transform: translateX(-80px);
+}
+
+.professional-a {
+  transition-delay: 0.75s;
+}
+
+.template-a {
+  transform: translateY(-40px);
+}
+
+.feature-a {
+  transform: translateY(-40px);
+}
+
+.feature-a:nth-child(2),
+.feature-a:nth-child(5) {
+  transition-delay: 200ms;
+}
+.feature-a:nth-child(3),
+.feature-a:nth-child(6) {
+  transition-delay: 400ms;
+}
+
+.ready-to-design-a {
+  transform: translateX(-80px);
+}
+
+.visible-element {
+  opacity: 1;
+  transform: translate3d(0, 0, 0);
+}
